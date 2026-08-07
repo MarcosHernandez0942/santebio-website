@@ -513,6 +513,126 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
   }
 }
 </style>
+<style id="visual-polish-css">
+/* Mejoras visuales adicionales (petición de Marcos: "que se vea más
+   viva") — ritmo de color entre secciones, íconos en círculo, badges y
+   hover states. Todo con la paleta real del sitio (#204F2B / #699431 /
+   #93DB4B), sin tocar contenido ni estructura. */
+
+/* Ritmo de color: alterna blanco / marfil-verdoso entre secciones */
+.elementor-element-3d89acf,
+.elementor-element-b8605a0,
+.elementor-element-d0dfeaa {
+  background-color: #F5F8F1;
+}
+
+/* Íconos de categoría en Beneficios (Nutrientes/Funcionales/Practicidad/Edad) en círculo */
+[data-id="5f68a24"] .elementor-icon,
+[data-id="ab850e8"] .elementor-icon,
+[data-id="ad82bbc"] .elementor-icon,
+[data-id="30081cd"] .elementor-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: rgba(32, 79, 43, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  transition: background-color 0.25s ease, transform 0.25s ease;
+}
+[data-id="5f68a24"] .elementor-icon svg,
+[data-id="ab850e8"] .elementor-icon svg,
+[data-id="ad82bbc"] .elementor-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: #204F2B;
+}
+[data-id="5f68a24"] .elementor-icon:hover,
+[data-id="ab850e8"] .elementor-icon:hover,
+[data-id="ad82bbc"] .elementor-icon:hover,
+[data-id="30081cd"] .elementor-icon:hover {
+  background: rgba(32, 79, 43, 0.2);
+  transform: scale(1.06);
+}
+
+/* Tarjetas de "Ayuda a..." — tinte verde suave en vez de gris plano, ícono circular, hover con elevación */
+.elementor-element-1dca128 > .e-con.e-child {
+  background-color: rgba(105, 148, 49, 0.08) !important;
+  border-radius: 16px;
+  transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+}
+.elementor-element-1dca128 > .e-con.e-child:hover {
+  background-color: rgba(105, 148, 49, 0.16) !important;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -14px rgba(32, 79, 43, 0.45);
+}
+.elementor-element-1dca128 img {
+  border-radius: 50%;
+  background: #FFFFFF;
+  padding: 8px;
+}
+
+/* Tarjetas de paquetes — elevación al pasar el mouse */
+.elementor-element-11e549e,
+.elementor-element-4d014e2,
+.elementor-element-b89fb18 {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.elementor-element-11e549e:hover,
+.elementor-element-4d014e2:hover,
+.elementor-element-b89fb18:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 32px -18px rgba(32, 79, 43, 0.5);
+}
+
+/* Badges "Recomendado" / "Ahorro Especial" */
+.elementor-element-c88d67c .elementor-heading-title,
+.elementor-element-bab6f01 .elementor-heading-title {
+  display: inline-block;
+  background: #93DB4B;
+  color: #204F2B;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 6px 16px;
+  border-radius: 999px;
+}
+
+/* Botones — hover con elevación sutil */
+.elementor-button {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.elementor-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px -10px rgba(32, 79, 43, 0.55);
+  filter: brightness(1.06);
+}
+
+/* FAQ — feedback visual al pasar el mouse sobre cada pregunta */
+.elementskit-card-header {
+  transition: background-color 0.2s ease;
+}
+.elementskit-card-header:hover {
+  background-color: rgba(105, 148, 49, 0.08);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .elementor-element-11e549e,
+  .elementor-element-4d014e2,
+  .elementor-element-b89fb18,
+  .elementor-button,
+  [data-id="5f68a24"] .elementor-icon,
+  [data-id="ab850e8"] .elementor-icon,
+  [data-id="ad82bbc"] .elementor-icon,
+  [data-id="30081cd"] .elementor-icon,
+  .elementor-element-1dca128 > .e-con.e-child {
+    transition: none;
+  }
+}
+</style>
 </head><body itemtype='https://schema.org/WebPage' itemscope='itemscope' class="home wp-singular page-template-default page page-id-44 wp-custom-logo wp-embed-responsive wp-theme-astra theme-astra woocommerce-no-js ast-desktop ast-page-builder-template ast-no-sidebar astra-4.13.1 ast-single-post ast-inherit-site-logo-transparent ast-hfb-header elementor-default elementor-kit-6 elementor-page elementor-page-44">
 <div id="intro-overlay">
   <video id="intro-video" src="videos/intro_16x9.mp4" autoplay muted playsinline></video>
