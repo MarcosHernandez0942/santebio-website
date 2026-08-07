@@ -1,0 +1,72 @@
+{
+  "proyecto": "SanteBio - Cápsulas de Nopal",
+  "hoja_origen": "Auditoria_Integral_Capsulas_de_Nopal_Torre_Digital.pptx + solicitud de Marcos",
+  "nota": "Los campos 'prompt' están en inglés a propósito: los modelos de generación de video/imagen (Runway, Kling, Sora, Luma, Veo/Flow, etc.) responden de forma más consistente en inglés. El resto de las etiquetas quedan en español para referencia de Marcos.",
+
+  "decision_de_ubicacion": {
+    "video_1_ya_integrado": "intro_16x9.mp4 / intro_9x16.mp4 — video de bienvenida a pantalla completa al abrir la página (ya resuelto, no está en este archivo).",
+    "video_2": "Se coloca como sección de fondo a pantalla completa, ENTRE el bloque de sellos de confianza (100% Orgánico / Envío / Pago protegido) y la sección '¿Por qué elegir SanteBio...?'. Razón: antes de entrar al argumento racional (la tabla comparativa), conviene un momento visual/emocional que respalde el claim '100% Orgánico' con evidencia — el origen del nopal.",
+    "video_3": "Se coloca como sección dividida (video + texto) justo ANTES de 'Elige el plan ideal...' (los paquetes). Razón: es el mejor punto de la página para reforzar con movimiento lo que la tabla comparativa ya dijo en texto (3 segundos vs. 15 minutos) — funciona como el último empujón de confianza antes de que el usuario vea precios, siguiendo la recomendación de la auditoría de reforzar confianza justo antes del CTA de compra."
+  },
+
+  "identidad_de_marca": "SanteBio nopal capsule supplement: a real, recognizable amber/white supplement bottle with a green nopal-leaf logo (the same bottle shown in the product photos already on the site — use those as reference images in 'Ingredients to Video' once uploaded). Real nopal cactus paddles (pencas) are flat, oval, blue-green, covered in small spine clusters (areolas) — do not invent a different plant. No invented brand text other than SanteBio's own real bottle/logo.",
+  "aviso": "SanteBio es un suplemento alimenticio, no un medicamento. Ningún clip debe sugerir que cura, trata o controla una condición médica (diabetes, glucosa, inflamación, peso) — mostrar solo el proceso natural/orgánico y la practicidad de uso, nunca un resultado de salud.",
+
+  "estilo_de_iluminacion": "Luz natural, cálida, de exterior (para la escena de campo) y luz de cocina/hogar realista y suave (para la escena de comparación) — nada de iluminación de estudio dramática ni look 'de IA'. Debe sentirse como fotografía/video real de producto orgánico, no como un anuncio genérico de stock.",
+
+  "notas_google_flow": {
+    "herramienta": "Google Labs Flow (Veo)",
+    "duracion_y_formato": "No hace falta escribir la duración ni '16:9'/'9:16' en el texto del prompt — en Flow eso se elige en los controles de la propia herramienta (aspect ratio y duración del clip).",
+    "ingredients_to_video": "Usa el modo 'Ingredients to Video' de Flow: sube como imagen de referencia una foto real del frasco SanteBio (por ejemplo clone/wp-content/uploads/2026/03/New-Project-2-e1773165267979-1024x863.webp) junto con el texto de cada escena donde aparezca el frasco, para que el envase se mantenga consistente y no se reinvente.",
+    "flujo_sugerido": [
+      "1. Para la Escena 2 (campo de nopal) no hace falta imagen de referencia del frasco — es paisaje/naturaleza. Genera directo el clip.",
+      "2. Para la Escena 3 (comparación) sí sube la foto real del frasco como 'ingredient' para que el envase se vea igual al de la página.",
+      "3. Ajusta el aspect ratio en el panel de Flow según corresponda (16:9 escritorio / 9:16 móvil).",
+      "4. Si una escena sale mal, regenera solo esa."
+    ]
+  },
+
+  "video_concept": {
+    "tono": "orgánico, cálido, honesto — nada de texto grande en pantalla, nada de resultados médicos insinuados, solo el producto y el proceso real",
+    "paleta_de_grading": {
+      "verde_oscuro": "#204F2B",
+      "verde_acento": "#699431",
+      "blancos": "#FFFFFF"
+    },
+    "nota_paleta": "Estos tonos ya son los que usa el sitio real (botones y acentos verdes) — mantener el grading de los clips alineado a esta paleta para que se sientan parte del mismo sitio, no insertados de otro lado."
+  },
+
+  "escenas": [
+    {
+      "id": 2,
+      "nombre": "Origen orgánico",
+      "narrativa_es": "Un campo de nopal orgánico al amanecer, cosecha manual de las pencas — respalda visualmente el claim '100% Orgánico' antes de la tabla comparativa.",
+      "clip_prompt_16_9": "Cinematic, warm natural documentary-style footage of an organic nopal cactus (prickly pear cactus) farm at soft early morning light. Wide establishing shot of rows of flat oval blue-green nopal paddles (pencas) covered in small spine clusters, dew on the leaves catching the low sun, gentle breeze. Slow, steady camera dolly moving forward through the rows. Then a smooth transition to a pair of hands (skin only, no visible face) wearing simple work gloves, carefully harvesting a single nopal paddle with a knife, no blood, no injury, calm and deliberate motion. Natural warm morning light (soft golden tones), realistic color grade leaning into deep natural greens (#204F2B) and a warm accent green (#699431) in the foliage, clean white highlights (#FFFFFF) where the sun catches the dew — subtle, true-to-life, not oversaturated. No text overlays, no logos, no people's faces, no medical or health claims implied — purely the natural origin of the plant.",
+      "clip_prompt_9_16": "Cinematic, vertical mobile format, warm natural documentary-style footage of an organic nopal cactus (prickly pear cactus) farm at soft early morning light, framed tall to keep rows of flat oval blue-green nopal paddles (pencas) centered. Slow steady forward camera move, dew catching low morning sun, gentle breeze. Transition to hands in simple work gloves harvesting a single paddle carefully with a knife, calm motion, no face visible. Warm natural light, realistic grade with deep natural greens (#204F2B), warm accent green (#699431), clean white highlights (#FFFFFF). No text overlays, no logos, no medical claims."
+    },
+    {
+      "id": 3,
+      "nombre": "Comparación práctica",
+      "narrativa_es": "Contraste visual entre preparar un licuado de nopal (tedioso, tallar espinas, textura viscosa) y tomar cápsulas SanteBio con un vaso de agua (3 segundos) — refuerzo justo antes de mostrar los paquetes.",
+      "clip_prompt_16_9": "Cinematic split-feeling sequence (single continuous video, not a literal split screen) shot in a bright, realistic home kitchen. First half: close-up, slightly hurried real-life footage of hands (no face) at a cutting board, carefully trimming spines off a fresh nopal paddle with a small knife, then the paddle going into a blender with water, the blender running and producing a visibly thick, slightly viscous green liquid poured into a glass — everyday, slightly messy, realistic (a few stray spine trimmings on the board, water splashes), natural kitchen lighting. Smooth match-cut transition to the second half: a calm hand picking up a real SanteBio supplement bottle (amber/white bottle with a green nopal-leaf logo, matching the reference product image), tapping out capsules into a palm, then swallowing them with a plain glass of water in one simple, quick motion — clean counter, soft natural window light, no mess. Overall realistic, warm, true-to-life color grade using deep natural green (#204F2B) and accent green (#699431) in the kitchen decor/plants, clean whites (#FFFFFF) in the counter and glass highlights. No on-screen timer or text overlay (timing contrast is implied by editing pace, not on-screen text), no visible faces, no health outcome claims — only the practical difference in preparation.",
+      "clip_prompt_9_16": "Cinematic vertical mobile format, realistic home kitchen. First: close-up hands (no face) trimming spines off a fresh nopal paddle, then blending it with water into a visibly thick green liquid poured into a glass — everyday and slightly messy, natural kitchen light, framed tall. Smooth match-cut to: a hand holding a real SanteBio supplement bottle (amber/white, green nopal-leaf logo), tapping capsules into a palm, swallowing them with a glass of water in one quick clean motion, soft natural light, clean counter. Realistic warm grade, deep natural green (#204F2B), accent green (#699431), clean whites (#FFFFFF). No text overlays, no visible faces, no health outcome claims."
+    }
+  ],
+
+  "edicion": {
+    "herramienta_sugerida": "CapCut o Premiere Pro",
+    "instrucciones_es": [
+      "Escena 2 (Origen): recortar a un clip de 6-10s para usarse en loop como fondo de sección — cuidar que el primer y último frame se parezcan para que el loop no se note al repetirse.",
+      "Escena 3 (Comparación): igual, recortar a 8-12s en loop; si el clip no queda perfectamente loopeable, exportar también una versión donde el corte quede en un momento neutro (ej. el vaso de agua quieto) para disimular el corte.",
+      "Sin audio necesario — ambos videos se reproducen sin sonido (mismo criterio que el video de intro).",
+      "Exportar ambas versiones: 16:9 (1920x1080) para escritorio y 9:16 (1080x1920) para móvil."
+    ]
+  },
+
+  "nombres_de_archivo_y_ubicacion": {
+    "carpeta": "capsulas_nopal_santebio/clone/videos/",
+    "escena_2": ["escena2_origen_16x9.mp4", "escena2_origen_9x16.mp4 (opcional)"],
+    "escena_3": ["escena3_comparacion_16x9.mp4", "escena3_comparacion_9x16.mp4 (opcional)"],
+    "nota": "Mismo patrón de nombres que intro_16x9.mp4. En cuanto se guarden ahí con esos nombres exactos, las secciones ya están conectadas en el sitio (clone/index.html) y se activan solas — no hace falta tocar código."
+  }
+}

@@ -430,6 +430,89 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
   display: none !important;
 }
 </style>
+<style id="new-video-sections-css">
+/* Dos secciones nuevas de video (petición de Marcos), insertadas por JS
+   antes de "¿Por qué elegir SanteBio...?" y antes de "Elige el plan
+   ideal...". Paleta tomada del sitio real (verdes #204F2B / #699431). */
+.sb-video-section {
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: #204F2B;
+}
+.sb-video-section video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.sb-video-section video.sb-video-ready {
+  opacity: 1;
+}
+.sb-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.sb-scrim-center {
+  background: linear-gradient(to bottom, rgba(32, 79, 43, 0.55) 0%, rgba(32, 79, 43, 0.25) 40%, rgba(32, 79, 43, 0.75) 100%);
+}
+.sb-scrim-left {
+  background: linear-gradient(90deg, rgba(32, 79, 43, 0.92) 0%, rgba(32, 79, 43, 0.55) 45%, rgba(32, 79, 43, 0.15) 75%);
+}
+.sb-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 28px;
+  width: 100%;
+}
+.sb-video-section.sb-align-left .sb-content {
+  max-width: 480px;
+}
+.sb-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #93DB4B;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.sb-content h2 {
+  font-size: clamp(26px, 4vw, 42px);
+  color: #FFFFFF;
+  margin: 0 0 16px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.sb-content p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 52ch;
+  line-height: 1.6;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .sb-video-section {
+    min-height: 60vh;
+  }
+  .sb-video-section.sb-align-left .sb-content {
+    max-width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-video-section video {
+    transition: none;
+  }
+}
+</style>
 </head><body itemtype='https://schema.org/WebPage' itemscope='itemscope' class="home wp-singular page-template-default page page-id-44 wp-custom-logo wp-embed-responsive wp-theme-astra theme-astra woocommerce-no-js ast-desktop ast-page-builder-template ast-no-sidebar astra-4.13.1 ast-single-post ast-inherit-site-logo-transparent ast-hfb-header elementor-default elementor-kit-6 elementor-page elementor-page-44">
 <div id="intro-overlay">
   <video id="intro-video" src="videos/intro_16x9.mp4" autoplay muted playsinline></video>
@@ -775,6 +858,83 @@ document.querySelectorAll('img[data-src]').forEach(function (img) {
 document.querySelectorAll('.e-con.e-parent').forEach(function (el) {
   el.classList.add('e-lazyloaded');
 });
+</script>
+<script id="new-video-sections-js">
+/* Inserta dos secciones de video nuevas (petición de Marcos), una antes
+   de "¿Por qué elegir SanteBio...?" y otra antes de "Elige el plan
+   ideal...". Si el archivo de video aún no existe, la sección se oculta
+   sola — no rompe nada mientras se generan/suben los clips. Ver
+   paso_video_prompts_santebio.json para los prompts usados. */
+(function () {
+  var isMobile = window.matchMedia('(max-width: 760px)').matches;
+
+  function buildSection(opts) {
+    var section = document.createElement('section');
+    section.className = 'sb-video-section ' + (opts.align === 'left' ? 'sb-align-left' : '');
+
+    var mobileSrc = isMobile ? opts.srcMobile : null;
+    var video = document.createElement('video');
+    video.autoplay = true;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.src = mobileSrc || opts.src;
+
+    video.addEventListener('loadeddata', function () {
+      video.classList.add('sb-video-ready');
+    });
+    video.addEventListener('error', function () {
+      if (mobileSrc) {
+        // el clip vertical no existe todavía: cae de vuelta al de escritorio
+        video.src = opts.src;
+        mobileSrc = null;
+      } else {
+        // tampoco existe el de escritorio: no hay clip aún, ocultar la sección
+        section.remove();
+      }
+    });
+
+    var scrim = document.createElement('div');
+    scrim.className = 'sb-scrim ' + (opts.align === 'left' ? 'sb-scrim-left' : 'sb-scrim-center');
+
+    var content = document.createElement('div');
+    content.className = 'sb-content';
+    content.innerHTML =
+      '<div class="sb-eyebrow">' + opts.eyebrow + '</div>' +
+      '<h2>' + opts.title + '</h2>' +
+      '<p>' + opts.body + '</p>';
+
+    section.appendChild(video);
+    section.appendChild(scrim);
+    section.appendChild(content);
+    return section;
+  }
+
+  function insertBefore(headingDataId, section) {
+    var heading = document.querySelector('[data-id="' + headingDataId + '"]');
+    if (!heading) return;
+    var target = heading.closest('.e-con.e-parent') || heading;
+    target.parentNode.insertBefore(section, target);
+  }
+
+  insertBefore('20ac3b5', buildSection({
+    src: 'videos/escena2_origen_16x9.mp4',
+    srcMobile: 'videos/escena2_origen_9x16.mp4',
+    align: 'center',
+    eyebrow: '100% Orgánico',
+    title: 'De la penca al frasco, sin perder nada natural',
+    body: 'Nopal cultivado de forma orgánica, cosechado y procesado a temperatura controlada para conservar cada beneficio del mucílago natural.'
+  }));
+
+  insertBefore('3e0f1d2', buildSection({
+    src: 'videos/escena3_comparacion_16x9.mp4',
+    srcMobile: 'videos/escena3_comparacion_9x16.mp4',
+    align: 'left',
+    eyebrow: 'La diferencia',
+    title: '3 segundos vs. 15 minutos de limpieza',
+    body: 'Mientras preparas un licuado de nopal lidiando con espinas y textura viscosa, con SanteBio solo pasas 3 cápsulas con agua. Misma potencia nutricional, cero complicaciones.'
+  }));
+})();
 </script>
 </body></html>
 <!-- Page optimized by LiteSpeed Cache @2026-08-06 14:33:30 -->
