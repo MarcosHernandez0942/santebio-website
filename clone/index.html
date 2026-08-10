@@ -707,6 +707,12 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
   video.addEventListener('ended', finish);
   video.addEventListener('error', finish);
   skipBtn.addEventListener('click', finish);
+  // Cualquier clic en el video/overlay tambien avanza. Antes solo el
+  // boton pequeno "Omitir intro" funcionaba, asi que un clic en, por
+  // ejemplo, el icono del carrito (que esta debajo del overlay) no
+  // hacia nada durante los 10s del video - se sentia como que "no
+  // respondia" o tardaba mucho. Ahora el primer clic siempre avanza.
+  overlay.addEventListener('click', finish);
 })();
 </script> <script type="litespeed/javascript">(function(){var w=document.documentElement.clientWidth;if(w>0&&w<=921){document.body.classList.add('ast-header-break-point');document.body.classList.remove('ast-desktop')}})()</script> <a
 class="skip-link screen-reader-text"
