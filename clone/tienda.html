@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tienda — SanteBio</title>
+<link rel="icon" type="image/png" href="wp-content/uploads/2026/03/logo-transparente.webp" />
+<link rel="stylesheet" href="assets/shop.css" />
+</head>
+<body>
+<header class="sb-header">
+  <a class="sb-logo-link" href="index.html">
+    <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
+  </a>
+  <div class="sb-header-actions">
+    <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
+      🛒 Carrito
+      <span class="sb-cart-badge">0</span>
+    </a>
+  </div>
+</header>
+
+<main class="sb-wrap">
+  <div class="sb-eyebrow">Tienda</div>
+  <h1>Cápsulas de nopal SanteBio</h1>
+  <p class="sb-subhead">Elige tu presentación o el plan que mejor se adapte a tu rutina.</p>
+
+  <div class="sb-grid">
+    <div class="sb-card">
+      <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
+      <h3>90 Cápsulas</h3>
+      <div class="sb-price">$269 MXN</div>
+      <button class="sb-btn sb-add-to-cart" data-id="998" data-name="90 Cápsulas" data-price="269" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
+    </div>
+
+    <div class="sb-card">
+      <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
+      <h3>150 Cápsulas</h3>
+      <div class="sb-price">$399 MXN</div>
+      <button class="sb-btn sb-add-to-cart" data-id="999" data-name="150 Cápsulas" data-price="399" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
+    </div>
+
+    <div class="sb-card">
+      <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
+      <h3>Paquete 1 — 1 frasco de 150 + 1 de 90</h3>
+      <div class="sb-price">$501 MXN</div>
+      <button class="sb-btn sb-add-to-cart" data-id="1250" data-name="Paquete 1 (150 + 90 cápsulas)" data-price="501" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
+    </div>
+
+    <div class="sb-card">
+      <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
+      <h3>Paquete 2 — 3x2 de 90 cápsulas</h3>
+      <div class="sb-price">$538 MXN</div>
+      <button class="sb-btn sb-add-to-cart" data-id="1252" data-name="Paquete 2 - 3x2 (90 cápsulas)" data-price="538" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
+    </div>
+
+    <div class="sb-card">
+      <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
+      <h3>Paquete 3 — 3x2 de 150 cápsulas</h3>
+      <div class="sb-price">$798 MXN</div>
+      <button class="sb-btn sb-add-to-cart" data-id="1253" data-name="Paquete 3 - 3x2 (150 cápsulas)" data-price="798" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
+    </div>
+  </div>
+
+  <p class="sb-note">Suplemento alimenticio. Este producto no es un medicamento. El consumo de este producto es responsabilidad de quien lo recomienda y lo usa.</p>
+</main>
+
+<script src="assets/cart.js"></script>
+<script>
+document.querySelectorAll('.sb-add-to-cart').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    SanteBioCart.addToCart({
+      id: btn.dataset.id,
+      name: btn.dataset.name,
+      price: parseFloat(btn.dataset.price),
+      image: btn.dataset.image,
+      qty: 1,
+    });
+    window.location.href = 'carrito.html';
+  });
+});
+</script>
+</body>
+</html>

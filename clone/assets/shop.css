@@ -1,0 +1,279 @@
+/* Estilo compartido de tienda.html y carrito.html — mismos verdes de
+   marca que el resto del sitio (#204F2B / #699431 / #93DB4B). Paginas
+   propias, no dependen del CSS de Elementor. */
+:root {
+  --ink: #204F2B;
+  --ink-soft: #2c6b3a;
+  --paper: #F6F3EA;
+  --green: #699431;
+  --green-bright: #93DB4B;
+  --line: rgba(32, 79, 43, 0.14);
+  --line-strong: rgba(32, 79, 43, 0.28);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+}
+
+.sb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 32px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.sb-header a.sb-logo-link {
+  display: flex;
+  align-items: center;
+}
+
+.sb-header img.sb-logo {
+  height: 48px;
+  width: auto;
+}
+
+.sb-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.sb-cart-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sb-cart-badge {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: -8px;
+  right: -14px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--green-bright);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sb-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.sb-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.sb-wrap h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  margin: 0 0 8px;
+}
+
+.sb-subhead {
+  color: rgba(32, 79, 43, 0.75);
+  margin-bottom: 36px;
+  max-width: 60ch;
+}
+
+.sb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.sb-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sb-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 30px -18px rgba(32, 79, 43, 0.45);
+}
+
+.sb-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: contain;
+  margin-bottom: 16px;
+}
+
+.sb-card h3 {
+  font-size: 17px;
+  margin: 0 0 6px;
+}
+
+.sb-card .sb-price {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 6px 0 16px;
+  color: var(--ink);
+}
+
+.sb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: none;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.sb-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px -10px rgba(32, 79, 43, 0.55);
+  filter: brightness(1.08);
+}
+
+.sb-btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+
+.sb-btn-ghost:hover {
+  border-color: var(--ink);
+}
+
+/* --- Carrito --- */
+.sb-cart-item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.sb-cart-item img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.sb-cart-item .sb-item-name {
+  font-weight: 600;
+}
+
+.sb-cart-item .sb-item-price {
+  color: rgba(32, 79, 43, 0.7);
+  font-size: 14px;
+}
+
+.sb-qty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sb-qty button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.sb-qty button:hover {
+  background: var(--paper);
+}
+
+.sb-remove {
+  background: none;
+  border: none;
+  color: rgba(32, 79, 43, 0.5);
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+.sb-remove:hover {
+  color: var(--ink);
+}
+
+.sb-cart-summary {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 2px solid var(--ink);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.sb-empty-cart {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.sb-empty-cart p {
+  margin-bottom: 20px;
+  color: rgba(32, 79, 43, 0.7);
+}
+
+.sb-cart-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.sb-note {
+  margin-top: 30px;
+  font-size: 13px;
+  color: rgba(32, 79, 43, 0.6);
+}

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Carrito — SanteBio</title>
+<link rel="icon" type="image/png" href="wp-content/uploads/2026/03/logo-transparente.webp" />
+<link rel="stylesheet" href="assets/shop.css" />
+</head>
+<body>
+<header class="sb-header">
+  <a class="sb-logo-link" href="index.html">
+    <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
+  </a>
+  <div class="sb-header-actions">
+    <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
+      🛒 Carrito
+      <span class="sb-cart-badge">0</span>
+    </a>
+  </div>
+</header>
+
+<main class="sb-wrap">
+  <div class="sb-eyebrow">Carrito</div>
+  <h1>Tu carrito</h1>
+
+  <div id="sb-cart-content"></div>
+</main>
+
+<script src="assets/cart.js"></script>
+<script>
+function render() {
+  var cart = SanteBioCart.getCart();
+  var container = document.getElementById('sb-cart-content');
+
+  if (cart.length === 0) {
+    container.innerHTML =
+      '<div class="sb-empty-cart">' +
+      '<p>Tu carrito está vacío.</p>' +
+      '<a class="sb-btn" href="tienda.html">Volver a la tienda</a>' +
+      '</div>';
+    return;
+  }
+
+  var itemsHtml = cart.map(function (item) {
+    return (
+      '<div class="sb-cart-item" data-id="' + item.id + '">' +
+      '<img src="' + item.image + '" alt="' + item.name + '" />' +
+      '<div>' +
+      '<div class="sb-item-name">' + item.name + '</div>' +
+      '<div class="sb-item-price">' + SanteBioCart.formatMXN(item.price) + ' c/u</div>' +
+      '</div>' +
+      '<div class="sb-qty">' +
+      '<button class="sb-qty-minus" aria-label="Quitar uno">−</button>' +
+      '<span>' + item.qty + '</span>' +
+      '<button class="sb-qty-plus" aria-label="Agregar uno">+</button>' +
+      '</div>' +
+      '<button class="sb-remove">Quitar</button>' +
+      '</div>'
+    );
+  }).join('');
+
+  container.innerHTML =
+    itemsHtml +
+    '<div class="sb-cart-summary"><span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.cartTotal()) + '</span></div>' +
+    '<div class="sb-cart-actions">' +
+    '<a class="sb-btn sb-btn-ghost" href="tienda.html">Seguir comprando</a>' +
+    '<button class="sb-btn sb-btn-ghost" id="sb-clear-cart">Vaciar carrito</button>' +
+    '</div>' +
+    '<p class="sb-note">Demo interna — el paso de pago todavía no está conectado.</p>';
+
+  container.querySelectorAll('.sb-qty-minus').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.closest('.sb-cart-item').dataset.id;
+      var item = SanteBioCart.getCart().find(function (i) { return i.id === id; });
+      if (item.qty <= 1) { SanteBioCart.removeFromCart(id); } else { SanteBioCart.updateQty(id, item.qty - 1); }
+      render();
+    });
+  });
+  container.querySelectorAll('.sb-qty-plus').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.closest('.sb-cart-item').dataset.id;
+      var item = SanteBioCart.getCart().find(function (i) { return i.id === id; });
+      SanteBioCart.updateQty(id, item.qty + 1);
+      render();
+    });
+  });
+  container.querySelectorAll('.sb-remove').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.closest('.sb-cart-item').dataset.id;
+      SanteBioCart.removeFromCart(id);
+      render();
+    });
+  });
+  var clearBtn = document.getElementById('sb-clear-cart');
+  if (clearBtn) clearBtn.addEventListener('click', function () { SanteBioCart.clearCart(); render(); });
+}
+
+render();
+</script>
+</body>
+</html>
