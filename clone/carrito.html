@@ -20,25 +20,61 @@
   </div>
 </header>
 
-<main class="sb-wrap">
+<section class="sb-hero">
   <div class="sb-eyebrow">Carrito</div>
   <h1>Tu carrito</h1>
+  <p class="sb-subhead">Revisa tu pedido antes de continuar.</p>
+  <div class="sb-steps">
+    <div class="sb-step is-active"><span class="sb-step-num">1</span> Carrito</div>
+    <div class="sb-step-sep"></div>
+    <div class="sb-step"><span class="sb-step-num">2</span> Datos</div>
+    <div class="sb-step-sep"></div>
+    <div class="sb-step"><span class="sb-step-num">3</span> Pago</div>
+  </div>
+</section>
 
-  <div id="sb-cart-content"></div>
+<main>
+  <section class="sb-section">
+    <div class="sb-section-inner">
+      <div id="sb-cart-content"></div>
+    </div>
+  </section>
 </main>
+
+<footer class="sb-footer">
+  <div class="sb-footer-links">
+    <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
+    <a href="https://wa.me/524771108120">477 110 8120</a>
+  </div>
+  <div class="sb-footer-social">
+    <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/capsulasdenopalsantebio" aria-label="Síguenos en Instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+    </a>
+  </div>
+  <small>Aviso de Privacidad · © 2026 SanteBio</small>
+</footer>
 
 <script src="assets/cart.js"></script>
 <script>
+function money(n) {
+  return SanteBioCart.formatMXN(n);
+}
+
 function render() {
   var cart = SanteBioCart.getCart();
   var container = document.getElementById('sb-cart-content');
 
   if (cart.length === 0) {
     container.innerHTML =
-      '<div class="sb-empty-cart">' +
+      '<div class="sb-empty-cart sb-reveal">' +
+      '<svg viewBox="0 0 32 32" fill="currentColor"><path d="M9 11V9a7 7 0 0 1 14 0v2h4.2a1.5 1.5 0 0 1 1.49 1.67l-1.8 16A1.5 1.5 0 0 1 25.4 30H6.6a1.5 1.5 0 0 1-1.49-1.33l-1.8-16A1.5 1.5 0 0 1 4.8 11H9zm2 0h10V9a5 5 0 0 0-10 0v2z"/></svg>' +
       '<p>Tu carrito está vacío.</p>' +
-      '<a class="sb-btn" href="tienda.html">Volver a la tienda</a>' +
+      '<a class="sb-btn" href="tienda.html">Ir a la tienda</a>' +
       '</div>';
+    setupReveal();
     return;
   }
 
@@ -48,7 +84,7 @@ function render() {
       '<img src="' + item.image + '" alt="' + item.name + '" />' +
       '<div>' +
       '<div class="sb-item-name">' + item.name + '</div>' +
-      '<div class="sb-item-price">' + SanteBioCart.formatMXN(item.price) + ' c/u</div>' +
+      '<div class="sb-item-price">' + money(item.price) + ' c/u</div>' +
       '</div>' +
       '<div class="sb-qty">' +
       '<button class="sb-qty-minus" aria-label="Quitar uno">−</button>' +
@@ -60,14 +96,24 @@ function render() {
     );
   }).join('');
 
+  var subtotal = SanteBioCart.cartTotal();
+
   container.innerHTML =
-    itemsHtml +
-    '<div class="sb-cart-summary"><span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.cartTotal()) + '</span></div>' +
-    '<div class="sb-cart-actions">' +
-    '<a class="sb-btn sb-btn-ghost" href="tienda.html">Seguir comprando</a>' +
-    '<button class="sb-btn sb-btn-ghost" id="sb-clear-cart">Vaciar carrito</button>' +
+    '<div class="sb-cart-layout">' +
+    '<div class="sb-cart-items-card sb-reveal">' + itemsHtml + '</div>' +
+    '<div class="sb-summary-card sb-reveal">' +
+    '<h3>Resumen del pedido</h3>' +
+    '<div class="sb-summary-row"><span>Subtotal</span><span>' + money(subtotal) + '</span></div>' +
+    '<div class="sb-summary-row"><span>Envío</span><span class="sb-shipping-free">Gratis</span></div>' +
+    '<div class="sb-cart-summary"><span>Total</span><span>' + money(subtotal) + '</span></div>' +
+    '<div class="sb-cart-actions" style="flex-direction: column;">' +
+    '<button class="sb-btn" id="sb-checkout" style="width: 100%;">Finalizar compra</button>' +
+    '<a class="sb-btn sb-btn-ghost" href="tienda.html" style="width: 100%;">Seguir comprando</a>' +
     '</div>' +
-    '<p class="sb-note">Demo interna — el paso de pago todavía no está conectado.</p>';
+    '<p class="sb-note"><button class="sb-remove" id="sb-clear-cart">Vaciar carrito</button></p>' +
+    '<p class="sb-note">Demo interna — el paso de pago todavía no está conectado.</p>' +
+    '</div>' +
+    '</div>';
 
   container.querySelectorAll('.sb-qty-minus').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -85,7 +131,7 @@ function render() {
       render();
     });
   });
-  container.querySelectorAll('.sb-remove').forEach(function (btn) {
+  container.querySelectorAll('.sb-remove:not(#sb-clear-cart)').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.closest('.sb-cart-item').dataset.id;
       SanteBioCart.removeFromCart(id);
@@ -94,6 +140,24 @@ function render() {
   });
   var clearBtn = document.getElementById('sb-clear-cart');
   if (clearBtn) clearBtn.addEventListener('click', function () { SanteBioCart.clearCart(); render(); });
+  var checkoutBtn = document.getElementById('sb-checkout');
+  if (checkoutBtn) checkoutBtn.addEventListener('click', function () {
+    alert('Esta es una demo interna — el paso de pago todavía no está conectado.');
+  });
+
+  setupReveal();
+}
+
+function setupReveal() {
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.sb-reveal:not(.is-visible)').forEach(function (el) { observer.observe(el); });
 }
 
 render();
