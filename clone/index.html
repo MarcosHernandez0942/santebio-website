@@ -586,18 +586,33 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
   box-shadow: 0 22px 32px -18px rgba(32, 79, 43, 0.5);
 }
 
-/* Badges "Recomendado" / "Ahorro Especial" */
-.elementor-element-c88d67c .elementor-heading-title,
+/* Badges "Recomendado" / "Ahorro Especial" — antes ambos en un verde
+   fosforescente (#93DB4B) que no gustó. Ahora cada uno con su propio
+   acento, más sobrio: verde de marca para el ahorro, dorado suave para
+   el destacado (se lee "premium" sobre la tarjeta verde oscuro). */
 .elementor-element-bab6f01 .elementor-heading-title {
   display: inline-block;
-  background: #93DB4B;
+  background: #699431;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 7px 18px;
+  border-radius: 999px;
+  box-shadow: 0 4px 10px -4px rgba(32, 79, 43, 0.45);
+}
+.elementor-element-c88d67c .elementor-heading-title {
+  display: inline-block;
+  background: #E3C77A;
   color: #204F2B;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 6px 16px;
+  padding: 7px 18px;
   border-radius: 999px;
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
 }
 
 /* Botones — hover con elevación sutil */
