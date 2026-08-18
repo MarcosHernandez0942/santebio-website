@@ -615,6 +615,16 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
   box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
 }
 
+/* Descripciones de los paquetes — estaban en text-align:justify, que
+   en tarjetas anchas (pantallas grandes) crea espacios enormes e
+   irregulares entre palabras. Alineado a la izquierda se lee bien en
+   cualquier ancho. */
+.elementor-44 .elementor-element.elementor-element-f681e81,
+.elementor-44 .elementor-element.elementor-element-30f7c43,
+.elementor-44 .elementor-element.elementor-element-6e4d336 {
+  text-align: left;
+}
+
 /* Botones — hover con elevación sutil */
 .elementor-button {
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
