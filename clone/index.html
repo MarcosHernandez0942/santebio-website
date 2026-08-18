@@ -681,6 +681,10 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
    tamano real del carrito y lo copia al icono de tienda en cada carga
    y cada resize, para que siempre midan lo mismo sin excepcion. */
 .sb-tienda-icon-link {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  align-self: center;
   margin-right: 14px;
   color: #204F2B;
   transition: color 0.2s ease, transform 0.2s ease;
@@ -1236,17 +1240,28 @@ document.querySelectorAll('[data-cart-id]').forEach(function (link) {
    icono de escritorio y el de movil). En vez de adivinar esos puntos
    de quiebre para el icono de tienda, se copia el tamano REAL del
    carrito de al lado en cada carga y cada resize, para que siempre
-   midan exactamente lo mismo. */
+   midan exactamente lo mismo.
+   Ademas de igualar el svg, se iguala tambien la ALTURA de la caja
+   que lo contiene: el carrito vive dentro de un wrapper propio de
+   Elementor que le agrega mas alto que el icono en si (el flex
+   centra cada caja por su propia altura, asi que si las cajas miden
+   distinto, los iconos quedan a distinta altura aunque cada uno este
+   "centrado" - eso se veia como si estuvieran chuecos). */
 function syncTiendaIconSize() {
   document.querySelectorAll('.sb-tienda-icon-link').forEach(function (link) {
     var cartWrapper = link.nextElementSibling;
+    var cartWidgetDiv = cartWrapper ? cartWrapper.closest('.elementor-widget-icon') : null;
     var cartSvg = cartWrapper ? cartWrapper.querySelector('svg') : null;
     var tiendaSvg = link.querySelector('svg');
-    if (!cartSvg || !tiendaSvg) return;
+    if (!cartSvg || !tiendaSvg || !cartWidgetDiv) return;
     var size = cartSvg.getBoundingClientRect().width;
+    var boxHeight = cartWidgetDiv.getBoundingClientRect().height;
     if (size > 0) {
       tiendaSvg.style.width = size + 'px';
       tiendaSvg.style.height = size + 'px';
+    }
+    if (boxHeight > 0) {
+      link.style.height = boxHeight + 'px';
     }
   });
 }
