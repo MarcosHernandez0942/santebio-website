@@ -590,29 +590,35 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
    fosforescente (#93DB4B) que no gustó. Ahora cada uno con su propio
    acento, más sobrio: verde de marca para el ahorro, dorado suave para
    el destacado (se lee "premium" sobre la tarjeta verde oscuro). */
+/* El contorno (elementor-element-acb0d55 / 13813ad) ya lo dimensiona
+   Elementor de forma responsiva (--width:31%/45% de su fila) — en vez
+   de ponerle su propio padding fijo al texto (lo que lo hacia mas
+   ancho que ese contorno y se salia por la derecha en pantallas
+   anchas), coloreamos el contorno mismo y dejamos que el texto llene
+   el espacio que ya le corresponde. */
+.elementor-element-acb0d55 {
+  background: #699431 !important;
+  box-shadow: 0 4px 10px -4px rgba(32, 79, 43, 0.45);
+}
+.elementor-element-13813ad {
+  background: #E3C77A !important;
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
+}
 .elementor-element-bab6f01 .elementor-heading-title {
-  display: inline-block;
-  background: #699431;
   color: #FFFFFF;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 7px 18px;
-  border-radius: 999px;
-  box-shadow: 0 4px 10px -4px rgba(32, 79, 43, 0.45);
+  white-space: nowrap;
 }
 .elementor-element-c88d67c .elementor-heading-title {
-  display: inline-block;
-  background: #E3C77A;
   color: #204F2B;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 7px 18px;
-  border-radius: 999px;
-  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
 }
 
 /* Descripciones de los paquetes — estaban en text-align:justify, que
