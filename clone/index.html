@@ -672,7 +672,14 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
 /* Enlace "Tienda" en el header, junto al icono del carrito (antes no
    habia ninguna forma de llegar directo a tienda.html desde aqui). Un
    texto se perdia junto al icono del carrito, asi que ahora es un
-   icono (bolsa de compras) del mismo tamano/estilo. */
+   icono (bolsa de compras) del mismo tamano/estilo.
+   El tamano NO se fija aqui en px: el carrito cambia de tamano segun
+   el breakpoint (50px en escritorio, 20px en cierto punto, con reglas
+   de font-size especificas por instancia que Elementor genero para
+   ESE icono en particular). En vez de adivinar esos puntos de quiebre,
+   un script (mas abajo, junto al resto de scripts propios) mide el
+   tamano real del carrito y lo copia al icono de tienda en cada carga
+   y cada resize, para que siempre midan lo mismo sin excepcion. */
 .sb-tienda-icon-link {
   margin-right: 14px;
   color: #204F2B;
@@ -681,10 +688,6 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
 .sb-tienda-icon-link:hover {
   color: #699431;
   transform: translateY(-1px);
-}
-.sb-tienda-icon-link svg {
-  width: 20px;
-  height: 20px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1227,6 +1230,29 @@ document.querySelectorAll('[data-cart-id]').forEach(function (link) {
     window.location.href = 'carrito.html';
   });
 });
+
+/* El icono del carrito cambia de tamano segun el ancho de pantalla
+   (reglas de font-size especificas por instancia, distintas para el
+   icono de escritorio y el de movil). En vez de adivinar esos puntos
+   de quiebre para el icono de tienda, se copia el tamano REAL del
+   carrito de al lado en cada carga y cada resize, para que siempre
+   midan exactamente lo mismo. */
+function syncTiendaIconSize() {
+  document.querySelectorAll('.sb-tienda-icon-link').forEach(function (link) {
+    var cartWrapper = link.nextElementSibling;
+    var cartSvg = cartWrapper ? cartWrapper.querySelector('svg') : null;
+    var tiendaSvg = link.querySelector('svg');
+    if (!cartSvg || !tiendaSvg) return;
+    var size = cartSvg.getBoundingClientRect().width;
+    if (size > 0) {
+      tiendaSvg.style.width = size + 'px';
+      tiendaSvg.style.height = size + 'px';
+    }
+  });
+}
+window.addEventListener('load', syncTiendaIconSize);
+window.addEventListener('resize', syncTiendaIconSize);
+syncTiendaIconSize();
 </script>
 </body></html>
 <!-- Page optimized by LiteSpeed Cache @2026-08-06 14:33:30 -->
