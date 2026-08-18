@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pago — SanteBio</title>
+<link rel="icon" type="image/png" href="wp-content/uploads/2026/03/logo-transparente.webp" />
+<link rel="stylesheet" href="assets/shop.css" />
+</head>
+<body>
+<header class="sb-header">
+  <a class="sb-logo-link" href="index.html">
+    <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
+  </a>
+  <div class="sb-header-actions">
+    <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
+      🛒 Carrito
+      <span class="sb-cart-badge">0</span>
+    </a>
+  </div>
+</header>
+
+<section class="sb-hero">
+  <div class="sb-eyebrow">Checkout</div>
+  <h1>Pago</h1>
+  <p class="sb-subhead">Elige cómo quieres pagar tu pedido.</p>
+  <div class="sb-steps">
+    <a href="carrito.html" class="sb-step" style="text-decoration:none;"><span class="sb-step-num">✓</span> Carrito</a>
+    <div class="sb-step-sep"></div>
+    <a href="datos.html" class="sb-step" style="text-decoration:none;"><span class="sb-step-num">✓</span> Datos</a>
+    <div class="sb-step-sep"></div>
+    <div class="sb-step is-active"><span class="sb-step-num">3</span> Pago</div>
+  </div>
+</section>
+
+<main>
+  <section class="sb-section">
+    <div class="sb-section-inner">
+      <div class="sb-cart-layout">
+        <div class="sb-form-card sb-reveal">
+
+          <!--
+            INTEGRACIÓN DE PAGO REAL (leer antes de conectar credenciales):
+
+            Estos campos de tarjeta son solo una maqueta visual — no están
+            conectados a ningún procesador y NO se debe guardar ni enviar
+            un número de tarjeta real a través de este código ni de
+            localStorage bajo ninguna circunstancia.
+
+            Cuando tengan las credenciales de la pasarela de pago
+            (Stripe, Conekta, MercadoPago, etc.):
+            1. Sustituir el <div id="sb-card-fields"> de abajo por los
+               campos/iframe que entrega el SDK oficial de esa pasarela
+               (ej. Stripe Elements, Conekta.js, MercadoPago Bricks). El
+               numero de tarjeta debe capturarse SIEMPRE dentro de ese
+               SDK, nunca en un <input> propio como el de aqui abajo -
+               así nunca toca nuestro servidor ni nuestro codigo.
+            2. La llave PUBLICA/publishable de la pasarela va en el
+               <script> del SDK, en el cliente (esta bien que sea
+               publica). La llave SECRETA nunca va en este HTML ni en
+               ningun archivo del sitio - vive solo en un servidor
+               propio que la pasarela requiere para confirmar el cobro.
+            3. El boton "Confirmar pedido" de abajo debe llamar al
+               metodo de tokenizacion del SDK en vez de simplemente
+               redirigir; ahora mismo solo muestra un aviso porque no
+               hay servidor ni pasarela conectada todavia.
+          -->
+
+          <h3>Método de pago</h3>
+          <div class="sb-payment-methods">
+            <label class="sb-payment-method">
+              <input type="radio" name="metodo-pago" value="tarjeta" checked />
+              <svg class="sb-payment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              <div>
+                <div class="sb-payment-method-label">Tarjeta de crédito o débito</div>
+                <div class="sb-payment-method-sub">Visa, Mastercard, American Express</div>
+              </div>
+            </label>
+            <label class="sb-payment-method">
+              <input type="radio" name="metodo-pago" value="transferencia" />
+              <svg class="sb-payment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 14h18M6 4l6 3 6-3M4 20h16"/></svg>
+              <div>
+                <div class="sb-payment-method-label">Transferencia bancaria</div>
+                <div class="sb-payment-method-sub">Recibirás los datos por correo</div>
+              </div>
+            </label>
+            <label class="sb-payment-method">
+              <input type="radio" name="metodo-pago" value="contraentrega" />
+              <svg class="sb-payment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="7" width="15" height="10" rx="1"/><path d="M16 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="18.5" cy="19" r="1.6"/></svg>
+              <div>
+                <div class="sb-payment-method-label">Pago contra entrega</div>
+                <div class="sb-payment-method-sub">Pagas en efectivo al recibir</div>
+              </div>
+            </label>
+          </div>
+
+          <div class="sb-card-fields" id="sb-card-fields">
+            <div class="sb-form-group">
+              <label for="sb-card-number">Número de tarjeta</label>
+              <input type="text" id="sb-card-number" placeholder="•••• •••• •••• ••••" inputmode="numeric" autocomplete="off" />
+            </div>
+            <div class="sb-form-row">
+              <div class="sb-form-group">
+                <label for="sb-card-name">Nombre en la tarjeta</label>
+                <input type="text" id="sb-card-name" autocomplete="off" />
+              </div>
+              <div class="sb-form-group">
+                <label for="sb-card-exp">Vencimiento</label>
+                <input type="text" id="sb-card-exp" placeholder="MM/AA" autocomplete="off" />
+              </div>
+            </div>
+            <p class="sb-form-hint">Vista previa visual — todavía no está conectada a una pasarela de pago real.</p>
+          </div>
+
+          <div id="sb-payment-result" style="display:none; margin-top: 20px; padding: 18px; border-radius: 12px; background: rgba(105,148,49,0.08); border: 1px solid var(--line-strong);">
+            <strong>Vista previa de confirmación</strong>
+            <p style="margin: 8px 0 0; font-size: 14px; color: rgba(32,79,43,0.8);">
+              Esto es una demo: el pedido no se procesó realmente. Cuando el sitio tenga las credenciales de una pasarela de pago, este paso confirmará el cobro real y enviará el pedido.
+            </p>
+          </div>
+
+          <div class="sb-cart-actions" style="flex-direction: column; margin-top: 20px;">
+            <button type="button" class="sb-btn" id="sb-confirmar-pedido" style="width: 100%;">Confirmar pedido</button>
+            <a class="sb-btn sb-btn-ghost" href="datos.html" style="width: 100%;">Volver a datos de envío</a>
+          </div>
+        </div>
+
+        <div class="sb-summary-card sb-reveal">
+          <h3>Tu pedido</h3>
+          <div id="sb-mini-summary"></div>
+          <div class="sb-cart-summary" id="sb-mini-total"></div>
+          <div id="sb-shipping-recap" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: rgba(32,79,43,0.75);"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="sb-footer">
+  <div class="sb-footer-links">
+    <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
+    <a href="https://wa.me/524771108120">477 110 8120</a>
+  </div>
+  <div class="sb-footer-social">
+    <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/capsulasdenopalsantebio" aria-label="Síguenos en Instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+    </a>
+  </div>
+  <small>Aviso de Privacidad · © 2026 SanteBio</small>
+</footer>
+
+<script src="assets/cart.js"></script>
+<script>
+(function () {
+  var cart = SanteBioCart.getCart();
+  var checkoutData = SanteBioCart.getCheckoutData();
+
+  if (cart.length === 0) {
+    window.location.href = 'tienda.html';
+    return;
+  }
+  if (!checkoutData) {
+    window.location.href = 'datos.html';
+    return;
+  }
+
+  var miniSummary = document.getElementById('sb-mini-summary');
+  miniSummary.innerHTML = cart.map(function (item) {
+    return (
+      '<div class="sb-mini-summary-item">' +
+      '<span class="sb-mini-name">' + item.name + ' <span class="sb-mini-qty">x' + item.qty + '</span></span>' +
+      '<span>' + SanteBioCart.formatMXN(item.price * item.qty) + '</span>' +
+      '</div>'
+    );
+  }).join('');
+  document.getElementById('sb-mini-total').innerHTML =
+    '<span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.cartTotal()) + '</span>';
+
+  document.getElementById('sb-shipping-recap').innerHTML =
+    '<strong style="color: var(--ink);">Enviar a:</strong><br>' +
+    checkoutData.nombre + '<br>' +
+    checkoutData.calle + ', ' + checkoutData.colonia + '<br>' +
+    checkoutData.ciudad + ', ' + checkoutData.estado + ' ' + checkoutData.cp;
+
+  var cardFields = document.getElementById('sb-card-fields');
+  document.querySelectorAll('input[name="metodo-pago"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      cardFields.style.display = radio.value === 'tarjeta' && radio.checked ? 'grid' : 'none';
+    });
+  });
+
+  document.getElementById('sb-confirmar-pedido').addEventListener('click', function () {
+    document.getElementById('sb-payment-result').style.display = 'block';
+    document.getElementById('sb-payment-result').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.sb-reveal').forEach(function (el) { observer.observe(el); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Datos de envío — SanteBio</title>
+<link rel="icon" type="image/png" href="wp-content/uploads/2026/03/logo-transparente.webp" />
+<link rel="stylesheet" href="assets/shop.css" />
+</head>
+<body>
+<header class="sb-header">
+  <a class="sb-logo-link" href="index.html">
+    <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
+  </a>
+  <div class="sb-header-actions">
+    <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
+      🛒 Carrito
+      <span class="sb-cart-badge">0</span>
+    </a>
+  </div>
+</header>
+
+<section class="sb-hero">
+  <div class="sb-eyebrow">Checkout</div>
+  <h1>Datos de envío</h1>
+  <p class="sb-subhead">Necesitamos estos datos para entregar tu pedido.</p>
+  <div class="sb-steps">
+    <a href="carrito.html" class="sb-step" style="text-decoration:none;"><span class="sb-step-num">✓</span> Carrito</a>
+    <div class="sb-step-sep"></div>
+    <div class="sb-step is-active"><span class="sb-step-num">2</span> Datos</div>
+    <div class="sb-step-sep"></div>
+    <div class="sb-step"><span class="sb-step-num">3</span> Pago</div>
+  </div>
+</section>
+
+<main>
+  <section class="sb-section">
+    <div class="sb-section-inner">
+      <div class="sb-cart-layout">
+        <form class="sb-form-card sb-reveal" id="sb-datos-form" novalidate>
+          <h3>Información de contacto</h3>
+          <div class="sb-form-row">
+            <div class="sb-form-group">
+              <label for="sb-nombre">Nombre completo</label>
+              <input type="text" id="sb-nombre" name="nombre" required autocomplete="name" />
+            </div>
+            <div class="sb-form-group">
+              <label for="sb-telefono">Teléfono</label>
+              <input type="tel" id="sb-telefono" name="telefono" required autocomplete="tel" />
+            </div>
+          </div>
+          <div class="sb-form-group">
+            <label for="sb-email">Correo electrónico</label>
+            <input type="email" id="sb-email" name="email" required autocomplete="email" />
+          </div>
+
+          <h3 style="margin-top: 28px;">Dirección de envío</h3>
+          <div class="sb-form-group">
+            <label for="sb-calle">Calle y número</label>
+            <input type="text" id="sb-calle" name="calle" required autocomplete="street-address" />
+          </div>
+          <div class="sb-form-row">
+            <div class="sb-form-group">
+              <label for="sb-colonia">Colonia</label>
+              <input type="text" id="sb-colonia" name="colonia" required />
+            </div>
+            <div class="sb-form-group">
+              <label for="sb-cp">Código postal</label>
+              <input type="text" id="sb-cp" name="cp" required inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="postal-code" />
+            </div>
+          </div>
+          <div class="sb-form-row">
+            <div class="sb-form-group">
+              <label for="sb-ciudad">Ciudad</label>
+              <input type="text" id="sb-ciudad" name="ciudad" required autocomplete="address-level2" />
+            </div>
+            <div class="sb-form-group">
+              <label for="sb-estado">Estado</label>
+              <input type="text" id="sb-estado" name="estado" required autocomplete="address-level1" />
+            </div>
+          </div>
+          <div class="sb-form-group">
+            <label for="sb-referencias">Referencias de entrega (opcional)</label>
+            <textarea id="sb-referencias" name="referencias" placeholder="Ej. Casa color verde, entre calles..."></textarea>
+          </div>
+
+          <div class="sb-cart-actions" style="flex-direction: column; margin-top: 8px;">
+            <button type="submit" class="sb-btn" style="width: 100%;">Continuar a pago</button>
+            <a class="sb-btn sb-btn-ghost" href="carrito.html" style="width: 100%;">Volver al carrito</a>
+          </div>
+        </form>
+
+        <div class="sb-summary-card sb-reveal">
+          <h3>Tu pedido</h3>
+          <div id="sb-mini-summary"></div>
+          <div class="sb-cart-summary" id="sb-mini-total"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="sb-footer">
+  <div class="sb-footer-links">
+    <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
+    <a href="https://wa.me/524771108120">477 110 8120</a>
+  </div>
+  <div class="sb-footer-social">
+    <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/capsulasdenopalsantebio" aria-label="Síguenos en Instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+    </a>
+  </div>
+  <small>Aviso de Privacidad · © 2026 SanteBio</small>
+</footer>
+
+<script src="assets/cart.js"></script>
+<script>
+(function () {
+  var cart = SanteBioCart.getCart();
+
+  // Sin carrito no hay nada que enviar - de regreso a la tienda.
+  if (cart.length === 0) {
+    window.location.href = 'tienda.html';
+    return;
+  }
+
+  var miniSummary = document.getElementById('sb-mini-summary');
+  miniSummary.innerHTML = cart.map(function (item) {
+    return (
+      '<div class="sb-mini-summary-item">' +
+      '<span class="sb-mini-name">' + item.name + ' <span class="sb-mini-qty">x' + item.qty + '</span></span>' +
+      '<span>' + SanteBioCart.formatMXN(item.price * item.qty) + '</span>' +
+      '</div>'
+    );
+  }).join('');
+  document.getElementById('sb-mini-total').innerHTML =
+    '<span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.cartTotal()) + '</span>';
+
+  // Precargar datos si ya los habian llenado antes (volvieron desde pago.html)
+  var saved = SanteBioCart.getCheckoutData();
+  if (saved) {
+    Object.keys(saved).forEach(function (key) {
+      var field = document.getElementById('sb-' + key);
+      if (field) field.value = saved[key];
+    });
+  }
+
+  document.getElementById('sb-datos-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!this.checkValidity()) {
+      this.reportValidity();
+      return;
+    }
+    var data = {
+      nombre: document.getElementById('sb-nombre').value.trim(),
+      telefono: document.getElementById('sb-telefono').value.trim(),
+      email: document.getElementById('sb-email').value.trim(),
+      calle: document.getElementById('sb-calle').value.trim(),
+      colonia: document.getElementById('sb-colonia').value.trim(),
+      cp: document.getElementById('sb-cp').value.trim(),
+      ciudad: document.getElementById('sb-ciudad').value.trim(),
+      estado: document.getElementById('sb-estado').value.trim(),
+      referencias: document.getElementById('sb-referencias').value.trim(),
+    };
+    SanteBioCart.saveCheckoutData(data);
+    window.location.href = 'pago.html';
+  });
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.sb-reveal').forEach(function (el) { observer.observe(el); });
+})();
+</script>
+</body>
+</html>

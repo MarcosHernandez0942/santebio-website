@@ -142,7 +142,7 @@ function render() {
   if (clearBtn) clearBtn.addEventListener('click', function () { SanteBioCart.clearCart(); render(); });
   var checkoutBtn = document.getElementById('sb-checkout');
   if (checkoutBtn) checkoutBtn.addEventListener('click', function () {
-    alert('Esta es una demo interna — el paso de pago todavía no está conectado.');
+    window.location.href = 'datos.html';
   });
 
   setupReveal();

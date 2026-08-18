@@ -551,6 +551,135 @@ a {
   font-size: 12px;
 }
 
+/* --- Formularios (Datos / Pago) --- */
+.sb-form-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+}
+.sb-form-card h3 {
+  margin: 0 0 20px;
+  font-size: 18px;
+}
+.sb-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 600px) {
+  .sb-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+.sb-form-group {
+  margin-bottom: 16px;
+}
+.sb-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+.sb-form-group input,
+.sb-form-group select,
+.sb-form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+}
+.sb-form-group input:focus,
+.sb-form-group select:focus,
+.sb-form-group textarea:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(105, 148, 49, 0.15);
+}
+.sb-form-group textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+.sb-form-hint {
+  font-size: 12px;
+  color: rgba(32, 79, 43, 0.55);
+  margin-top: -10px;
+  margin-bottom: 16px;
+}
+
+/* Metodos de pago */
+.sb-payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.sb-payment-method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.sb-payment-method:has(input:checked) {
+  border-color: var(--green);
+  background: rgba(105, 148, 49, 0.06);
+}
+.sb-payment-method input[type="radio"] {
+  accent-color: var(--green);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.sb-payment-method .sb-payment-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.sb-payment-method-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+.sb-payment-method-sub {
+  font-size: 12px;
+  color: rgba(32, 79, 43, 0.6);
+}
+.sb-card-fields {
+  display: grid;
+  gap: 16px;
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line-strong);
+}
+
+/* Resumen mini (orden), reutilizado en datos.html/pago.html */
+.sb-mini-summary-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.sb-mini-summary-item:last-of-type {
+  border-bottom: none;
+}
+.sb-mini-summary-item .sb-mini-name {
+  color: rgba(32, 79, 43, 0.85);
+}
+.sb-mini-summary-item .sb-mini-qty {
+  color: rgba(32, 79, 43, 0.5);
+}
+
 /* Cursor personalizado con forma de nopal (mismo que index.html), para
    que tienda.html y carrito.html tengan el mismo detalle de marca. */
 html, body, * {

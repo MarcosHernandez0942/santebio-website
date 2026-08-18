@@ -3,6 +3,7 @@
    carrito.html. Nada aquí se conecta a capsulasdenopal.com. */
 (function (global) {
   var STORAGE_KEY = 'santebio_cart';
+  var CHECKOUT_KEY = 'santebio_checkout_data';
 
   function getCart() {
     try {
@@ -64,6 +65,19 @@
     return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
   }
 
+  function saveCheckoutData(data) {
+    localStorage.setItem(CHECKOUT_KEY, JSON.stringify(data));
+  }
+
+  function getCheckoutData() {
+    try {
+      var raw = localStorage.getItem(CHECKOUT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function updateCartBadges() {
     var count = cartCount();
     document.querySelectorAll('.sb-cart-badge').forEach(function (el) {
@@ -84,5 +98,7 @@
     cartTotal: cartTotal,
     formatMXN: formatMXN,
     updateCartBadges: updateCartBadges,
+    saveCheckoutData: saveCheckoutData,
+    getCheckoutData: getCheckoutData,
   };
 })(window);
