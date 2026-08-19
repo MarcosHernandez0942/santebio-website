@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mi cuenta — SanteBio</title>
+<link rel="icon" type="image/png" href="wp-content/uploads/2026/03/logo-transparente.webp" />
+<link rel="stylesheet" href="assets/shop.css" />
+</head>
+<body>
+<header class="sb-header">
+  <a class="sb-logo-link" href="index.html">
+    <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
+  </a>
+  <div class="sb-header-actions">
+    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>
+    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
+    <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
+      🛒 Carrito
+      <span class="sb-cart-badge">0</span>
+    </a>
+  </div>
+</header>
+
+<section class="sb-hero">
+  <div class="sb-eyebrow">Cuenta</div>
+  <h1>Mi cuenta</h1>
+  <p class="sb-subhead">Inicia sesión o crea una cuenta nueva.</p>
+</section>
+
+<main>
+  <section class="sb-section">
+    <div class="sb-section-inner">
+
+      <div id="sb-cuenta-sesion" style="display:none; max-width: 760px; margin: 0 auto;">
+
+        <div class="sb-account-hero sb-reveal">
+          <div class="sb-account-avatar" id="sb-avatar"></div>
+          <div class="sb-account-hero-info">
+            <h2 id="sb-sesion-saludo"></h2>
+            <p id="sb-sesion-correo"></p>
+          </div>
+          <button type="button" class="sb-btn sb-btn-ghost" id="sb-cerrar-sesion">Cerrar sesión</button>
+        </div>
+
+        <div class="sb-dash-tabs sb-reveal">
+          <button type="button" class="is-active" data-panel="perfil">👤 Mi perfil</button>
+          <button type="button" data-panel="direcciones">📍 Direcciones</button>
+          <button type="button" data-panel="pedidos">📦 Mis pedidos</button>
+          <button type="button" data-panel="tarjetas">💳 Tarjetas</button>
+        </div>
+
+        <!-- Panel: Mi perfil -->
+        <div class="sb-dash-panel" id="sb-panel-perfil">
+          <div class="sb-form-card sb-reveal" style="margin-bottom: 20px;">
+            <h3>Información personal</h3>
+            <div id="sb-perfil-success" class="sb-form-success" style="display:none;"></div>
+            <div id="sb-perfil-error" class="sb-form-error" style="display:none;"></div>
+            <form id="sb-perfil-form">
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-perfil-nombre">Nombre completo</label>
+                  <input type="text" id="sb-perfil-nombre" required />
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-perfil-telefono">Teléfono</label>
+                  <input type="tel" id="sb-perfil-telefono" />
+                </div>
+              </div>
+              <div class="sb-form-group">
+                <label for="sb-perfil-correo">Correo electrónico</label>
+                <input type="email" id="sb-perfil-correo" required />
+              </div>
+              <button type="submit" class="sb-btn" id="sb-perfil-btn">Guardar cambios</button>
+            </form>
+          </div>
+
+          <div class="sb-form-card sb-reveal">
+            <h3>Cambiar contraseña</h3>
+            <p style="font-size: 13.5px; color: rgba(32,79,43,0.7); margin-top: -4px; margin-bottom: 20px;">
+              Por seguridad, el cambio de contraseña se confirma por correo. Te enviaremos un enlace a
+              <strong id="sb-password-correo-destino"></strong> para continuar.
+            </p>
+            <div id="sb-password-success" class="sb-form-success" style="display:none;"></div>
+            <div id="sb-password-error" class="sb-form-error" style="display:none;"></div>
+            <button type="button" class="sb-btn" id="sb-password-btn">Enviar enlace de confirmación</button>
+          </div>
+        </div>
+
+        <!-- Panel: Direcciones -->
+        <div class="sb-dash-panel" id="sb-panel-direcciones" style="display:none;">
+          <div class="sb-kpi-section sb-reveal">
+            <h3>Direcciones guardadas</h3>
+            <div id="sb-direcciones-lista"></div>
+
+            <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-direccion" style="margin-top: 8px;">+ Agregar dirección</button>
+
+            <form id="sb-direccion-form" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line-strong);">
+              <div class="sb-form-group">
+                <label for="sb-dir-etiqueta">Nombre para esta dirección (opcional)</label>
+                <input type="text" id="sb-dir-etiqueta" placeholder="Ej. Casa, Oficina" />
+              </div>
+              <div class="sb-form-group">
+                <label for="sb-dir-calle">Calle y número</label>
+                <input type="text" id="sb-dir-calle" required autocomplete="street-address" />
+              </div>
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-dir-cp">Código postal</label>
+                  <input type="text" id="sb-dir-cp" required inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="postal-code" />
+                  <p class="sb-form-hint" id="sb-dir-cp-hint" style="margin-top: 6px; margin-bottom: 0;"></p>
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-dir-colonia">Colonia</label>
+                  <input type="text" id="sb-dir-colonia" required placeholder="Ingresa tu código postal primero" />
+                </div>
+              </div>
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-dir-ciudad">Ciudad</label>
+                  <input type="text" id="sb-dir-ciudad" required autocomplete="address-level2" />
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-dir-estado">Estado</label>
+                  <input type="text" id="sb-dir-estado" required autocomplete="address-level1" />
+                </div>
+              </div>
+              <div class="sb-form-group">
+                <label for="sb-dir-referencias">Referencias (opcional)</label>
+                <textarea id="sb-dir-referencias"></textarea>
+              </div>
+              <button type="submit" class="sb-btn" id="sb-guardar-direccion-btn">Guardar dirección</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Panel: Mis pedidos -->
+        <div class="sb-dash-panel" id="sb-panel-pedidos" style="display:none;">
+          <div id="sb-pedidos-lista" class="sb-reveal"></div>
+        </div>
+
+        <!-- Panel: Tarjetas -->
+        <div class="sb-dash-panel" id="sb-panel-tarjetas" style="display:none;">
+          <div class="sb-kpi-section sb-reveal">
+            <h3>Tarjetas guardadas</h3>
+            <p class="sb-tarjeta-nota">
+              Vista previa: esta sección está lista para cuando se conecte una pasarela de pago real (Stripe, Conekta, MercadoPago). Ese día, la tarjeta se guardará aquí automáticamente y de forma segura (tokenizada) en cuanto se agregue en el pago — nunca se escribe ni se guarda un número de tarjeta completo en este sitio.
+            </p>
+            <div id="sb-tarjetas-lista"></div>
+
+            <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-tarjeta" style="margin-top: 8px;">+ Agregar tarjeta (demo)</button>
+
+            <form id="sb-tarjeta-form" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line-strong);">
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-tar-marca">Marca</label>
+                  <select id="sb-tar-marca" required>
+                    <option value="Visa">Visa</option>
+                    <option value="Mastercard">Mastercard</option>
+                    <option value="American Express">American Express</option>
+                  </select>
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-tar-ultimos4">Últimos 4 dígitos</label>
+                  <input type="text" id="sb-tar-ultimos4" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="4242" />
+                </div>
+              </div>
+              <div class="sb-form-group">
+                <label for="sb-tar-vencimiento">Vencimiento</label>
+                <input type="text" id="sb-tar-vencimiento" required placeholder="MM/AA" maxlength="5" />
+              </div>
+              <button type="submit" class="sb-btn" id="sb-guardar-tarjeta-btn">Guardar tarjeta</button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="sb-cuenta-formularios" class="sb-reveal" style="max-width: 480px; margin: 0 auto;">
+        <div class="sb-auth-tabs">
+          <button type="button" class="is-active" data-tab="login">Iniciar sesión</button>
+          <button type="button" data-tab="registro">Crear cuenta</button>
+        </div>
+
+        <div id="sb-error" class="sb-form-error" style="display:none;"></div>
+
+        <form class="sb-form-card" id="sb-login-form">
+          <div class="sb-form-group">
+            <label for="sb-login-correo">Correo o usuario</label>
+            <input type="text" id="sb-login-correo" name="correo" required autocomplete="username" />
+          </div>
+          <div class="sb-form-group">
+            <label for="sb-login-password">Contraseña</label>
+            <input type="password" id="sb-login-password" name="password" required autocomplete="current-password" />
+          </div>
+          <button type="submit" class="sb-btn" style="width: 100%;" id="sb-login-btn">Entrar</button>
+          <p style="text-align: center; margin: 14px 0 0;">
+            <a href="#" id="sb-olvide-password-link" style="font-size: 13px; color: rgba(32,79,43,0.65); text-decoration: underline;">¿Olvidaste tu contraseña?</a>
+          </p>
+        </form>
+
+        <form class="sb-form-card" id="sb-olvide-password-form" style="display:none;">
+          <p style="font-size: 13.5px; color: rgba(32,79,43,0.7); margin-top: 0;">Escribe tu correo y te enviaremos un enlace para elegir una nueva contraseña.</p>
+          <div id="sb-olvide-success" class="sb-form-success" style="display:none;"></div>
+          <div class="sb-form-group">
+            <label for="sb-olvide-correo">Correo electrónico</label>
+            <input type="email" id="sb-olvide-correo" required autocomplete="email" />
+          </div>
+          <button type="submit" class="sb-btn" style="width: 100%;" id="sb-olvide-btn">Enviar enlace de confirmación</button>
+          <p style="text-align: center; margin: 14px 0 0;">
+            <a href="#" id="sb-volver-login-link" style="font-size: 13px; color: rgba(32,79,43,0.65); text-decoration: underline;">Volver a iniciar sesión</a>
+          </p>
+        </form>
+
+        <form class="sb-form-card" id="sb-registro-form" style="display:none;">
+          <div class="sb-form-group">
+            <label for="sb-reg-nombre">Nombre completo</label>
+            <input type="text" id="sb-reg-nombre" name="nombre" required autocomplete="name" />
+          </div>
+          <div class="sb-form-group">
+            <label for="sb-reg-correo">Correo electrónico</label>
+            <input type="email" id="sb-reg-correo" name="correo" required autocomplete="email" />
+          </div>
+          <div class="sb-form-group">
+            <label for="sb-reg-telefono">Teléfono (opcional)</label>
+            <input type="tel" id="sb-reg-telefono" name="telefono" autocomplete="tel" />
+          </div>
+          <div class="sb-form-group">
+            <label for="sb-reg-password">Contraseña</label>
+            <input type="password" id="sb-reg-password" name="password" required autocomplete="new-password" minlength="6" />
+          </div>
+          <button type="submit" class="sb-btn" style="width: 100%;" id="sb-registro-btn">Crear cuenta</button>
+        </form>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="sb-footer">
+  <div class="sb-footer-links">
+    <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
+    <a href="https://wa.me/524771108120">477 110 8120</a>
+  </div>
+  <div class="sb-footer-social">
+    <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/capsulasdenopalsantebio" aria-label="Síguenos en Instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+    </a>
+  </div>
+  <small>Aviso de Privacidad · © 2026 SanteBio</small>
+</footer>
+
+<script src="assets/cart.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/cp-lookup.js"></script>
+<script>
+(function () {
+  var sesionCard = document.getElementById('sb-cuenta-sesion');
+  var formulariosDiv = document.getElementById('sb-cuenta-formularios');
+  var errorDiv = document.getElementById('sb-error');
+  var loginForm = document.getElementById('sb-login-form');
+  var registroForm = document.getElementById('sb-registro-form');
+
+  function mostrarError(msg) {
+    errorDiv.textContent = msg;
+    errorDiv.style.display = 'block';
+  }
+  function ocultarError() {
+    errorDiv.style.display = 'none';
+  }
+
+  function render() {
+    var usuario = SanteBioAuth.getUsuarioActual();
+    if (usuario) {
+      sesionCard.style.display = 'block';
+      formulariosDiv.style.display = 'none';
+      document.getElementById('sb-sesion-saludo').textContent = usuario.nombre;
+      document.getElementById('sb-sesion-correo').textContent = usuario.correo;
+      document.getElementById('sb-avatar').textContent = usuario.nombre.charAt(0).toUpperCase();
+      llenarFormularioPerfil(usuario);
+      cargarDirecciones();
+      cargarPedidos();
+      cargarTarjetas();
+    } else {
+      sesionCard.style.display = 'none';
+      formulariosDiv.style.display = 'block';
+    }
+  }
+
+  /* --- Tabs del dashboard --- */
+  function activarPanel(nombre) {
+    var btn = document.querySelector('.sb-dash-tabs button[data-panel="' + nombre + '"]');
+    if (!btn) return;
+    document.querySelectorAll('.sb-dash-tabs button').forEach(function (b) { b.classList.remove('is-active'); });
+    btn.classList.add('is-active');
+    document.querySelectorAll('.sb-dash-panel').forEach(function (panel) { panel.style.display = 'none'; });
+    document.getElementById('sb-panel-' + nombre).style.display = 'block';
+  }
+
+  document.querySelectorAll('.sb-dash-tabs button').forEach(function (btn) {
+    btn.addEventListener('click', function () { activarPanel(btn.dataset.panel); });
+  });
+
+  // Si se llega aqui desde otro lado con ?tab=pedidos (ej. despues de
+  // confirmar una compra en pago.html), abrir esa pestaña de una vez.
+  var panelSolicitado = new URLSearchParams(window.location.search).get('tab');
+  if (panelSolicitado) {
+    activarPanel(panelSolicitado);
+  }
+
+  /* --- Mi perfil --- */
+  function llenarFormularioPerfil(usuario) {
+    document.getElementById('sb-perfil-nombre').value = usuario.nombre;
+    document.getElementById('sb-perfil-correo').value = usuario.correo;
+    document.getElementById('sb-perfil-telefono').value = usuario.telefono || '';
+    document.getElementById('sb-password-correo-destino').textContent = usuario.correo;
+  }
+
+  document.getElementById('sb-perfil-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var successDiv = document.getElementById('sb-perfil-success');
+    var errDiv = document.getElementById('sb-perfil-error');
+    successDiv.style.display = 'none';
+    errDiv.style.display = 'none';
+    var btn = document.getElementById('sb-perfil-btn');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    SanteBioAuth.actualizarPerfil({
+      nombre: document.getElementById('sb-perfil-nombre').value.trim(),
+      correo: document.getElementById('sb-perfil-correo').value.trim(),
+      telefono: document.getElementById('sb-perfil-telefono').value.trim(),
+    }).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Guardar cambios';
+      if (!res.ok) {
+        errDiv.textContent = res.error || 'No se pudo actualizar el perfil.';
+        errDiv.style.display = 'block';
+        return;
+      }
+      successDiv.textContent = 'Perfil actualizado.';
+      successDiv.style.display = 'block';
+      document.getElementById('sb-sesion-saludo').textContent = res.usuario.nombre;
+      document.getElementById('sb-sesion-correo').textContent = res.usuario.correo;
+      document.getElementById('sb-avatar').textContent = res.usuario.nombre.charAt(0).toUpperCase();
+    });
+  });
+
+  document.getElementById('sb-password-btn').addEventListener('click', function () {
+    var successDiv = document.getElementById('sb-password-success');
+    var errDiv = document.getElementById('sb-password-error');
+    successDiv.style.display = 'none';
+    errDiv.style.display = 'none';
+
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    SanteBioAuth.solicitarCambioPassword({}).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Enviar enlace de confirmación';
+      if (!res.ok) {
+        errDiv.textContent = res.error || 'No se pudo enviar el enlace.';
+        errDiv.style.display = 'block';
+        return;
+      }
+      successDiv.textContent = 'Te enviamos un enlace a tu correo para confirmar el cambio. Revisa tu bandeja de entrada (el enlace es válido por 30 minutos).';
+      successDiv.style.display = 'block';
+    });
+  });
+
+  /* --- Direcciones --- */
+  function cargarDirecciones() {
+    var lista = document.getElementById('sb-direcciones-lista');
+    lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    SanteBioAuth.llamarApi('listar_direcciones', {}, SanteBioAuth.getToken()).then(function (res) {
+      var direcciones = res.direcciones || [];
+      if (direcciones.length === 0) {
+        lista.innerHTML = '<p class="sb-empty-panel">Todavía no tienes direcciones guardadas.</p>';
+        return;
+      }
+      lista.innerHTML = direcciones.map(function (d) {
+        return (
+          '<div class="sb-direccion-card" data-id="' + d.id + '">' +
+          '<div><div class="sb-direccion-etiqueta">' + (d.etiqueta || 'Dirección guardada') + '</div>' +
+          '<div class="sb-direccion-detalle">' + d.calle + ', ' + d.colonia + ', ' + d.ciudad + ', ' + d.estado + ' ' + d.cp + '</div></div>' +
+          '<button type="button" class="sb-remove sb-eliminar-direccion" data-id="' + d.id + '">Eliminar</button>' +
+          '</div>'
+        );
+      }).join('');
+      lista.querySelectorAll('.sb-eliminar-direccion').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          btn.disabled = true;
+          SanteBioAuth.llamarApi('eliminar_direccion', { id: btn.dataset.id }, SanteBioAuth.getToken()).then(function () {
+            cargarDirecciones();
+          });
+        });
+      });
+    });
+  }
+
+  var direccionForm = document.getElementById('sb-direccion-form');
+  var cpHelperDireccion = null;
+
+  document.getElementById('sb-mostrar-form-direccion').addEventListener('click', function () {
+    var mostrando = direccionForm.style.display === 'block';
+    direccionForm.style.display = mostrando ? 'none' : 'block';
+    if (!mostrando && !cpHelperDireccion) {
+      cpHelperDireccion = SanteBioCP.wire({ cp: 'sb-dir-cp', colonia: 'sb-dir-colonia', ciudad: 'sb-dir-ciudad', estado: 'sb-dir-estado', hint: 'sb-dir-cp-hint' });
+    }
+  });
+
+  direccionForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!this.checkValidity()) {
+      this.reportValidity();
+      return;
+    }
+    var btn = document.getElementById('sb-guardar-direccion-btn');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    SanteBioAuth.llamarApi('guardar_direccion', {
+      etiqueta: document.getElementById('sb-dir-etiqueta').value.trim(),
+      calle: document.getElementById('sb-dir-calle').value.trim(),
+      colonia: document.getElementById('sb-dir-colonia').value.trim(),
+      cp: document.getElementById('sb-dir-cp').value.trim(),
+      ciudad: document.getElementById('sb-dir-ciudad').value.trim(),
+      estado: document.getElementById('sb-dir-estado').value.trim(),
+      referencias: document.getElementById('sb-dir-referencias').value.trim(),
+    }, SanteBioAuth.getToken()).then(function () {
+      btn.disabled = false;
+      btn.textContent = 'Guardar dirección';
+      direccionForm.reset();
+      direccionForm.style.display = 'none';
+      cargarDirecciones();
+    });
+  });
+
+  /* --- Mis pedidos --- */
+  function cargarPedidos() {
+    var lista = document.getElementById('sb-pedidos-lista');
+    lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    SanteBioAuth.llamarApi('mis_pedidos', {}, SanteBioAuth.getToken()).then(function (res) {
+      var pedidos = res.pedidos || [];
+      if (pedidos.length === 0) {
+        lista.innerHTML = '<p class="sb-empty-panel">Todavía no tienes pedidos. <a href="tienda.html">Ir a la tienda</a>.</p>';
+        return;
+      }
+      lista.innerHTML = pedidos.map(function (p) {
+        var fecha = new Date(p.creadoEn).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+        var itemsTexto = p.items.map(function (it) { return it.qty + 'x ' + it.name; }).join(', ');
+        return (
+          '<div class="sb-pedido-card">' +
+          '<div class="sb-pedido-card-top">' +
+          '<span class="sb-pedido-id">Pedido #' + p.id + '</span>' +
+          '<span class="sb-pedido-estado">' + p.estado + '</span>' +
+          '</div>' +
+          '<div class="sb-pedido-fecha">' + fecha + '</div>' +
+          '<div class="sb-pedido-items">' + itemsTexto + '</div>' +
+          '<div class="sb-pedido-total">' + SanteBioCart.formatMXN(p.total) + '</div>' +
+          '</div>'
+        );
+      }).join('');
+    });
+  }
+
+  /* --- Tarjetas --- */
+  function cargarTarjetas() {
+    var lista = document.getElementById('sb-tarjetas-lista');
+    lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    SanteBioAuth.llamarApi('listar_tarjetas', {}, SanteBioAuth.getToken()).then(function (res) {
+      var tarjetas = res.tarjetas || [];
+      if (tarjetas.length === 0) {
+        lista.innerHTML = '<p class="sb-empty-panel">Todavía no tienes tarjetas guardadas.</p>';
+        return;
+      }
+      lista.innerHTML = tarjetas.map(function (t) {
+        return (
+          '<div class="sb-tarjeta-card" data-id="' + t.id + '">' +
+          '<div class="sb-tarjeta-icon">' + t.marca.slice(0, 4).toUpperCase() + '</div>' +
+          '<div class="sb-tarjeta-info">' +
+          '<div class="sb-tarjeta-numero">•••• •••• •••• ' + t.ultimos4 + '</div>' +
+          '<div class="sb-tarjeta-vencimiento">Vence ' + t.vencimiento + '</div>' +
+          '</div>' +
+          '<button type="button" class="sb-remove sb-eliminar-tarjeta" data-id="' + t.id + '">Eliminar</button>' +
+          '</div>'
+        );
+      }).join('');
+      lista.querySelectorAll('.sb-eliminar-tarjeta').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          btn.disabled = true;
+          SanteBioAuth.llamarApi('eliminar_tarjeta', { id: btn.dataset.id }, SanteBioAuth.getToken()).then(function () {
+            cargarTarjetas();
+          });
+        });
+      });
+    });
+  }
+
+  var tarjetaForm = document.getElementById('sb-tarjeta-form');
+  document.getElementById('sb-mostrar-form-tarjeta').addEventListener('click', function () {
+    tarjetaForm.style.display = tarjetaForm.style.display === 'block' ? 'none' : 'block';
+  });
+
+  tarjetaForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!this.checkValidity()) {
+      this.reportValidity();
+      return;
+    }
+    var btn = document.getElementById('sb-guardar-tarjeta-btn');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    SanteBioAuth.llamarApi('guardar_tarjeta', {
+      marca: document.getElementById('sb-tar-marca').value,
+      ultimos4: document.getElementById('sb-tar-ultimos4').value.trim(),
+      vencimiento: document.getElementById('sb-tar-vencimiento').value.trim(),
+    }, SanteBioAuth.getToken()).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Guardar tarjeta';
+      if (!res.ok) return;
+      tarjetaForm.reset();
+      tarjetaForm.style.display = 'none';
+      cargarTarjetas();
+    });
+  });
+
+  /* --- Login / registro (sin sesion) --- */
+  document.querySelectorAll('.sb-auth-tabs button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.sb-auth-tabs button').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      ocultarError();
+      var esLogin = btn.dataset.tab === 'login';
+      loginForm.style.display = esLogin ? 'block' : 'none';
+      registroForm.style.display = esLogin ? 'none' : 'block';
+      document.getElementById('sb-olvide-password-form').style.display = 'none';
+    });
+  });
+
+  /* --- Olvide mi contraseña (sin sesion, por correo) --- */
+  var olvideForm = document.getElementById('sb-olvide-password-form');
+  document.getElementById('sb-olvide-password-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    loginForm.style.display = 'none';
+    document.querySelector('.sb-auth-tabs').style.display = 'none';
+    olvideForm.style.display = 'block';
+  });
+  document.getElementById('sb-volver-login-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    olvideForm.style.display = 'none';
+    document.querySelector('.sb-auth-tabs').style.display = 'flex';
+    loginForm.style.display = 'block';
+  });
+  olvideForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var successDiv = document.getElementById('sb-olvide-success');
+    var btn = document.getElementById('sb-olvide-btn');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    SanteBioAuth.solicitarCambioPassword({ correo: document.getElementById('sb-olvide-correo').value.trim() }).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Enviar enlace de confirmación';
+      successDiv.textContent = res.mensaje || 'Si el correo está registrado, se envió un enlace de confirmación.';
+      successDiv.style.display = 'block';
+      olvideForm.reset();
+    });
+  });
+
+  // Un solo formulario de login para usuario y admin: primero intenta
+  // como usuario normal; si falla, reintenta el mismo valor como
+  // usuario de administrador antes de mostrar error. Asi no hace
+  // falta que quien entra sepa de antemano que tipo de cuenta tiene.
+  loginForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    ocultarError();
+    var correo = document.getElementById('sb-login-correo').value.trim();
+    var password = document.getElementById('sb-login-password').value;
+    var btn = document.getElementById('sb-login-btn');
+    btn.disabled = true;
+    btn.textContent = 'Entrando…';
+
+    SanteBioAuth.iniciarSesionUsuario({ correo: correo, password: password }).then(function (res) {
+      if (res.ok) {
+        render();
+        return;
+      }
+      SanteBioAuth.iniciarSesionAdmin({ usuario: correo, password: password }).then(function (resAdmin) {
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+        if (resAdmin.ok) {
+          window.location.href = 'admin.html';
+          return;
+        }
+        mostrarError('Correo/usuario o contraseña incorrectos.');
+      });
+    });
+  });
+
+  registroForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    ocultarError();
+    var btn = document.getElementById('sb-registro-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creando cuenta…';
+
+    SanteBioAuth.registrarUsuario({
+      nombre: document.getElementById('sb-reg-nombre').value.trim(),
+      correo: document.getElementById('sb-reg-correo').value.trim(),
+      telefono: document.getElementById('sb-reg-telefono').value.trim(),
+      password: document.getElementById('sb-reg-password').value,
+    }).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Crear cuenta';
+      if (!res.ok) {
+        mostrarError(res.error || 'No se pudo crear la cuenta.');
+        return;
+      }
+      render();
+    });
+  });
+
+  document.getElementById('sb-cerrar-sesion').addEventListener('click', function () {
+    SanteBioAuth.cerrarSesion();
+    render();
+  });
+
+  render();
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.sb-reveal').forEach(function (el) { observer.observe(el); });
+})();
+</script>
+</body>
+</html>

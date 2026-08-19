@@ -13,6 +13,8 @@
     <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
   </a>
   <div class="sb-header-actions">
+    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>
+    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
     <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
       🛒 Carrito
       <span class="sb-cart-badge">0</span>
@@ -60,10 +62,14 @@
                publica). La llave SECRETA nunca va en este HTML ni en
                ningun archivo del sitio - vive solo en un servidor
                propio que la pasarela requiere para confirmar el cobro.
-            3. El boton "Confirmar pedido" de abajo debe llamar al
-               metodo de tokenizacion del SDK en vez de simplemente
-               redirigir; ahora mismo solo muestra un aviso porque no
-               hay servidor ni pasarela conectada todavia.
+            3. El boton "Confirmar pedido" de abajo ya guarda el pedido
+               real en la base de datos (accion "crear_pedido" del API
+               Flask/Postgres) con estado "Confirmado" -- falta
+               unicamente el cobro en si. Cuando se conecte una
+               pasarela real, este boton debe llamar primero al metodo
+               de tokenizacion del SDK, y solo si el cobro se autoriza
+               llamar a "crear_pedido" (o guardar el pedido con estado
+               "Pagado" en vez de "Confirmado").
           -->
 
           <h3>Método de pago</h3>
@@ -94,6 +100,11 @@
             </label>
           </div>
 
+          <div id="sb-tarjetas-guardadas-wrap" style="display:none; margin-bottom: 20px;">
+            <p style="font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 10px;">Tus tarjetas guardadas</p>
+            <div id="sb-tarjetas-guardadas-lista"></div>
+          </div>
+
           <div class="sb-card-fields" id="sb-card-fields">
             <div class="sb-form-group">
               <label for="sb-card-number">Número de tarjeta</label>
@@ -112,12 +123,7 @@
             <p class="sb-form-hint">Vista previa visual — todavía no está conectada a una pasarela de pago real.</p>
           </div>
 
-          <div id="sb-payment-result" style="display:none; margin-top: 20px; padding: 18px; border-radius: 12px; background: rgba(105,148,49,0.08); border: 1px solid var(--line-strong);">
-            <strong>Vista previa de confirmación</strong>
-            <p style="margin: 8px 0 0; font-size: 14px; color: rgba(32,79,43,0.8);">
-              Esto es una demo: el pedido no se procesó realmente. Cuando el sitio tenga las credenciales de una pasarela de pago, este paso confirmará el cobro real y enviará el pedido.
-            </p>
-          </div>
+          <div id="sb-payment-error" class="sb-form-error" style="display:none; margin-top: 20px;"></div>
 
           <div class="sb-cart-actions" style="flex-direction: column; margin-top: 20px;">
             <button type="button" class="sb-btn" id="sb-confirmar-pedido" style="width: 100%;">Confirmar pedido</button>
@@ -152,7 +158,19 @@
   <small>Aviso de Privacidad · © 2026 SanteBio</small>
 </footer>
 
+<div class="sb-modal-overlay" id="sb-modal-gracias">
+  <div class="sb-modal-card">
+    <div class="sb-modal-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    </div>
+    <h2>¡Gracias por tu compra!</h2>
+    <p id="sb-modal-texto"></p>
+    <button type="button" class="sb-btn" id="sb-modal-btn" style="width: 100%;">Ver mis pedidos</button>
+  </div>
+</div>
+
 <script src="assets/cart.js"></script>
+<script src="assets/auth.js"></script>
 <script>
 (function () {
   var cart = SanteBioCart.getCart();
@@ -192,9 +210,83 @@
     });
   });
 
+  /* Tarjetas guardadas: si el cliente tiene sesion y ya tiene tarjetas
+     en su perfil, se le ofrece elegir una en vez de escribir los
+     datos de nuevo -- por ahora es solo visual (no hay pasarela
+     conectada), pero en cuanto se conecte una real, elegir una
+     tarjeta guardada aqui sera lo que dispare el cobro con su token
+     ya guardado, sin volver a pedir el numero completo. */
+  var usuarioActual = SanteBioAuth.getUsuarioActual();
+  if (usuarioActual) {
+    SanteBioAuth.llamarApi('listar_tarjetas', {}, SanteBioAuth.getToken()).then(function (res) {
+      var tarjetas = res.tarjetas || [];
+      if (tarjetas.length === 0) return;
+
+      var wrap = document.getElementById('sb-tarjetas-guardadas-wrap');
+      var lista = document.getElementById('sb-tarjetas-guardadas-lista');
+      wrap.style.display = 'block';
+
+      lista.innerHTML = tarjetas.map(function (t, i) {
+        return (
+          '<label class="sb-direccion-option">' +
+          '<input type="radio" name="tarjeta-guardada" value="' + t.id + '"' + (i === 0 ? ' checked' : '') + ' />' +
+          '<div><div class="sb-direccion-etiqueta">' + t.marca + ' •••• ' + t.ultimos4 + '</div>' +
+          '<div class="sb-direccion-detalle">Vence ' + t.vencimiento + '</div></div>' +
+          '</label>'
+        );
+      }).join('') +
+        '<label class="sb-direccion-option">' +
+        '<input type="radio" name="tarjeta-guardada" value="nueva" />' +
+        '<div><div class="sb-direccion-etiqueta">Usar una tarjeta nueva</div></div>' +
+        '</label>';
+
+      function actualizarCamposTarjeta() {
+        var esNueva = document.querySelector('input[name="tarjeta-guardada"]:checked').value === 'nueva';
+        cardFields.style.display = esNueva ? 'grid' : 'none';
+      }
+      lista.querySelectorAll('input[name="tarjeta-guardada"]').forEach(function (radio) {
+        radio.addEventListener('change', actualizarCamposTarjeta);
+      });
+      actualizarCamposTarjeta();
+    });
+  }
+
   document.getElementById('sb-confirmar-pedido').addEventListener('click', function () {
-    document.getElementById('sb-payment-result').style.display = 'block';
-    document.getElementById('sb-payment-result').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var btn = this;
+    var metodoInput = document.querySelector('input[name="metodo-pago"]:checked');
+    var errorDiv = document.getElementById('sb-payment-error');
+    errorDiv.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Guardando pedido…';
+
+    var usuario = SanteBioAuth.getUsuarioActual();
+
+    SanteBioAuth.llamarApi('crear_pedido', {
+      items: cart,
+      total: SanteBioCart.cartTotal(),
+      metodoPago: metodoInput ? metodoInput.value : '',
+      datosEntrega: checkoutData,
+    }, usuario ? SanteBioAuth.getToken() : null).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Confirmar pedido';
+
+      if (!res.ok) {
+        errorDiv.textContent = res.error || 'No se pudo guardar el pedido. Intenta de nuevo.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      SanteBioCart.clearCart();
+      SanteBioCart.clearCheckoutData();
+
+      document.getElementById('sb-modal-texto').textContent =
+        'Tu pedido #' + res.pedido.id + ' quedó registrado. Esto es una demo: el cobro no se procesó realmente — cuando el sitio tenga las credenciales de una pasarela de pago, este paso confirmará el cobro real.';
+      document.getElementById('sb-modal-gracias').classList.add('is-visible');
+    });
+  });
+
+  document.getElementById('sb-modal-btn').addEventListener('click', function () {
+    window.location.href = usuarioActual ? 'cuenta.html?tab=pedidos' : 'tienda.html';
   });
 
   var observer = new IntersectionObserver(function (entries) {

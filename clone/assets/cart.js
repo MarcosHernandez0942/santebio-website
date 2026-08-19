@@ -78,6 +78,10 @@
     }
   }
 
+  function clearCheckoutData() {
+    localStorage.removeItem(CHECKOUT_KEY);
+  }
+
   function updateCartBadges() {
     var count = cartCount();
     document.querySelectorAll('.sb-cart-badge').forEach(function (el) {
@@ -100,5 +104,6 @@
     updateCartBadges: updateCartBadges,
     saveCheckoutData: saveCheckoutData,
     getCheckoutData: getCheckoutData,
+    clearCheckoutData: clearCheckoutData,
   };
 })(window);

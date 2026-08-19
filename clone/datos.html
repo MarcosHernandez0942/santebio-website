@@ -13,6 +13,8 @@
     <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
   </a>
   <div class="sb-header-actions">
+    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>
+    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
     <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
       🛒 Carrito
       <span class="sb-cart-badge">0</span>
@@ -55,6 +57,9 @@
           </div>
 
           <h3 style="margin-top: 28px;">Dirección de envío</h3>
+
+          <div id="sb-direcciones-guardadas" style="display:none; margin-bottom: 20px;"></div>
+
           <div class="sb-form-group">
             <label for="sb-calle">Calle y número</label>
             <input type="text" id="sb-calle" name="calle" required autocomplete="street-address" />
@@ -83,6 +88,14 @@
           <div class="sb-form-group">
             <label for="sb-referencias">Referencias de entrega (opcional)</label>
             <textarea id="sb-referencias" name="referencias" placeholder="Ej. Casa color verde, entre calles..."></textarea>
+          </div>
+
+          <div class="sb-form-group" id="sb-guardar-direccion-wrap" style="display:none;">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:600; margin-bottom: 0;">
+              <input type="checkbox" id="sb-guardar-direccion" style="width:auto;" />
+              Guardar esta dirección en mi perfil
+            </label>
+            <input type="text" id="sb-nueva-etiqueta" placeholder="Nombre para esta dirección (ej. Casa, Oficina)" style="margin-top: 10px; display:none;" />
           </div>
 
           <div class="sb-cart-actions" style="flex-direction: column; margin-top: 8px;">
@@ -118,6 +131,8 @@
 </footer>
 
 <script src="assets/cart.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/cp-lookup.js"></script>
 <script>
 (function () {
   var cart = SanteBioCart.getCart();
@@ -149,97 +164,86 @@
     });
   }
 
-  /* Autocompletar ciudad/estado y sugerir colonias segun el codigo
-     postal, usando la API publica y gratuita de codigos postales de
-     Mexico cp.terio.dev (con CORS abierto, sin necesitar llave). Si
-     el CP no se encuentra o falla la consulta, no pasa nada: el
-     usuario sigue pudiendo llenar todo a mano como antes. */
-  function setColoniaField(colonias, currentValue) {
-    var oldField = document.getElementById('sb-colonia');
-    var newField;
-    if (colonias && colonias.length > 0) {
-      newField = document.createElement('select');
-      newField.id = 'sb-colonia';
-      newField.name = 'colonia';
-      newField.required = true;
-      var placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.textContent = colonias.length > 1 ? 'Selecciona tu colonia...' : colonias[0];
-      if (colonias.length > 1) newField.appendChild(placeholder);
-      colonias.forEach(function (c) {
-        var opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        if (c === currentValue || colonias.length === 1) opt.selected = true;
-        newField.appendChild(opt);
-      });
-    } else {
-      newField = document.createElement('input');
-      newField.type = 'text';
-      newField.id = 'sb-colonia';
-      newField.name = 'colonia';
-      newField.required = true;
-      newField.placeholder = 'Ingresa tu código postal primero';
-      newField.value = currentValue || '';
-    }
-    oldField.parentElement.replaceChild(newField, oldField);
+  var cpHelper = SanteBioCP.wire({ cp: 'sb-cp', colonia: 'sb-colonia', ciudad: 'sb-ciudad', estado: 'sb-estado', hint: 'sb-cp-hint' });
+
+  // Si el cliente tiene sesion, ofrecerle elegir una de sus direcciones
+  // guardadas (mas rapido) o seguir con una nueva -- si no tiene
+  // ninguna guardada todavia, se le ofrece guardar la que esta
+  // llenando ahora para la proxima vez.
+  var usuarioActual = SanteBioAuth.getUsuarioActual();
+  var direccionesGuardadas = [];
+
+  function llenarCamposDireccion(d) {
+    document.getElementById('sb-calle').value = d.calle;
+    document.getElementById('sb-ciudad').value = d.ciudad;
+    document.getElementById('sb-estado').value = d.estado;
+    document.getElementById('sb-referencias').value = d.referencias || '';
+    document.getElementById('sb-colonia').value = d.colonia;
+    document.getElementById('sb-cp').value = d.cp;
+    cpHelper.lookupCP(d.cp);
   }
 
-  var cpInput = document.getElementById('sb-cp');
-  var cpHint = document.getElementById('sb-cp-hint');
-  var cpDebounceTimer;
-  var lastLookedUpCp = null;
+  function mostrarGuardarDireccion(mostrar) {
+    var wrap = document.getElementById('sb-guardar-direccion-wrap');
+    wrap.style.display = usuarioActual && mostrar ? 'block' : 'none';
+  }
 
-  function lookupCP(cp) {
-    if (cp === lastLookedUpCp) return;
-    lastLookedUpCp = cp;
-    cpHint.textContent = 'Buscando colonias...';
-    fetch('https://cp.terio.dev/v1/codigos-postales/' + cp)
-      .then(function (r) {
-        if (!r.ok) throw new Error('cp no encontrado');
-        return r.json();
-      })
-      .then(function (data) {
-        var registros = (data && data.datos) || [];
-        if (registros.length === 0) throw new Error('sin resultados');
-        document.getElementById('sb-ciudad').value = registros[0].ciudad || registros[0].municipio || '';
-        document.getElementById('sb-estado').value = registros[0].estado || '';
-        var currentColoniaValue = document.getElementById('sb-colonia').value;
-        var colonias = registros.map(function (r) { return r.asentamiento; });
-        setColoniaField(colonias, currentColoniaValue);
-        cpHint.textContent = colonias.length > 1
-          ? colonias.length + ' colonias encontradas para este código postal.'
-          : '';
-      })
-      .catch(function () {
-        // CP no encontrado o fallo la consulta: no se bloquea el formulario.
-        // Si colonia ya era un <select> de un CP anterior, esos datos ya no
-        // corresponden al CP que esta escrito ahora, asi que se limpian y
-        // vuelve a ser editable a mano. Si el usuario ya estaba escribiendo
-        // su colonia a mano (nunca se resolvio ningun CP), no se le borra.
-        if (document.getElementById('sb-colonia').tagName === 'SELECT') {
-          document.getElementById('sb-ciudad').value = '';
-          document.getElementById('sb-estado').value = '';
-          setColoniaField(null, '');
+  function renderDireccionesGuardadas() {
+    var wrap = document.getElementById('sb-direcciones-guardadas');
+    wrap.style.display = 'block';
+    wrap.innerHTML = direccionesGuardadas.map(function (d, i) {
+      return (
+        '<label class="sb-direccion-option">' +
+        '<input type="radio" name="direccion-guardada" value="' + d.id + '"' + (i === 0 ? ' checked' : '') + ' />' +
+        '<div><div class="sb-direccion-etiqueta">' + (d.etiqueta || 'Dirección guardada') + '</div>' +
+        '<div class="sb-direccion-detalle">' + d.calle + ', ' + d.colonia + ', ' + d.ciudad + ', ' + d.estado + ' ' + d.cp + '</div></div>' +
+        '</label>'
+      );
+    }).join('') +
+      '<label class="sb-direccion-option">' +
+      '<input type="radio" name="direccion-guardada" value="nueva" />' +
+      '<div><div class="sb-direccion-etiqueta">Usar una dirección nueva</div></div>' +
+      '</label>';
+
+    wrap.querySelectorAll('input[name="direccion-guardada"]').forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        if (radio.value === 'nueva') {
+          mostrarGuardarDireccion(true);
+        } else {
+          var d = direccionesGuardadas.find(function (x) { return String(x.id) === radio.value; });
+          llenarCamposDireccion(d);
+          mostrarGuardarDireccion(false);
         }
-        cpHint.textContent = '';
       });
-  }
+    });
 
-  cpInput.addEventListener('input', function () {
-    clearTimeout(cpDebounceTimer);
-    var cp = cpInput.value.trim();
-    if (!/^[0-9]{5}$/.test(cp)) {
-      cpHint.textContent = '';
-      return;
+    // Si ya habia datos precargados (se volvio desde pago.html con una
+    // direccion en proceso), no se sobreescriben con la primera
+    // guardada: se deja seleccionado "nueva" y se respeta lo que ya
+    // estaba escrito.
+    if (saved && saved.calle) {
+      wrap.querySelector('input[value="nueva"]').checked = true;
+      mostrarGuardarDireccion(true);
+    } else {
+      llenarCamposDireccion(direccionesGuardadas[0]);
+      mostrarGuardarDireccion(false);
     }
-    cpDebounceTimer = setTimeout(function () { lookupCP(cp); }, 350);
-  });
-
-  // Si ya habia un CP precargado (volviendo desde pago.html), buscar de una vez.
-  if (/^[0-9]{5}$/.test(cpInput.value.trim())) {
-    lookupCP(cpInput.value.trim());
   }
+
+  if (usuarioActual) {
+    SanteBioAuth.llamarApi('listar_direcciones', {}, SanteBioAuth.getToken()).then(function (res) {
+      if (res.direcciones && res.direcciones.length > 0) {
+        direccionesGuardadas = res.direcciones;
+        renderDireccionesGuardadas();
+      } else {
+        mostrarGuardarDireccion(true);
+      }
+    });
+  }
+
+  document.getElementById('sb-guardar-direccion').addEventListener('change', function () {
+    document.getElementById('sb-nueva-etiqueta').style.display = this.checked ? 'block' : 'none';
+  });
 
   document.getElementById('sb-datos-form').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -259,7 +263,23 @@
       referencias: document.getElementById('sb-referencias').value.trim(),
     };
     SanteBioCart.saveCheckoutData(data);
-    window.location.href = 'pago.html';
+
+    var guardarCheckbox = document.getElementById('sb-guardar-direccion');
+    if (usuarioActual && guardarCheckbox.checked) {
+      SanteBioAuth.llamarApi('guardar_direccion', {
+        etiqueta: document.getElementById('sb-nueva-etiqueta').value.trim(),
+        calle: data.calle,
+        colonia: data.colonia,
+        cp: data.cp,
+        ciudad: data.ciudad,
+        estado: data.estado,
+        referencias: data.referencias,
+      }, SanteBioAuth.getToken()).then(function () {
+        window.location.href = 'pago.html';
+      });
+    } else {
+      window.location.href = 'pago.html';
+    }
   });
 
   var observer = new IntersectionObserver(function (entries) {

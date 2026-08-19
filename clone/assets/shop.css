@@ -55,7 +55,9 @@ a {
   gap: 20px;
 }
 
-.sb-cart-link {
+.sb-cart-link,
+.sb-account-link,
+.sb-tienda-link {
   position: relative;
   display: flex;
   align-items: center;
@@ -678,6 +680,554 @@ a {
 }
 .sb-mini-summary-item .sb-mini-qty {
   color: rgba(32, 79, 43, 0.5);
+}
+
+/* --- Cuenta (login / registro / admin) --- */
+.sb-auth-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.sb-auth-tabs button {
+  background: none;
+  border: none;
+  padding: 10px 4px;
+  margin-right: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(32, 79, 43, 0.5);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.sb-auth-tabs button.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--green);
+}
+.sb-form-error {
+  background: rgba(179, 65, 60, 0.08);
+  border: 1px solid rgba(179, 65, 60, 0.3);
+  color: #b3413c;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.sb-account-card {
+  text-align: center;
+  padding: 48px 24px;
+}
+.sb-account-card h2 {
+  margin: 0 0 6px;
+}
+.sb-account-card p {
+  color: rgba(32, 79, 43, 0.7);
+  margin-bottom: 24px;
+}
+
+/* --- Dashboard de cuenta.html --- */
+.sb-account-hero {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.sb-account-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.sb-account-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+.sb-account-hero-info h2 {
+  margin: 0 0 2px;
+  font-size: 20px;
+}
+.sb-account-hero-info p {
+  margin: 0;
+  font-size: 13.5px;
+  color: rgba(32, 79, 43, 0.65);
+}
+
+.sb-dash-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0;
+}
+.sb-dash-tabs button {
+  background: none;
+  border: none;
+  padding: 10px 6px;
+  margin-right: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(32, 79, 43, 0.55);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sb-dash-tabs button.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--green);
+}
+.sb-dash-panel {
+  animation: sb-panel-in 0.3s ease;
+}
+@keyframes sb-panel-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.sb-pedido-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+}
+.sb-pedido-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sb-pedido-id {
+  font-weight: 700;
+  font-size: 14.5px;
+}
+.sb-pedido-fecha {
+  font-size: 12.5px;
+  color: rgba(32, 79, 43, 0.55);
+}
+.sb-pedido-estado {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(105, 148, 49, 0.12);
+  color: var(--green);
+}
+.sb-pedido-items {
+  font-size: 13px;
+  color: rgba(32, 79, 43, 0.75);
+  margin-bottom: 8px;
+}
+.sb-pedido-total {
+  font-weight: 700;
+  font-size: 15px;
+}
+.sb-pedido-estado-pendiente {
+  background: rgba(227, 199, 122, 0.25);
+  color: #8a6d1f;
+}
+.sb-pedido-estado-aceptado {
+  background: rgba(70, 130, 180, 0.14);
+  color: #2f6690;
+}
+.sb-pedido-estado-enviado {
+  background: rgba(105, 148, 49, 0.12);
+  color: var(--green);
+}
+.sb-pedido-estado-entregado {
+  background: rgba(32, 79, 43, 0.14);
+  color: var(--ink);
+}
+.sb-pedido-estado-cancelado {
+  background: rgba(179, 65, 60, 0.12);
+  color: #b3413c;
+}
+
+/* --- Admin: filtro de pedidos por estado --- */
+.sb-admin-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.sb-admin-filtros button {
+  background: #fff;
+  border: 1.5px solid var(--line-strong);
+  color: rgba(32, 79, 43, 0.7);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.sb-admin-filtros button.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+/* --- Admin: tarjeta de pedido con detalle de cliente/envio --- */
+.sb-pedido-admin-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 14px;
+}
+.sb-pedido-admin-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: start;
+}
+.sb-pedido-cliente {
+  font-size: 12.5px;
+  color: rgba(32, 79, 43, 0.65);
+  margin-bottom: 10px;
+}
+.sb-pedido-envio {
+  font-size: 12.5px;
+  color: rgba(32, 79, 43, 0.65);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.sb-pedido-select-estado {
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fff;
+}
+
+/* --- Admin: modulo de opiniones --- */
+.sb-opiniones-columnas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 900px) {
+  .sb-opiniones-columnas {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+.sb-opinion-columna h4 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(32, 79, 43, 0.6);
+  margin: 0 0 12px;
+}
+.sb-opinion-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.sb-opinion-estrellas {
+  color: #E3C77A;
+  font-size: 14px;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.sb-opinion-nombre {
+  font-weight: 700;
+  font-size: 13.5px;
+  margin-bottom: 4px;
+}
+.sb-opinion-texto {
+  font-size: 13px;
+  color: rgba(32, 79, 43, 0.8);
+  font-style: italic;
+  margin-bottom: 12px;
+}
+.sb-opinion-acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sb-opinion-acciones button {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.sb-opinion-acciones button.sb-btn-aprobar:hover {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.sb-opinion-acciones button.sb-btn-rechazar:hover,
+.sb-opinion-acciones button.sb-btn-eliminar:hover {
+  background: #b3413c;
+  border-color: #b3413c;
+  color: #fff;
+}
+.sb-opinion-acciones button.sb-btn-ocultar:hover,
+.sb-opinion-acciones button.sb-btn-mostrar:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.sb-tarjeta-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sb-tarjeta-icon {
+  width: 40px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.sb-tarjeta-info {
+  flex: 1;
+}
+.sb-tarjeta-numero {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+}
+.sb-tarjeta-vencimiento {
+  font-size: 12px;
+  color: rgba(32, 79, 43, 0.55);
+}
+.sb-tarjeta-nota {
+  background: rgba(105, 148, 49, 0.08);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: rgba(32, 79, 43, 0.8);
+  margin-bottom: 20px;
+}
+
+.sb-empty-panel {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(32, 79, 43, 0.55);
+  font-size: 14px;
+}
+
+.sb-form-success {
+  background: rgba(105, 148, 49, 0.1);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* --- Direcciones guardadas (datos.html y cuenta.html) --- */
+.sb-direccion-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.sb-direccion-option:has(input:checked) {
+  border-color: var(--green);
+  background: rgba(105, 148, 49, 0.06);
+}
+.sb-direccion-option input[type="radio"] {
+  accent-color: var(--green);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.sb-direccion-etiqueta {
+  font-weight: 700;
+  font-size: 14px;
+}
+.sb-direccion-detalle {
+  font-size: 12.5px;
+  color: rgba(32, 79, 43, 0.65);
+  margin-top: 2px;
+}
+.sb-direccion-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* --- KPIs del panel de administrador --- */
+.sb-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.sb-kpi-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+}
+.sb-kpi-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(32, 79, 43, 0.6);
+  margin-bottom: 8px;
+}
+.sb-kpi-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.sb-kpi-sub {
+  font-size: 12.5px;
+  color: rgba(32, 79, 43, 0.6);
+  margin-top: 4px;
+}
+.sb-kpi-section {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.sb-kpi-section h3 {
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+.sb-kpi-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.sb-kpi-bar-row .sb-kpi-bar-label {
+  width: 130px;
+  flex-shrink: 0;
+  color: var(--ink);
+  font-weight: 600;
+}
+.sb-kpi-bar-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--paper);
+  overflow: hidden;
+}
+.sb-kpi-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--green);
+}
+.sb-kpi-bar-value {
+  width: 90px;
+  flex-shrink: 0;
+  text-align: right;
+  color: rgba(32, 79, 43, 0.75);
+}
+
+/* --- Modal de confirmacion de pedido (pago.html) --- */
+.sb-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(32, 79, 43, 0.55);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+.sb-modal-overlay.is-visible {
+  display: flex;
+}
+.sb-modal-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  animation: sb-modal-in 0.25s ease;
+}
+@keyframes sb-modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.sb-modal-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(105, 148, 49, 0.12);
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+.sb-modal-icon svg {
+  width: 32px;
+  height: 32px;
+}
+.sb-modal-card h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+}
+.sb-modal-card p {
+  color: rgba(32, 79, 43, 0.75);
+  font-size: 14px;
+  margin: 0 0 24px;
 }
 
 /* Cursor personalizado con forma de nopal (mismo que index.html), para

@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Panel de administrador — SanteBio</title>
+<link rel="icon" type="image/png" href="wp-content/uploads/2026/03/logo-transparente.webp" />
+<link rel="stylesheet" href="assets/shop.css" />
+</head>
+<body>
+<header class="sb-header">
+  <a class="sb-logo-link" href="index.html">
+    <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
+  </a>
+  <div class="sb-header-actions">
+    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>
+    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
+    <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
+      🛒 Carrito
+      <span class="sb-cart-badge">0</span>
+    </a>
+  </div>
+</header>
+
+<section class="sb-hero">
+  <div class="sb-eyebrow">Administración</div>
+  <h1>Panel de administrador</h1>
+  <p class="sb-subhead" id="sb-admin-sub"></p>
+</section>
+
+<main>
+  <section class="sb-section">
+    <div class="sb-section-inner">
+
+      <div id="sb-sin-sesion" class="sb-form-card sb-account-card sb-reveal" style="display:none; max-width: 480px; margin: 0 auto;">
+        <h2>Se requiere iniciar sesión</h2>
+        <p>Inicia sesión como administrador desde Mi cuenta para entrar aquí.</p>
+        <a class="sb-btn" href="cuenta.html">Ir a Mi cuenta</a>
+      </div>
+
+      <div id="sb-con-sesion" style="display:none; max-width: 980px; margin: 0 auto;">
+
+        <div class="sb-account-hero sb-reveal">
+          <div class="sb-account-avatar" id="sb-admin-avatar"></div>
+          <div class="sb-account-hero-info">
+            <h2 id="sb-admin-saludo" style="margin: 0 0 2px; font-size: 20px;"></h2>
+            <p style="margin: 0; font-size: 13.5px; color: rgba(32,79,43,0.65);">Administrador</p>
+          </div>
+          <button type="button" class="sb-btn sb-btn-ghost" id="sb-cerrar-sesion-admin">Cerrar sesión</button>
+        </div>
+
+        <div class="sb-dash-tabs sb-reveal">
+          <button type="button" class="is-active" data-panel="resumen">📊 Resumen</button>
+          <button type="button" data-panel="pedidos">📦 Pedidos</button>
+          <button type="button" data-panel="opiniones">💬 Opiniones</button>
+        </div>
+
+        <div class="sb-dash-panel" id="sb-panel-resumen">
+          <div id="sb-kpi-cargando" class="sb-reveal" style="text-align:center; padding: 20px;">Cargando KPIs…</div>
+
+          <div id="sb-kpi-contenido" style="display:none;">
+            <div class="sb-kpi-grid sb-reveal">
+              <div class="sb-kpi-card">
+                <div class="sb-kpi-label">Ventas totales</div>
+                <div class="sb-kpi-value" id="sb-kpi-ventas"></div>
+              </div>
+              <div class="sb-kpi-card">
+                <div class="sb-kpi-label">Pedidos</div>
+                <div class="sb-kpi-value" id="sb-kpi-pedidos"></div>
+              </div>
+              <div class="sb-kpi-card">
+                <div class="sb-kpi-label">Ticket promedio</div>
+                <div class="sb-kpi-value" id="sb-kpi-ticket"></div>
+              </div>
+              <div class="sb-kpi-card">
+                <div class="sb-kpi-label">Usuarios registrados</div>
+                <div class="sb-kpi-value" id="sb-kpi-usuarios"></div>
+              </div>
+            </div>
+
+            <div class="sb-kpi-section sb-reveal">
+              <h3>Producto más vendido</h3>
+              <div id="sb-kpi-producto-top"></div>
+            </div>
+
+            <div class="sb-kpi-section sb-reveal">
+              <h3>Ventas por método de pago</h3>
+              <div id="sb-kpi-metodos"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel: Pedidos -->
+        <div class="sb-dash-panel" id="sb-panel-pedidos" style="display:none;">
+          <div class="sb-admin-filtros" id="sb-pedidos-filtros">
+            <button type="button" class="is-active" data-filtro="todos">Todos</button>
+            <button type="button" data-filtro="Pendiente">Pendientes</button>
+            <button type="button" data-filtro="Aceptado">Aceptados</button>
+            <button type="button" data-filtro="Enviado">Enviados</button>
+            <button type="button" data-filtro="Entregado">Entregados</button>
+            <button type="button" data-filtro="Cancelado">Cancelados</button>
+          </div>
+          <div id="sb-pedidos-admin-lista" class="sb-reveal"></div>
+        </div>
+
+        <!-- Panel: Opiniones -->
+        <div class="sb-dash-panel" id="sb-panel-opiniones" style="display:none;">
+          <div class="sb-opiniones-columnas sb-reveal">
+            <div class="sb-opinion-columna">
+              <h4 id="sb-opiniones-pendientes-titulo">Pendientes</h4>
+              <div id="sb-opiniones-pendientes"></div>
+            </div>
+            <div class="sb-opinion-columna">
+              <h4 id="sb-opiniones-publicadas-titulo">Publicadas</h4>
+              <div id="sb-opiniones-publicadas"></div>
+            </div>
+            <div class="sb-opinion-columna">
+              <h4 id="sb-opiniones-ocultas-titulo">Ocultas</h4>
+              <div id="sb-opiniones-ocultas"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="sb-footer">
+  <div class="sb-footer-links">
+    <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
+    <a href="https://wa.me/524771108120">477 110 8120</a>
+  </div>
+  <div class="sb-footer-social">
+    <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/capsulasdenopalsantebio" aria-label="Síguenos en Instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+    </a>
+  </div>
+  <small>Aviso de Privacidad · © 2026 SanteBio</small>
+</footer>
+
+<script src="assets/cart.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(function () {
+  // El login de administrador vive en cuenta.html; esta pagina es solo
+  // la interfaz de gestion en si. Si alguien llega aqui directo sin
+  // sesion, se le muestra un aviso en vez de dejarlo pasar.
+  var token = SanteBioAuth.getAdminToken();
+  var subhead = document.getElementById('sb-admin-sub');
+
+  if (!token) {
+    subhead.textContent = 'Acceso restringido.';
+    document.getElementById('sb-sin-sesion').style.display = 'block';
+  } else {
+    var usuario = SanteBioAuth.getAdminUsuario();
+    subhead.textContent = 'Bienvenido de vuelta.';
+    document.getElementById('sb-con-sesion').style.display = 'block';
+    document.getElementById('sb-admin-saludo').textContent = usuario;
+    document.getElementById('sb-admin-avatar').textContent = usuario.charAt(0).toUpperCase();
+    cargarKpis(token);
+  }
+
+  document.getElementById('sb-cerrar-sesion-admin').addEventListener('click', function () {
+    SanteBioAuth.cerrarSesionAdmin();
+    window.location.href = 'cuenta.html';
+  });
+
+  var pedidosCargados = false;
+  var opinionesCargadas = false;
+
+  document.querySelectorAll('.sb-dash-tabs button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.sb-dash-tabs button').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      document.querySelectorAll('.sb-dash-panel').forEach(function (panel) { panel.style.display = 'none'; });
+      document.getElementById('sb-panel-' + btn.dataset.panel).style.display = 'block';
+
+      if (btn.dataset.panel === 'pedidos' && !pedidosCargados) {
+        pedidosCargados = true;
+        cargarPedidosAdmin(token);
+      }
+      if (btn.dataset.panel === 'opiniones' && !opinionesCargadas) {
+        opinionesCargadas = true;
+        cargarOpinionesAdmin(token);
+      }
+    });
+  });
+
+  function cargarKpis(token) {
+    SanteBioAuth.llamarApi('listar_kpis_admin', {}, token).then(function (kpis) {
+      document.getElementById('sb-kpi-cargando').style.display = 'none';
+
+      if (!kpis.ok && kpis.ok !== undefined) {
+        document.getElementById('sb-kpi-cargando').textContent = kpis.error || 'No se pudieron cargar los KPIs.';
+        document.getElementById('sb-kpi-cargando').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('sb-kpi-contenido').style.display = 'block';
+      document.getElementById('sb-kpi-ventas').textContent = SanteBioCart.formatMXN(kpis.ventasTotales);
+      document.getElementById('sb-kpi-pedidos').textContent = kpis.totalPedidos;
+      document.getElementById('sb-kpi-ticket').textContent = SanteBioCart.formatMXN(kpis.ticketPromedio);
+      document.getElementById('sb-kpi-usuarios').textContent = kpis.totalUsuarios;
+
+      var productoTop = document.getElementById('sb-kpi-producto-top');
+      if (kpis.productoMasVendido) {
+        productoTop.innerHTML =
+          '<div class="sb-kpi-value" style="font-size:20px;">' + kpis.productoMasVendido.nombre + '</div>' +
+          '<div class="sb-kpi-sub">' + kpis.productoMasVendido.cantidad + ' unidades vendidas</div>';
+      } else {
+        productoTop.innerHTML = '<p class="sb-kpi-sub">Todavía no hay pedidos.</p>';
+      }
+
+      var metodosDiv = document.getElementById('sb-kpi-metodos');
+      if (kpis.ventasPorMetodo.length === 0) {
+        metodosDiv.innerHTML = '<p class="sb-kpi-sub">Todavía no hay pedidos.</p>';
+      } else {
+        var max = Math.max.apply(null, kpis.ventasPorMetodo.map(function (m) { return m.total; }));
+        metodosDiv.innerHTML = kpis.ventasPorMetodo.map(function (m) {
+          var pct = max > 0 ? Math.round((m.total / max) * 100) : 0;
+          return (
+            '<div class="sb-kpi-bar-row">' +
+            '<div class="sb-kpi-bar-label">' + m.metodo + '</div>' +
+            '<div class="sb-kpi-bar-track"><div class="sb-kpi-bar-fill" style="width:' + pct + '%;"></div></div>' +
+            '<div class="sb-kpi-bar-value">' + SanteBioCart.formatMXN(m.total) + '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+    });
+  }
+
+  /* --- Pedidos (admin) --- */
+  var todosPedidos = [];
+  var filtroPedidoActual = 'todos';
+
+  function cargarPedidosAdmin(token) {
+    var lista = document.getElementById('sb-pedidos-admin-lista');
+    lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    SanteBioAuth.llamarApi('listar_pedidos_admin', {}, token).then(function (res) {
+      todosPedidos = res.pedidos || [];
+      renderPedidosAdmin();
+    });
+  }
+
+  function renderPedidosAdmin() {
+    var lista = document.getElementById('sb-pedidos-admin-lista');
+    var pedidos = filtroPedidoActual === 'todos'
+      ? todosPedidos
+      : todosPedidos.filter(function (p) { return p.estado === filtroPedidoActual; });
+
+    if (pedidos.length === 0) {
+      lista.innerHTML = '<p class="sb-empty-panel">No hay pedidos en esta categoría.</p>';
+      return;
+    }
+
+    lista.innerHTML = pedidos.map(function (p) {
+      var fecha = new Date(p.creadoEn).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+      var itemsTexto = p.items.map(function (it) { return it.qty + 'x ' + it.name; }).join(', ');
+      var d = p.datosEntrega || {};
+      var estadoClase = 'sb-pedido-estado-' + p.estado.toLowerCase();
+      return (
+        '<div class="sb-pedido-admin-card" data-id="' + p.id + '">' +
+        '<div class="sb-pedido-admin-grid">' +
+        '<div>' +
+        '<div class="sb-pedido-card-top">' +
+        '<span class="sb-pedido-id">Pedido #' + p.id + '</span>' +
+        '<span class="sb-pedido-estado ' + estadoClase + '">' + p.estado + '</span>' +
+        '</div>' +
+        '<div class="sb-pedido-fecha">' + fecha + '</div>' +
+        '<div class="sb-pedido-cliente">' + (p.clienteCorreo || 'Cliente invitado') + '</div>' +
+        '<div class="sb-pedido-items">' + itemsTexto + '</div>' +
+        '<div class="sb-pedido-total">' + SanteBioCart.formatMXN(p.total) + '</div>' +
+        '<div class="sb-pedido-envio"><strong style="color: var(--ink);">Enviar a:</strong> ' +
+        (d.nombre || '') + ' — ' + (d.calle || '') + ', ' + (d.colonia || '') + ', ' +
+        (d.ciudad || '') + ', ' + (d.estado || '') + ' ' + (d.cp || '') +
+        (d.telefono ? ' · Tel: ' + d.telefono : '') +
+        '</div>' +
+        '</div>' +
+        '<select class="sb-pedido-select-estado" data-id="' + p.id + '">' +
+        ['Pendiente', 'Aceptado', 'Enviado', 'Entregado', 'Cancelado'].map(function (e) {
+          return '<option value="' + e + '"' + (e === p.estado ? ' selected' : '') + '>' + e + '</option>';
+        }).join('') +
+        '</select>' +
+        '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    lista.querySelectorAll('.sb-pedido-select-estado').forEach(function (select) {
+      select.addEventListener('change', function () {
+        var id = select.dataset.id;
+        select.disabled = true;
+        SanteBioAuth.llamarApi('actualizar_estado_pedido', { id: id, estado: select.value }, token).then(function () {
+          select.disabled = false;
+          var pedido = todosPedidos.find(function (p) { return String(p.id) === id; });
+          if (pedido) pedido.estado = select.value;
+          renderPedidosAdmin();
+        });
+      });
+    });
+  }
+
+  document.querySelectorAll('#sb-pedidos-filtros button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#sb-pedidos-filtros button').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      filtroPedidoActual = btn.dataset.filtro;
+      renderPedidosAdmin();
+    });
+  });
+
+  /* --- Opiniones (admin) --- */
+  function cargarOpinionesAdmin(token) {
+    ['sb-opiniones-pendientes', 'sb-opiniones-publicadas', 'sb-opiniones-ocultas'].forEach(function (id) {
+      document.getElementById(id).innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    });
+    SanteBioAuth.llamarApi('listar_opiniones_admin', {}, token).then(function (res) {
+      renderOpiniones(res.opiniones || [], token);
+    });
+  }
+
+  function estrellasHtml(n) {
+    return '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n);
+  }
+
+  function tarjetaOpinion(o, acciones) {
+    return (
+      '<div class="sb-opinion-card" data-id="' + o.id + '">' +
+      '<div class="sb-opinion-estrellas">' + estrellasHtml(o.estrellas) + '</div>' +
+      '<div class="sb-opinion-nombre">' + o.nombre + '</div>' +
+      '<div class="sb-opinion-texto">"' + o.texto + '"</div>' +
+      '<div class="sb-opinion-acciones">' + acciones + '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderOpiniones(opiniones, token) {
+    var pendientes = opiniones.filter(function (o) { return o.estado === 'pendiente'; });
+    var publicadas = opiniones.filter(function (o) { return o.estado === 'aprobado'; });
+    var ocultas = opiniones.filter(function (o) { return o.estado === 'oculto'; });
+
+    document.getElementById('sb-opiniones-pendientes-titulo').textContent = 'Pendientes (' + pendientes.length + ')';
+    document.getElementById('sb-opiniones-publicadas-titulo').textContent = 'Publicadas (' + publicadas.length + ')';
+    document.getElementById('sb-opiniones-ocultas-titulo').textContent = 'Ocultas (' + ocultas.length + ')';
+
+    var contPendientes = document.getElementById('sb-opiniones-pendientes');
+    var contPublicadas = document.getElementById('sb-opiniones-publicadas');
+    var contOcultas = document.getElementById('sb-opiniones-ocultas');
+
+    contPendientes.innerHTML = pendientes.length
+      ? pendientes.map(function (o) {
+          return tarjetaOpinion(o,
+            '<button type="button" class="sb-btn-aprobar" data-accion="aprobar_opinion" data-id="' + o.id + '">Aprobar</button>' +
+            '<button type="button" class="sb-btn-rechazar" data-accion="rechazar_opinion" data-id="' + o.id + '" data-confirmar="1">Rechazar</button>'
+          );
+        }).join('')
+      : '<p class="sb-empty-panel">Sin opiniones pendientes.</p>';
+
+    contPublicadas.innerHTML = publicadas.length
+      ? publicadas.map(function (o) {
+          return tarjetaOpinion(o,
+            '<button type="button" class="sb-btn-ocultar" data-accion="ocultar_opinion" data-id="' + o.id + '">Ocultar</button>'
+          );
+        }).join('')
+      : '<p class="sb-empty-panel">Sin opiniones publicadas.</p>';
+
+    contOcultas.innerHTML = ocultas.length
+      ? ocultas.map(function (o) {
+          return tarjetaOpinion(o,
+            '<button type="button" class="sb-btn-mostrar" data-accion="mostrar_opinion" data-id="' + o.id + '">Mostrar</button>' +
+            '<button type="button" class="sb-btn-eliminar" data-accion="eliminar_opinion" data-id="' + o.id + '" data-confirmar="1">Eliminar</button>'
+          );
+        }).join('')
+      : '<p class="sb-empty-panel">Sin opiniones ocultas.</p>';
+
+    document.querySelectorAll('#sb-panel-opiniones button[data-accion]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.dataset.confirmar && !window.confirm('Esta acción no se puede deshacer. ¿Continuar?')) {
+          return;
+        }
+        btn.disabled = true;
+        SanteBioAuth.llamarApi(btn.dataset.accion, { id: btn.dataset.id }, token).then(function () {
+          cargarOpinionesAdmin(token);
+        });
+      });
+    });
+  }
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.sb-reveal').forEach(function (el) { observer.observe(el); });
+})();
+</script>
+</body>
+</html>

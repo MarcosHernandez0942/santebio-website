@@ -1,0 +1,19 @@
+name: capsulas-nopal-santebio
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-santebio}
+      POSTGRES_USER: ${PGUSER:-santebio_admin}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-changeme}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      # Solo accesible desde esta misma maquina (127.0.0.1), no desde
+      # la red local -- antes estaba expuesto en todas las interfaces.
+      - "127.0.0.1:5434:5432"
+
+volumes:
+  db_data:
