@@ -13,8 +13,7 @@
     <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
   </a>
   <div class="sb-header-actions">
-    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>
-    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
+    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
     <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
       🛒 Carrito
       <span class="sb-cart-badge">0</span>
@@ -130,6 +129,7 @@
   <div class="sb-footer-links">
     <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
     <a href="https://wa.me/524771108120">477 110 8120</a>
+    <a href="seguimiento.html">Rastrear mi pedido</a>
   </div>
   <div class="sb-footer-social">
     <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
@@ -144,6 +144,7 @@
 
 <script src="assets/cart.js"></script>
 <script src="assets/auth.js"></script>
+<script src="assets/opiniones.js"></script>
 <script>
 (function () {
   // El login de administrador vive en cuenta.html; esta pagina es solo
@@ -324,15 +325,13 @@
     });
   }
 
-  function estrellasHtml(n) {
-    return '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n);
-  }
-
   function tarjetaOpinion(o, acciones) {
     return (
       '<div class="sb-opinion-card" data-id="' + o.id + '">' +
-      '<div class="sb-opinion-estrellas">' + estrellasHtml(o.estrellas) + '</div>' +
-      '<div class="sb-opinion-nombre">' + o.nombre + '</div>' +
+      '<div class="sb-opinion-estrellas">' + SanteBioOpiniones.estrellasHtml(o.estrellas) + '</div>' +
+      '<div class="sb-opinion-nombre">' + o.nombre +
+      (o.productoNombre ? ' <span class="sb-kpi-sub">· ' + o.productoNombre + '</span>' : '') +
+      '</div>' +
       '<div class="sb-opinion-texto">"' + o.texto + '"</div>' +
       '<div class="sb-opinion-acciones">' + acciones + '</div>' +
       '</div>'

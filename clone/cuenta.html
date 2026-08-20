@@ -13,8 +13,7 @@
     <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
   </a>
   <div class="sb-header-actions">
-    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>
-    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
+    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
     <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
       🛒 Carrito
       <span class="sb-cart-badge">0</span>
@@ -241,6 +240,7 @@
   <div class="sb-footer-links">
     <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
     <a href="https://wa.me/524771108120">477 110 8120</a>
+    <a href="seguimiento.html">Rastrear mi pedido</a>
   </div>
   <div class="sb-footer-social">
     <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
@@ -256,6 +256,7 @@
 <script src="assets/cart.js"></script>
 <script src="assets/auth.js"></script>
 <script src="assets/cp-lookup.js"></script>
+<script src="assets/opiniones.js"></script>
 <script>
 (function () {
   var sesionCard = document.getElementById('sb-cuenta-sesion');
@@ -453,18 +454,91 @@
       lista.innerHTML = pedidos.map(function (p) {
         var fecha = new Date(p.creadoEn).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
         var itemsTexto = p.items.map(function (it) { return it.qty + 'x ' + it.name; }).join(', ');
+        var calificados = p.productosCalificados || [];
+
+        var filasCalificar = p.items.map(function (it) {
+          var yaCalificado = calificados.indexOf(it.id) !== -1;
+          return (
+            '<div class="sb-calificar-producto-row" data-pedido-id="' + p.id + '" data-producto-id="' + it.id + '" data-producto-nombre="' + it.name + '">' +
+            '<span>' + it.name + '</span>' +
+            (yaCalificado
+              ? '<span class="sb-kpi-sub">✓ Ya calificado</span>'
+              : '<button type="button" class="sb-calificar-btn" data-accion="mostrar-form">⭐ Calificar</button>') +
+            '</div>' +
+            (yaCalificado ? '' :
+              '<div class="sb-calificar-form" style="display:none;">' +
+              '<div class="sb-estrella-picker sb-calificar-estrellas" style="margin-bottom: 10px;"></div>' +
+              '<textarea placeholder="¿Qué te pareció este producto?"></textarea>' +
+              '<button type="button" class="sb-btn sb-calificar-enviar" style="width:100%;">Enviar calificación</button>' +
+              '</div>')
+          );
+        }).join('');
+
+        var estadoClase = 'sb-pedido-estado-' + p.estado.toLowerCase();
         return (
           '<div class="sb-pedido-card">' +
           '<div class="sb-pedido-card-top">' +
           '<span class="sb-pedido-id">Pedido #' + p.id + '</span>' +
-          '<span class="sb-pedido-estado">' + p.estado + '</span>' +
+          '<span class="sb-pedido-estado ' + estadoClase + '">' + p.estado + '</span>' +
           '</div>' +
           '<div class="sb-pedido-fecha">' + fecha + '</div>' +
           '<div class="sb-pedido-items">' + itemsTexto + '</div>' +
           '<div class="sb-pedido-total">' + SanteBioCart.formatMXN(p.total) + '</div>' +
+          filasCalificar +
           '</div>'
         );
       }).join('');
+
+      wireCalificarPedido();
+    });
+  }
+
+  function wireCalificarPedido() {
+    document.querySelectorAll('.sb-calificar-producto-row [data-accion="mostrar-form"]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var form = btn.closest('.sb-calificar-producto-row').nextElementSibling;
+        var yaAbierto = form.style.display === 'block';
+        form.style.display = yaAbierto ? 'none' : 'block';
+        if (!yaAbierto && !form.dataset.wired) {
+          form.dataset.wired = '1';
+          form.__picker = SanteBioOpiniones.crearEstrellaPicker(form.querySelector('.sb-calificar-estrellas'), 5);
+        }
+      });
+    });
+
+    document.querySelectorAll('.sb-calificar-enviar').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var form = btn.closest('.sb-calificar-form');
+        var fila = form.previousElementSibling;
+        var textarea = form.querySelector('textarea');
+        var texto = textarea.value.trim();
+        if (!texto) {
+          textarea.focus();
+          return;
+        }
+
+        var usuario = SanteBioAuth.getUsuarioActual();
+        btn.disabled = true;
+        btn.textContent = 'Enviando…';
+
+        SanteBioAuth.llamarApi('nueva_opinion', {
+          nombre: usuario.nombre,
+          estrellas: form.__picker.getValor(),
+          texto: texto,
+          productoId: fila.dataset.productoId,
+          productoNombre: fila.dataset.productoNombre,
+          pedidoId: parseInt(fila.dataset.pedidoId, 10),
+        }, SanteBioAuth.getToken()).then(function (res) {
+          if (!res.ok) {
+            btn.disabled = false;
+            btn.textContent = 'Enviar calificación';
+            alert(res.error || 'No se pudo enviar tu calificación.');
+            return;
+          }
+          fila.innerHTML = '<span>' + fila.dataset.productoNombre + '</span><span class="sb-kpi-sub">✓ Ya calificado</span>';
+          form.remove();
+        });
+      });
     });
   }
 
@@ -542,6 +616,14 @@
       document.getElementById('sb-olvide-password-form').style.display = 'none';
     });
   });
+
+  // Si se llega aqui con ?tab=registro (ej. desde la invitacion a
+  // opinar en la pagina principal), abrir de una vez la pestaña de
+  // "Crear cuenta" en vez de la de login.
+  if (new URLSearchParams(window.location.search).get('tab') === 'registro') {
+    var tabRegistro = document.querySelector('.sb-auth-tabs button[data-tab="registro"]');
+    if (tabRegistro) tabRegistro.click();
+  }
 
   /* --- Olvide mi contraseña (sin sesion, por correo) --- */
   var olvideForm = document.getElementById('sb-olvide-password-form');

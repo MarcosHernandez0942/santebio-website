@@ -13,8 +13,7 @@
     <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
   </a>
   <div class="sb-header-actions">
-    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>
-    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
+    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
     <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
       🛒 Carrito
       <span class="sb-cart-badge">0</span>
@@ -49,6 +48,7 @@
         <div class="sb-card sb-reveal">
           <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
           <h3>90 Cápsulas</h3>
+          <div class="sb-producto-rating" data-producto-id="998"></div>
           <div class="sb-price">$269 MXN</div>
           <button class="sb-btn sb-add-to-cart" data-id="998" data-name="90 Cápsulas" data-price="269" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
         </div>
@@ -56,6 +56,7 @@
         <div class="sb-card sb-reveal">
           <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
           <h3>150 Cápsulas</h3>
+          <div class="sb-producto-rating" data-producto-id="999"></div>
           <div class="sb-price">$399 MXN</div>
           <button class="sb-btn sb-add-to-cart" data-id="999" data-name="150 Cápsulas" data-price="399" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
         </div>
@@ -74,6 +75,7 @@
         <div class="sb-card sb-reveal">
           <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
           <h3>Paquete 1 — 1 frasco de 150 + 1 de 90</h3>
+          <div class="sb-producto-rating" data-producto-id="1250"></div>
           <div class="sb-price">$501 MXN</div>
           <button class="sb-btn sb-add-to-cart" data-id="1250" data-name="Paquete 1 (150 + 90 cápsulas)" data-price="501" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
         </div>
@@ -82,6 +84,7 @@
           <span class="sb-card-badge sb-card-badge-savings">Ahorro especial</span>
           <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
           <h3>Paquete 2 — 3x2 de 90 cápsulas</h3>
+          <div class="sb-producto-rating" data-producto-id="1252"></div>
           <div class="sb-price">$538 MXN</div>
           <button class="sb-btn sb-add-to-cart" data-id="1252" data-name="Paquete 2 - 3x2 (90 cápsulas)" data-price="538" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
         </div>
@@ -90,6 +93,7 @@
           <span class="sb-card-badge sb-card-badge-recommended">Recomendado</span>
           <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
           <h3>Paquete 3 — 3x2 de 150 cápsulas</h3>
+          <div class="sb-producto-rating" data-producto-id="1253"></div>
           <div class="sb-price">$798 MXN</div>
           <button class="sb-btn sb-add-to-cart" data-id="1253" data-name="Paquete 3 - 3x2 (150 cápsulas)" data-price="798" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
         </div>
@@ -104,6 +108,7 @@
   <div class="sb-footer-links">
     <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
     <a href="https://wa.me/524771108120">477 110 8120</a>
+    <a href="seguimiento.html">Rastrear mi pedido</a>
   </div>
   <div class="sb-footer-social">
     <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
@@ -117,6 +122,8 @@
 </footer>
 
 <script src="assets/cart.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/opiniones.js"></script>
 <script>
 document.querySelectorAll('.sb-add-to-cart').forEach(function (btn) {
   btn.addEventListener('click', function () {
@@ -128,6 +135,25 @@ document.querySelectorAll('.sb-add-to-cart').forEach(function (btn) {
       qty: 1,
     });
     window.location.href = 'carrito.html';
+  });
+});
+
+/* Mientras un producto no tenga opiniones reales aprobadas, se
+   muestra una calificacion base de 4.8 (solo visual, no se crea
+   ninguna opinion falsa en la base de datos) para que la tienda no se
+   vea vacia. En cuanto el producto tenga su primera opinion real
+   aprobada, este numero se reemplaza solo por el promedio real. */
+var CALIFICACION_BASE = 4.8;
+
+SanteBioAuth.llamarApi('calificaciones_por_producto', {}, null).then(function (res) {
+  var calificaciones = res.calificaciones || {};
+  document.querySelectorAll('.sb-producto-rating').forEach(function (el) {
+    var c = calificaciones[el.dataset.productoId];
+    var promedio = c ? c.promedio : CALIFICACION_BASE;
+    var detalle = c ? (c.total + (c.total === 1 ? ' opinión' : ' opiniones')) : '';
+    el.innerHTML =
+      '<span class="sb-producto-rating-estrellas">' + SanteBioOpiniones.estrellasHtml(Math.round(promedio)) + '</span>' +
+      '<span>' + promedio + (detalle ? ' (' + detalle + ')' : '') + '</span>';
   });
 });
 

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rastrear mi pedido — SanteBio</title>
+<link rel="icon" type="image/png" href="wp-content/uploads/2026/03/logo-transparente.webp" />
+<link rel="stylesheet" href="assets/shop.css" />
+</head>
+<body>
+<header class="sb-header">
+  <a class="sb-logo-link" href="index.html">
+    <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
+  </a>
+  <div class="sb-header-actions">
+    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>
+    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
+    <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
+      🛒 Carrito
+      <span class="sb-cart-badge">0</span>
+    </a>
+  </div>
+</header>
+
+<section class="sb-hero">
+  <div class="sb-eyebrow">Seguimiento</div>
+  <h1>Rastrea tu pedido</h1>
+  <p class="sb-subhead">Sin necesidad de cuenta — solo necesitas tu folio y el correo con el que compraste.</p>
+</section>
+
+<main>
+  <section class="sb-section">
+    <div class="sb-section-inner" style="max-width: 480px;">
+
+      <form class="sb-form-card sb-reveal" id="sb-seguimiento-form">
+        <div id="sb-seguimiento-error" class="sb-form-error" style="display:none;"></div>
+        <div class="sb-form-group">
+          <label for="sb-folio">Folio de tu pedido</label>
+          <input type="text" id="sb-folio" placeholder="SB-XXXXXX" required style="text-transform: uppercase;" />
+        </div>
+        <div class="sb-form-group">
+          <label for="sb-correo-seguimiento">Correo con el que compraste</label>
+          <input type="email" id="sb-correo-seguimiento" required />
+        </div>
+        <button type="submit" class="sb-btn" style="width: 100%;" id="sb-seguimiento-btn">Consultar estatus</button>
+      </form>
+
+      <div id="sb-seguimiento-resultado" style="display:none; margin-top: 20px;"></div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="sb-footer">
+  <div class="sb-footer-links">
+    <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
+    <a href="https://wa.me/524771108120">477 110 8120</a>
+  </div>
+  <div class="sb-footer-social">
+    <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/capsulasdenopalsantebio" aria-label="Síguenos en Instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+    </a>
+  </div>
+  <small>Aviso de Privacidad · © 2026 SanteBio</small>
+</footer>
+
+<script src="assets/cart.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var folioInput = document.getElementById('sb-folio');
+  var correoInput = document.getElementById('sb-correo-seguimiento');
+  if (params.get('folio')) folioInput.value = params.get('folio');
+  if (params.get('email')) correoInput.value = params.get('email');
+
+  function estadoClase(estado) {
+    return 'sb-pedido-estado-' + estado.toLowerCase();
+  }
+
+  document.getElementById('sb-seguimiento-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var errorDiv = document.getElementById('sb-seguimiento-error');
+    var resultadoDiv = document.getElementById('sb-seguimiento-resultado');
+    errorDiv.style.display = 'none';
+    resultadoDiv.style.display = 'none';
+
+    var btn = document.getElementById('sb-seguimiento-btn');
+    btn.disabled = true;
+    btn.textContent = 'Consultando…';
+
+    SanteBioAuth.llamarApi('consultar_pedido_publico', {
+      folio: folioInput.value.trim(),
+      email: correoInput.value.trim(),
+    }, null).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Consultar estatus';
+
+      if (!res.ok) {
+        errorDiv.textContent = res.error || 'No se pudo consultar tu pedido.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      var p = res.pedido;
+      var fecha = new Date(p.creadoEn).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+      var itemsTexto = p.items.map(function (it) { return it.qty + 'x ' + it.name; }).join(', ');
+
+      resultadoDiv.innerHTML =
+        '<div class="sb-pedido-card">' +
+        '<div class="sb-pedido-card-top">' +
+        '<span class="sb-pedido-id">Folio ' + p.folio + '</span>' +
+        '<span class="sb-pedido-estado ' + estadoClase(p.estado) + '">' + p.estado + '</span>' +
+        '</div>' +
+        '<div class="sb-pedido-fecha">' + fecha + '</div>' +
+        '<div class="sb-pedido-items">' + itemsTexto + '</div>' +
+        '<div class="sb-pedido-total">' + SanteBioCart.formatMXN(p.total) + '</div>' +
+        (p.ciudad ? '<div class="sb-pedido-envio">Enviando a: ' + p.ciudad + ', ' + p.estadoDireccion + '</div>' : '') +
+        '</div>';
+      resultadoDiv.style.display = 'block';
+    });
+  });
+
+  // Si ya llegamos con folio y correo (ej. desde el correo de
+  // confirmacion o desde el modal de "gracias por tu compra"),
+  // consultar de una vez sin esperar a que el usuario le de clic.
+  if (params.get('folio') && params.get('email')) {
+    document.getElementById('sb-seguimiento-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+  }
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.sb-reveal').forEach(function (el) { observer.observe(el); });
+})();
+</script>
+</body>
+</html>

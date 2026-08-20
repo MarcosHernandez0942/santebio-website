@@ -5,7 +5,7 @@ import bcrypt
 from flask import Blueprint, request, jsonify
 from auth import firmar_token, verificar_token
 from db import db
-from email_utils import enviar_correo_restablecer
+from email_utils import enviar_correo_restablecer, enviar_correo_confirmacion_pedido
 from models import Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion
 
 bp = Blueprint("accion", __name__)
@@ -15,8 +15,22 @@ ESTADOS_PEDIDO = {"Pendiente", "Aceptado", "Enviado", "Entregado", "Cancelado"}
 ACCIONES_PUBLICAS = {
     "registro_usuario", "login_usuario", "login_admin", "crear_pedido",
     "solicitar_cambio_password", "confirmar_cambio_password",
-    "nueva_opinion", "listar_opiniones_publicas",
+    "listar_opiniones_publicas", "calificaciones_por_producto",
+    "consultar_pedido_publico",
 }
+# "nueva_opinion" YA NO es publica a proposito: solo clientes con
+# sesion iniciada pueden opinar (pedido de Marcos, "para que se filtre
+# aun mas y solo clientes puedan opinar").
+
+# Sin 0/O/1/I ni vocales que formen palabras raras por accidente -- un
+# folio se lee/escribe a mano, asi que evita caracteres que se
+# confunden entre si.
+_ALFABETO_FOLIO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def generar_folio():
+    sufijo = "".join(secrets.choice(_ALFABETO_FOLIO) for _ in range(6))
+    return f"SB-{sufijo}"
 
 
 @bp.post("/accion")
@@ -41,6 +55,8 @@ def accion():
             return login_admin(body)
         if tipo_accion == "crear_pedido":
             return crear_pedido(body, datos_token)
+        if tipo_accion == "consultar_pedido_publico":
+            return consultar_pedido_publico(body)
         if tipo_accion == "listar_kpis_admin":
             return listar_kpis_admin(datos_token)
         if tipo_accion == "listar_direcciones":
@@ -68,9 +84,11 @@ def accion():
         if tipo_accion == "actualizar_estado_pedido":
             return actualizar_estado_pedido(body, datos_token)
         if tipo_accion == "nueva_opinion":
-            return nueva_opinion(body)
+            return nueva_opinion(body, datos_token)
         if tipo_accion == "listar_opiniones_publicas":
             return listar_opiniones_publicas()
+        if tipo_accion == "calificaciones_por_producto":
+            return calificaciones_por_producto()
         if tipo_accion == "listar_opiniones_admin":
             return listar_opiniones_admin(datos_token)
         if tipo_accion == "aprobar_opinion":
@@ -85,7 +103,8 @@ def accion():
             return eliminar_opinion(body, datos_token, desde="oculto")
         return jsonify({"error": "Acción no reconocida."}), 400
     except Exception as error:  # noqa: BLE001
-        print(f"[accion:{tipo_accion}]", error)
+        import traceback
+        print(f"[accion:{tipo_accion}] " + traceback.format_exc(), flush=True)
         return jsonify({"error": "Error interno del servidor."}), 500
 
 
@@ -152,7 +171,14 @@ def crear_pedido(body, datos_token):
     if datos_token and datos_token.get("tipo") == "usuario":
         usuario_id = datos_token.get("usuarioId")
 
+    folio = generar_folio()
+    # Practicamente imposible que choque, pero por si acaso se
+    # regenera en vez de fallar el pedido.
+    while db.session.query(Pedido).filter_by(folio=folio).first():
+        folio = generar_folio()
+
     pedido = Pedido(
+        folio=folio,
         usuario_id=usuario_id,
         items=items,
         total=total,
@@ -162,7 +188,40 @@ def crear_pedido(body, datos_token):
     db.session.add(pedido)
     db.session.commit()
 
+    correo_cliente = (datos_entrega or {}).get("email")
+    if correo_cliente:
+        enviar_correo_confirmacion_pedido(correo_cliente, folio, items, float(total))
+
     return jsonify({"ok": True, "pedido": pedido.to_dict()})
+
+
+def consultar_pedido_publico(body):
+    folio = (body.get("folio") or "").strip().upper()
+    correo = (body.get("email") or "").strip().lower()
+
+    if not folio or not correo:
+        return jsonify({"error": "Falta el folio o el correo."}), 400
+
+    pedido = db.session.query(Pedido).filter_by(folio=folio).first()
+    # Mismo mensaje si el folio no existe o si el correo no coincide,
+    # para no revelar cual de los dos esta mal a quien esta adivinando.
+    if not pedido or (pedido.datos_entrega or {}).get("email", "").strip().lower() != correo:
+        return jsonify({"ok": False, "error": "No encontramos un pedido con ese folio y correo."})
+
+    d = pedido.datos_entrega or {}
+    return jsonify({
+        "ok": True,
+        "pedido": {
+            "folio": pedido.folio,
+            "estado": pedido.estado,
+            "items": pedido.items,
+            "total": float(pedido.total),
+            "metodoPago": pedido.metodo_pago,
+            "creadoEn": pedido.creado_en.isoformat(),
+            "ciudad": d.get("ciudad"),
+            "estadoDireccion": d.get("estado"),
+        },
+    })
 
 
 def listar_kpis_admin(datos_token):
@@ -357,7 +416,15 @@ def mis_pedidos(datos_token):
         .order_by(Pedido.creado_en.desc())
         .all()
     )
-    return jsonify({"pedidos": [p.to_dict() for p in pedidos]})
+
+    resultado = []
+    for p in pedidos:
+        d = p.to_dict()
+        calificados = db.session.query(Opinion.producto_id).filter_by(pedido_id=p.id).all()
+        d["productosCalificados"] = [c[0] for c in calificados]
+        resultado.append(d)
+
+    return jsonify({"pedidos": resultado})
 
 
 def listar_tarjetas(datos_token):
@@ -453,15 +520,53 @@ def actualizar_estado_pedido(body, datos_token):
     return jsonify({"ok": True, "pedido": pedido.to_dict()})
 
 
-def nueva_opinion(body):
-    nombre = body.get("nombre")
+def nueva_opinion(body, datos_token):
+    # Solo clientes con sesion iniciada pueden opinar -- ya no es
+    # anonimo/publico (pedido de Marcos, para filtrar mas quien opina).
+    # El nombre se toma SIEMPRE de la cuenta real, nunca de lo que
+    # venga en el body, para que no se pueda opinar con un nombre falso.
+    if not exigir_tipo(datos_token, "usuario"):
+        return jsonify({"error": "Debes iniciar sesión para dejar tu opinión."}), 401
+
+    usuario = db.session.query(Usuario).filter_by(id=datos_token.get("usuarioId")).first()
+    if not usuario:
+        return jsonify({"error": "Usuario no encontrado."}), 404
+
     estrellas = body.get("estrellas")
     texto = body.get("texto")
+    producto_id = body.get("productoId")
+    producto_nombre = body.get("productoNombre")
+    pedido_id = body.get("pedidoId")
 
-    if not nombre or not texto or not isinstance(estrellas, int) or not (1 <= estrellas <= 5):
+    if not texto or not isinstance(estrellas, int) or not (1 <= estrellas <= 5):
         return jsonify({"error": "Faltan datos obligatorios o la calificación no es válida (1-5)."}), 400
 
-    opinion = Opinion(nombre=nombre, estrellas=estrellas, texto=texto, estado="pendiente")
+    if pedido_id is not None:
+        # Calificar un producto de un pedido puntual exige ademas que
+        # el pedido sea realmente del usuario que la esta enviando --
+        # si no, cualquiera podria mandar pedidoId de otra persona.
+        pedido = db.session.query(Pedido).filter_by(id=pedido_id).first()
+        if not pedido or pedido.usuario_id != usuario.id:
+            return jsonify({"error": "Ese pedido no te pertenece."}), 403
+
+        ya_existe = (
+            db.session.query(Opinion)
+            .filter_by(pedido_id=pedido_id, producto_id=producto_id)
+            .first()
+        )
+        if ya_existe:
+            return jsonify({"ok": False, "error": "Ya calificaste este producto de este pedido."})
+
+    opinion = Opinion(
+        nombre=usuario.nombre,
+        estrellas=estrellas,
+        texto=texto,
+        estado="pendiente",
+        producto_id=producto_id,
+        producto_nombre=producto_nombre,
+        pedido_id=pedido_id,
+        usuario_id=usuario.id,
+    )
     db.session.add(opinion)
     db.session.commit()
     return jsonify({"ok": True})
@@ -475,6 +580,26 @@ def listar_opiniones_publicas():
         .all()
     )
     return jsonify({"opiniones": [o.to_dict() for o in opiniones]})
+
+
+def calificaciones_por_producto():
+    opiniones = (
+        db.session.query(Opinion)
+        .filter(Opinion.estado == "aprobado", Opinion.producto_id.isnot(None))
+        .all()
+    )
+
+    agregados = {}
+    for o in opiniones:
+        a = agregados.setdefault(o.producto_id, {"suma": 0, "total": 0})
+        a["suma"] += o.estrellas
+        a["total"] += 1
+
+    resultado = {
+        pid: {"promedio": round(a["suma"] / a["total"], 1), "total": a["total"]}
+        for pid, a in agregados.items()
+    }
+    return jsonify({"calificaciones": resultado})
 
 
 def listar_opiniones_admin(datos_token):

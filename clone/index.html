@@ -513,6 +513,269 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
   }
 }
 </style>
+<style id="opiniones-home-css">
+/* Seccion de opiniones de clientes, insertada por JS justo antes del
+   footer. Vive en la pagina principal (se movio aqui desde una pagina
+   aparte a peticion de Marcos). Mismo tratamiento de video de fondo que
+   las secciones "origen" y "comparacion" (petición de Marcos: "que se
+   vea mejor... como los demas con video de fondo"), pero a diferencia
+   de esas (puramente decorativas, se ocultan si el video no existe),
+   esta tiene el formulario real adentro -- por eso el fondo verde
+   solido queda como respaldo permanente en vez de desaparecer. */
+.sb-opiniones-home {
+  position: relative;
+  padding: 72px 24px;
+  overflow: hidden;
+  background: #204F2B;
+}
+.sb-opiniones-home video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.sb-opiniones-home video.sb-video-ready {
+  opacity: 1;
+}
+.sb-opiniones-home-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(32, 79, 43, 0.78) 0%, rgba(32, 79, 43, 0.55) 40%, rgba(32, 79, 43, 0.88) 100%);
+}
+.sb-opiniones-home-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.sb-opiniones-home .sb-eyebrow {
+  color: #93DB4B;
+  text-align: center;
+}
+.sb-opiniones-home-heading {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.sb-opiniones-home-heading h2 {
+  font-size: clamp(28px, 4vw, 42px);
+  color: #fff;
+  margin: 8px 0 0;
+  font-weight: 600;
+}
+.sb-opiniones-home-carousel {
+  position: relative;
+  margin-bottom: 40px;
+  /* Espacio reservado a los lados solo para las flechas, para que
+     nunca se encimen con la primera/ultima tarjeta. */
+  padding: 0 52px;
+}
+@media (max-width: 600px) {
+  .sb-opiniones-home-carousel {
+    padding: 0 40px;
+  }
+}
+.sb-opiniones-home-grid {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px 4px 8px;
+  scrollbar-width: none;
+}
+.sb-opiniones-home-grid::-webkit-scrollbar {
+  display: none;
+}
+.sb-opinion-home-card {
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 18px 34px -18px rgba(0, 0, 0, 0.45);
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+}
+@media (min-width: 640px) {
+  .sb-opinion-home-card {
+    flex-basis: 320px;
+  }
+}
+.sb-carrusel-flecha {
+  /* !important necesario: el tema (Astra) trae un estilo global para
+     "button" con padding grande (13px 50px) que le gana a esta regla
+     por orden de cascada -- se vio como un boton ancho de 100px en vez
+     de un circulo, en lugar de perseguir la especificidad exacta del
+     tema se fuerza aqui, ya que es un elemento propio y aislado. */
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #204F2B !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.5);
+  z-index: 3;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.sb-carrusel-flecha:hover {
+  background: #fff !important;
+  transform: translateY(-50%) scale(1.06) !important;
+}
+.sb-carrusel-prev {
+  left: 0;
+}
+.sb-carrusel-next {
+  right: 0;
+}
+@media (max-width: 600px) {
+  .sb-carrusel-flecha {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+  .sb-carrusel-prev {
+    left: 2px;
+  }
+  .sb-carrusel-next {
+    right: 2px;
+  }
+}
+.sb-opinion-home-estrellas {
+  color: #E3C77A;
+  font-size: 14px;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.sb-opinion-home-nombre {
+  font-weight: 700;
+  color: #204F2B;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.sb-opinion-home-texto {
+  font-style: italic;
+  color: rgba(32, 79, 43, 0.8);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.sb-opiniones-home-form {
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 18px;
+  padding: 32px;
+  max-width: 480px;
+  margin: 0 auto;
+  box-shadow: 0 18px 34px -18px rgba(0, 0, 0, 0.45);
+}
+.sb-opiniones-home-form h3 {
+  margin: 0 0 20px;
+  color: #204F2B;
+  font-size: 19px;
+  text-align: center;
+}
+.sb-opiniones-home-form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #204F2B;
+  margin-bottom: 6px;
+}
+.sb-opiniones-home-form .sb-campo {
+  margin-bottom: 18px;
+}
+.sb-opiniones-home-form input,
+.sb-opiniones-home-form textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid rgba(32, 79, 43, 0.28);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #204F2B;
+  box-sizing: border-box;
+}
+.sb-opiniones-home-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.sb-opiniones-home-form input:focus,
+.sb-opiniones-home-form textarea:focus {
+  outline: none;
+  border-color: #699431;
+  box-shadow: 0 0 0 3px rgba(105, 148, 49, 0.15);
+}
+.sb-opiniones-home-form input[readonly] {
+  background: rgba(32, 79, 43, 0.06);
+  color: #204F2B;
+  cursor: default;
+}
+.sb-opiniones-home .sb-estrella-picker {
+  display: flex;
+  gap: 4px;
+  font-size: 28px;
+  line-height: 1;
+}
+.sb-opiniones-home .sb-estrella-picker span {
+  cursor: pointer;
+  color: rgba(32, 79, 43, 0.28);
+  transition: color 0.1s ease;
+}
+.sb-opiniones-home .sb-estrella-picker span.is-activa {
+  color: #E3C77A;
+}
+.sb-opiniones-home-btn {
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 999px;
+  border: none;
+  background: #204F2B;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+.sb-opiniones-home-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.sb-opiniones-home-mensaje {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.sb-opiniones-home-mensaje.exito {
+  background: rgba(105, 148, 49, 0.1);
+  color: #204F2B;
+  border: 1px solid rgba(105, 148, 49, 0.35);
+}
+.sb-opiniones-home-mensaje.error {
+  background: rgba(179, 65, 60, 0.1);
+  color: #b3413c;
+  border: 1px solid rgba(179, 65, 60, 0.3);
+}
+.sb-opiniones-home-vacio {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+</style>
 <style id="visual-polish-css">
 /* Mejoras visuales adicionales (petición de Marcos: "que se vea más
    viva") — ritmo de color entre secciones, íconos en círculo, badges y
@@ -817,8 +1080,10 @@ class="hfeed site" id="page"><div class="ekit-template-content-markup ekit-templ
 <a class="elementor-icon" href="carrito.html" aria-label="Ver carrito">
 <svg class="ekit-svg-icon icon-online-shopping-cart" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M1.184 4.246h3.394l4.834 17.481c0.138 0.513 0.612 0.868 1.144 0.868h14.857c0.474 0 0.888-0.276 1.085-0.71l5.406-12.43c0.158-0.375 0.118-0.789-0.099-1.125s-0.592-0.533-0.987-0.533h-16.416c-0.651 0-1.184 0.533-1.184 1.184s0.533 1.184 1.184 1.184h14.6l-4.38 10.062h-13.18l-4.834-17.481c-0.138-0.513-0.612-0.868-1.144-0.868h-4.282c-0.651 0-1.184 0.533-1.184 1.184s0.533 1.184 1.184 1.184zM9.431 30.922c1.48 0 2.683-1.204 2.683-2.683s-1.204-2.683-2.683-2.683-2.683 1.203-2.683 2.683 1.204 2.683 2.683 2.683zM26.202 30.922c0.059 0 0.138 0 0.197 0 0.71-0.059 1.361-0.375 1.835-0.927 0.474-0.533 0.691-1.223 0.651-1.953-0.099-1.46-1.381-2.585-2.861-2.486s-2.585 1.401-2.486 2.861c0.099 1.401 1.263 2.506 2.664 2.506z"></path></svg>			</a></div></div><a href="cuenta.html" class="elementor-icon sb-cuenta-icon-link sb-header-icon-link" aria-label="Mi cuenta">
 <svg class="ekit-svg-icon icon-user" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+<g transform="translate(16 17.5) scale(1.1) translate(-16 -17.5)">
 <circle cx="16" cy="10.5" r="6.5"></circle>
 <path d="M4 29.5c0-7.7 5.4-12.5 12-12.5s12 4.8 12 12.5a1.5 1.5 0 0 1-1.5 1.5h-21A1.5 1.5 0 0 1 4 29.5z"></path>
+</g>
 </svg>
 </a></div><div class="elementor-element elementor-element-f0d3e5e e-con-full navbar-scroll elementor-hidden-desktop elementor-hidden-tablet e-flex e-con e-parent" data-id="f0d3e5e" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}"><div class="elementor-element elementor-element-daedf2a logo elementor-widget-mobile__width-initial elementor-widget elementor-widget-html" data-id="daedf2a" data-element_type="widget" data-e-type="widget" data-widget_type="html.default">
 <a href="index.html" aria-label="Ir al inicio" class="sb-logo-home-link"><img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjU4MCIgdmlld0JveD0iMCAwIDE2MDAgNTgwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" id="logo" data-src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" width="1600" height="580" /></a></div><a href="tienda.html" class="elementor-icon sb-tienda-icon-link sb-header-icon-link" aria-label="Ir a la tienda">
@@ -831,8 +1096,10 @@ class="hfeed site" id="page"><div class="ekit-template-content-markup ekit-templ
 <a class="elementor-icon" href="carrito.html" aria-label="Ver carrito">
 <svg class="ekit-svg-icon icon-online-shopping-cart" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M1.184 4.246h3.394l4.834 17.481c0.138 0.513 0.612 0.868 1.144 0.868h14.857c0.474 0 0.888-0.276 1.085-0.71l5.406-12.43c0.158-0.375 0.118-0.789-0.099-1.125s-0.592-0.533-0.987-0.533h-16.416c-0.651 0-1.184 0.533-1.184 1.184s0.533 1.184 1.184 1.184h14.6l-4.38 10.062h-13.18l-4.834-17.481c-0.138-0.513-0.612-0.868-1.144-0.868h-4.282c-0.651 0-1.184 0.533-1.184 1.184s0.533 1.184 1.184 1.184zM9.431 30.922c1.48 0 2.683-1.204 2.683-2.683s-1.204-2.683-2.683-2.683-2.683 1.203-2.683 2.683 1.204 2.683 2.683 2.683zM26.202 30.922c0.059 0 0.138 0 0.197 0 0.71-0.059 1.361-0.375 1.835-0.927 0.474-0.533 0.691-1.223 0.651-1.953-0.099-1.46-1.381-2.585-2.861-2.486s-2.585 1.401-2.486 2.861c0.099 1.401 1.263 2.506 2.664 2.506z"></path></svg>			</a></div></div><a href="cuenta.html" class="elementor-icon sb-cuenta-icon-link sb-header-icon-link" aria-label="Mi cuenta">
 <svg class="ekit-svg-icon icon-user" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+<g transform="translate(16 17.5) scale(1.1) translate(-16 -17.5)">
 <circle cx="16" cy="10.5" r="6.5"></circle>
 <path d="M4 29.5c0-7.7 5.4-12.5 12-12.5s12 4.8 12 12.5a1.5 1.5 0 0 1-1.5 1.5h-21A1.5 1.5 0 0 1 4 29.5z"></path>
+</g>
 </svg>
 </a><div class="elementor-element elementor-element-f85ef1a elementor-widget__width-initial elementor-widget-tablet__width-initial elementor-widget elementor-widget-html" data-id="f85ef1a" data-element_type="widget" data-e-type="widget" data-widget_type="html.default"> <script type="litespeed/javascript">const logoNormal="https://capsulasdenopal.com/wp-content/uploads/2026/03/logo-transparente.webp";const logoScroll="https://capsulasdenopal.com/wp-content/uploads/2026/03/logo-blanco.webp";document.addEventListener("scroll",function(){const navbar=document.querySelector(".navbar-scroll");const logo=document.getElementById("logo");if(window.scrollY>50){navbar.classList.add("scrolled");logo.src=logoScroll}else{navbar.classList.remove("scrolled");logo.src=logoNormal}})</script> </div></div></div></div><div id="content" class="site-content"><div class="ast-container"><div id="primary" class="content-area primary"><main id="main" class="site-main"><article
 class="post-44 page type-page status-publish ast-article-single" id="post-44" itemtype="https://schema.org/CreativeWork" itemscope="itemscope"><header class="entry-header ast-no-thumbnail ast-no-title ast-header-without-markup"></header><div class="entry-content clear"
@@ -982,9 +1249,8 @@ abdominal</h2></div></div><div class="elementor-element elementor-element-a91283
 frecuente</h2></div></div><div class="elementor-element elementor-element-333a417 e-con-full e-flex elementor-invisible e-con e-child" data-id="333a417" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;animation&quot;:&quot;fadeInUp&quot;}"><div class="elementor-element elementor-element-c923b7f elementor-widget elementor-widget-image" data-id="c923b7f" data-element_type="widget" data-e-type="widget" data-widget_type="image.default">
 <img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5MSIgaGVpZ2h0PSI5MSIgdmlld0JveD0iMCAwIDkxIDkxIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" loading="lazy" decoding="async" width="91" height="91" data-src="wp-content/uploads/2026/03/19.webp" class="attachment-large size-large wp-image-92" alt="Antojos entre comidas" /></div><div class="elementor-element elementor-element-17f4611 elementor-widget elementor-widget-heading" data-id="17f4611" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default">Antojos entre
 comidas</h2></div></div><div class="elementor-element elementor-element-9f9cdfe e-con-full e-flex elementor-invisible e-con e-child" data-id="9f9cdfe" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;animation&quot;:&quot;fadeInRight&quot;}"><div class="elementor-element elementor-element-b805e04 elementor-widget elementor-widget-image" data-id="b805e04" data-element_type="widget" data-e-type="widget" data-widget_type="image.default">
-<img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5MSIgaGVpZ2h0PSI5MSIgdmlld0JveD0iMCAwIDkxIDkxIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" loading="lazy" decoding="async" width="91" height="91" data-src="wp-content/uploads/2026/03/15.webp" class="attachment-large size-large wp-image-93" alt="Falta de saciedad entre comidas" /></div><div class="elementor-element elementor-element-b38a8b4 elementor-widget elementor-widget-heading" data-id="b38a8b4" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default">Falta de
-saciedad entre
-comidas</h2></div></div><div class="elementor-element elementor-element-da242ba e-con-full e-flex elementor-invisible e-con e-child" data-id="da242ba" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;animation&quot;:&quot;fadeInRight&quot;}"><div class="elementor-element elementor-element-87f16a2 elementor-widget elementor-widget-image" data-id="87f16a2" data-element_type="widget" data-e-type="widget" data-widget_type="image.default">
+<img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5MSIgaGVpZ2h0PSI5MSIgdmlld0JveD0iMCAwIDkxIDkxIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" loading="lazy" decoding="async" width="91" height="91" data-src="wp-content/uploads/2026/03/15.webp" class="attachment-large size-large wp-image-93" alt="Dificultad para controlar peso" /></div><div class="elementor-element elementor-element-b38a8b4 elementor-widget elementor-widget-heading" data-id="b38a8b4" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default">Dificultad para
+controlar peso</h2></div></div><div class="elementor-element elementor-element-da242ba e-con-full e-flex elementor-invisible e-con e-child" data-id="da242ba" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;animation&quot;:&quot;fadeInRight&quot;}"><div class="elementor-element elementor-element-87f16a2 elementor-widget elementor-widget-image" data-id="87f16a2" data-element_type="widget" data-e-type="widget" data-widget_type="image.default">
 <img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5MSIgaGVpZ2h0PSI5MSIgdmlld0JveD0iMCAwIDkxIDkxIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" loading="lazy" decoding="async" width="91" height="91" data-src="wp-content/uploads/2026/03/16.webp" class="attachment-large size-large wp-image-94" alt="Falta de fibra en la dieta" /></div><div class="elementor-element elementor-element-da35106 elementor-widget elementor-widget-heading" data-id="da35106" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default">Falta de fibra
 en la dieta</h2></div></div></div></div></div><div class="elementor-element elementor-element-4586c8b e-flex e-con-boxed e-con e-parent" data-id="4586c8b" data-element_type="container" data-e-type="container"><div class="e-con-inner"><div class="elementor-element elementor-element-fac83cf elementor-widget elementor-widget-menu-anchor" data-id="fac83cf" data-element_type="widget" data-e-type="widget" data-widget_type="menu-anchor.default"><div class="elementor-menu-anchor" id="beneficios"></div></div><div class="elementor-element elementor-element-bd940b0 elementor-invisible elementor-widget elementor-widget-heading" data-id="bd940b0" data-element_type="widget" data-e-type="widget" data-settings="{&quot;_animation&quot;:&quot;fadeInDown&quot;}" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default">Beneficios</h2></div><div class="elementor-element elementor-element-3952f52 elementor-widget-divider--view-line elementor-widget elementor-widget-divider" data-id="3952f52" data-element_type="widget" data-e-type="widget" data-widget_type="divider.default"><div class="elementor-divider">
 <span class="elementor-divider-separator">
@@ -1230,6 +1496,8 @@ document.querySelectorAll('.elementor-invisible').forEach(function (el) {
 })();
 </script>
 <script src="assets/cart.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/opiniones.js"></script>
 <script>
 /* Conecta los botones "Comprar ahora" al carrito propio del sitio
    (assets/cart.js) en vez de mandar al checkout externo. */
@@ -1280,11 +1548,202 @@ function syncHeaderIconSizes() {
         link.style.height = boxHeight + 'px';
       }
     });
+
+    /* Separacion pareja entre iconos: el DIV que envuelve al carrito
+       (propio de Elementor) a veces mide MENOS de ancho que el icono
+       real que trae adentro (el icono se sale de su caja) -- en
+       pantalla ancha real esto se noto porque el "gap" del flex se
+       calcula contra esa caja angosta, no contra el icono visible, y
+       el icono de cuenta (que va justo despues) terminaba pegado o
+       encimado con el del carrito en vez de guardar la misma
+       separacion que hay entre tienda y carrito. Se corrige aqui
+       forzando el mismo espacio visual real (medido en pantalla,
+       no adivinado) entre el carrito y lo que venga despues. */
+    var siguiente = cartWidgetDiv.nextElementSibling;
+    if (siguiente && siguiente.classList.contains('sb-header-icon-link')) {
+      var espacioDeseado = 34;
+      siguiente.style.marginLeft = '0px';
+      var huecoActual = siguiente.getBoundingClientRect().left - cartLink.getBoundingClientRect().right;
+      var faltante = espacioDeseado - huecoActual;
+      if (faltante > 0) {
+        siguiente.style.marginLeft = faltante + 'px';
+      }
+    }
   });
 }
 window.addEventListener('load', syncHeaderIconSizes);
 window.addEventListener('resize', syncHeaderIconSizes);
 syncHeaderIconSizes();
+</script>
+<script id="opiniones-home-js">
+/* Seccion de opiniones de clientes: se movio aqui desde una pagina
+   aparte (opiniones.html) a peticion de Marcos -- "no me gusto donde
+   quedo". Se inserta justo antes del footer real del sitio, usando el
+   footer vacio nativo de WordPress (id="colophon") como referencia
+   estable, ya que no depende de ningun data-id especifico de Elementor
+   que pudiera cambiar. */
+(function () {
+  var footer = document.getElementById('colophon');
+  if (!footer) return;
+
+  var seccion = document.createElement('section');
+  seccion.className = 'sb-opiniones-home';
+  seccion.id = 'opiniones';
+  seccion.innerHTML =
+    '<div class="sb-opiniones-home-scrim"></div>' +
+    '<div class="sb-opiniones-home-inner">' +
+    '<div class="sb-opiniones-home-heading">' +
+    '<div class="sb-eyebrow">Opiniones</div>' +
+    '<h2>Lo que dicen nuestros clientes</h2>' +
+    '</div>' +
+    '<div class="sb-opiniones-home-carousel">' +
+    '<button type="button" class="sb-carrusel-flecha sb-carrusel-prev" aria-label="Ver opiniones anteriores">‹</button>' +
+    '<div class="sb-opiniones-home-grid" id="sb-opiniones-home-lista"></div>' +
+    '<button type="button" class="sb-carrusel-flecha sb-carrusel-next" aria-label="Ver más opiniones">›</button>' +
+    '</div>' +
+    '<div class="sb-opiniones-home-form">' +
+    '<h3>Deja tu opinión</h3>' +
+    '<div id="sb-opinion-home-mensaje"></div>' +
+    '<div id="sb-opinion-home-sin-sesion" style="display:none; text-align:center;">' +
+    '<p style="color: rgba(32,79,43,0.75); font-size: 14px; margin-bottom: 18px;">¿Ya probaste SanteBio? Crea tu cuenta gratis en un minuto y cuéntanos qué te pareció.</p>' +
+    '<a href="cuenta.html?tab=registro" class="sb-opiniones-home-btn" style="display:block; text-decoration:none; box-sizing:border-box;">Crear mi cuenta gratis</a>' +
+    '</div>' +
+    '<form id="sb-opinion-home-form">' +
+    '<div class="sb-campo">' +
+    '<label>Tu calificación</label>' +
+    '<div class="sb-estrella-picker" id="sb-opinion-home-estrellas"></div>' +
+    '</div>' +
+    '<div class="sb-campo">' +
+    '<label for="sb-opinion-home-nombre">Tu nombre</label>' +
+    '<input type="text" id="sb-opinion-home-nombre" readonly />' +
+    '</div>' +
+    '<div class="sb-campo">' +
+    '<label for="sb-opinion-home-texto">Tu opinión</label>' +
+    '<textarea id="sb-opinion-home-texto" required placeholder="Cuéntanos qué te pareció..."></textarea>' +
+    '</div>' +
+    '<button type="submit" class="sb-opiniones-home-btn" id="sb-opinion-home-btn">Enviar opinión</button>' +
+    '</form>' +
+    '</div>' +
+    '</div>';
+
+  footer.parentNode.insertBefore(seccion, footer);
+
+  /* Video de fondo, mismo criterio que las secciones "origen" y
+     "comparacion": si el clip movil no existe, cae al de escritorio;
+     si tampoco existe ninguno de los dos, se quita solo el <video> y
+     la seccion se queda con su fondo verde solido de respaldo (a
+     diferencia de esas otras secciones, aqui NO se quita la seccion
+     completa porque adentro vive el formulario real). */
+  (function () {
+    var isMobile = window.matchMedia('(max-width: 760px)').matches;
+    var srcDesktop = 'videos/escena4_confianza_16x9.mp4';
+    var srcMobile = 'videos/escena4_confianza_9x16.mp4';
+    var mobileSrc = isMobile ? srcMobile : null;
+
+    var video = document.createElement('video');
+    video.autoplay = true;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.src = mobileSrc || srcDesktop;
+
+    video.addEventListener('loadeddata', function () {
+      video.classList.add('sb-video-ready');
+    });
+    video.addEventListener('error', function () {
+      if (mobileSrc) {
+        video.src = srcDesktop;
+        mobileSrc = null;
+      } else {
+        video.remove();
+      }
+    });
+
+    seccion.insertBefore(video, seccion.firstChild);
+  })();
+
+  var lista = document.getElementById('sb-opiniones-home-lista');
+  var flechaPrev = seccion.querySelector('.sb-carrusel-prev');
+  var flechaNext = seccion.querySelector('.sb-carrusel-next');
+
+  SanteBioAuth.llamarApi('listar_opiniones_publicas', {}, null).then(function (res) {
+    var opiniones = res.opiniones || [];
+    if (opiniones.length === 0) {
+      lista.innerHTML = '<p class="sb-opiniones-home-vacio">Todavía no hay opiniones publicadas. ¡Sé el primero!</p>';
+      flechaPrev.style.display = 'none';
+      flechaNext.style.display = 'none';
+      return;
+    }
+    lista.innerHTML = opiniones.map(function (o) {
+      return (
+        '<div class="sb-opinion-home-card">' +
+        '<div class="sb-opinion-home-estrellas">' + SanteBioOpiniones.estrellasHtml(o.estrellas) + '</div>' +
+        '<div class="sb-opinion-home-nombre">' + o.nombre +
+        (o.productoNombre ? ' · ' + o.productoNombre : '') +
+        '</div>' +
+        '<div class="sb-opinion-home-texto">"' + o.texto + '"</div>' +
+        '</div>'
+      );
+    }).join('');
+  });
+
+  /* Carrusel: las flechas mueven el ancho de una tarjeta a la vez.
+     Se usa scroll nativo con scroll-snap en vez de una libreria de
+     carrusel -- mas simple y funciona igual de bien con el mouse,
+     touch en movil, o las flechas. */
+  function anchoTarjeta() {
+    var primera = lista.querySelector('.sb-opinion-home-card');
+    return primera ? primera.getBoundingClientRect().width + 16 : 300;
+  }
+  flechaPrev.addEventListener('click', function () {
+    lista.scrollBy({ left: -anchoTarjeta(), behavior: 'smooth' });
+  });
+  flechaNext.addEventListener('click', function () {
+    lista.scrollBy({ left: anchoTarjeta(), behavior: 'smooth' });
+  });
+
+  var picker = SanteBioOpiniones.crearEstrellaPicker(document.getElementById('sb-opinion-home-estrellas'), 5);
+
+  /* Solo clientes con sesion iniciada pueden opinar (pedido de Marcos,
+     para filtrar mas quien opina) -- su nombre se coloca solo y no se
+     puede editar, para que la opinion quede ligada de verdad a su
+     cuenta real. Sin sesion, se reemplaza el formulario por una
+     invitacion a iniciar sesion. */
+  var usuarioActual = SanteBioAuth.getUsuarioActual();
+  var formOpinion = document.getElementById('sb-opinion-home-form');
+  var sinSesionDiv = document.getElementById('sb-opinion-home-sin-sesion');
+
+  if (usuarioActual) {
+    document.getElementById('sb-opinion-home-nombre').value = usuarioActual.nombre;
+  } else {
+    formOpinion.style.display = 'none';
+    sinSesionDiv.style.display = 'block';
+  }
+
+  formOpinion.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var mensajeDiv = document.getElementById('sb-opinion-home-mensaje');
+    mensajeDiv.innerHTML = '';
+
+    var btn = document.getElementById('sb-opinion-home-btn');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    SanteBioAuth.llamarApi('nueva_opinion', {
+      estrellas: picker.getValor(),
+      texto: document.getElementById('sb-opinion-home-texto').value.trim(),
+    }, SanteBioAuth.getToken()).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Enviar opinión';
+      if (!res.ok) {
+        mensajeDiv.innerHTML = '<div class="sb-opiniones-home-mensaje error">' + (res.error || 'No se pudo enviar tu opinión.') + '</div>';
+        return;
+      }
+      mensajeDiv.innerHTML = '<div class="sb-opiniones-home-mensaje exito">¡Gracias por tu opinión! Se publicará en cuanto sea revisada.</div>';
+      document.getElementById('sb-opinion-home-texto').value = '';
+    });
+  });
+})();
 </script>
 </body></html>
 <!-- Page optimized by LiteSpeed Cache @2026-08-06 14:33:30 -->

@@ -997,6 +997,107 @@ a {
   border-color: var(--ink);
   color: #fff;
 }
+.sb-opinion-fecha {
+  font-size: 11.5px;
+  color: rgba(32, 79, 43, 0.45);
+  margin-top: 6px;
+}
+
+/* --- Opiniones: pagina publica --- */
+.sb-opiniones-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+@media (min-width: 720px) {
+  .sb-opiniones-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* --- Selector interactivo de estrellas (para calificar) --- */
+.sb-estrella-picker {
+  display: flex;
+  gap: 4px;
+  font-size: 28px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.sb-estrella-picker span {
+  cursor: pointer;
+  color: var(--line-strong);
+  transition: color 0.1s ease;
+}
+.sb-estrella-picker span.is-activa {
+  color: #E3C77A;
+}
+
+/* --- Badge de calificacion en tarjeta de producto (tienda.html) --- */
+.sb-producto-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: rgba(32, 79, 43, 0.7);
+  margin: 2px 0 8px;
+}
+.sb-producto-rating .sb-producto-rating-estrellas {
+  color: #E3C77A;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.sb-producto-rating.sin-calificar {
+  color: rgba(32, 79, 43, 0.45);
+  font-style: italic;
+}
+
+/* --- Calificar pedido (Mis pedidos, cuenta.html) --- */
+.sb-calificar-producto-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px dashed var(--line);
+  font-size: 13px;
+}
+.sb-calificar-producto-row:first-of-type {
+  margin-top: 8px;
+}
+.sb-calificar-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  cursor: pointer;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.sb-calificar-btn:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.sb-calificar-form {
+  margin-top: 10px;
+  padding: 14px;
+  background: var(--paper);
+  border-radius: 10px;
+}
+.sb-calificar-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  margin-bottom: 10px;
+}
 
 .sb-tarjeta-card {
   background: #fff;

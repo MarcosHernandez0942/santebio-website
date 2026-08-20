@@ -13,8 +13,7 @@
     <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
   </a>
   <div class="sb-header-actions">
-    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>
-    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
+    <a class="sb-tienda-link" href="tienda.html" aria-label="Ir a la tienda">🛍️ Tienda</a>    <a class="sb-account-link" href="cuenta.html" aria-label="Mi cuenta">👤 Cuenta</a>
     <a class="sb-cart-link" href="carrito.html" aria-label="Ver carrito">
       🛒 Carrito
       <span class="sb-cart-badge">0</span>
@@ -146,6 +145,7 @@
   <div class="sb-footer-links">
     <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
     <a href="https://wa.me/524771108120">477 110 8120</a>
+    <a href="seguimiento.html">Rastrear mi pedido</a>
   </div>
   <div class="sb-footer-social">
     <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
@@ -165,6 +165,10 @@
     </div>
     <h2>¡Gracias por tu compra!</h2>
     <p id="sb-modal-texto"></p>
+    <div id="sb-modal-folio" style="display:none; background: rgba(105,148,49,0.1); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 12px; margin-bottom: 20px;">
+      <div style="font-size: 12px; color: rgba(32,79,43,0.65); margin-bottom: 4px;">Tu folio de seguimiento</div>
+      <div style="font-size: 20px; font-weight: 700; letter-spacing: 0.05em;" id="sb-modal-folio-valor"></div>
+    </div>
     <button type="button" class="sb-btn" id="sb-modal-btn" style="width: 100%;">Ver mis pedidos</button>
   </div>
 </div>
@@ -280,13 +284,33 @@
       SanteBioCart.clearCheckoutData();
 
       document.getElementById('sb-modal-texto').textContent =
-        'Tu pedido #' + res.pedido.id + ' quedó registrado. Esto es una demo: el cobro no se procesó realmente — cuando el sitio tenga las credenciales de una pasarela de pago, este paso confirmará el cobro real.';
+        'Tu pedido quedó registrado y te enviamos la confirmación a ' + checkoutData.email + '. Esto es una demo: el cobro no se procesó realmente — cuando el sitio tenga las credenciales de una pasarela de pago, este paso confirmará el cobro real.';
+
+      if (res.pedido.folio) {
+        document.getElementById('sb-modal-folio-valor').textContent = res.pedido.folio;
+        document.getElementById('sb-modal-folio').style.display = 'block';
+      }
+
+      var modalBtn = document.getElementById('sb-modal-btn');
+      if (usuarioActual) {
+        modalBtn.textContent = 'Ver mis pedidos';
+      } else {
+        modalBtn.textContent = 'Ver estatus de mi pedido';
+        modalBtn.dataset.folio = res.pedido.folio;
+        modalBtn.dataset.email = checkoutData.email;
+      }
+
       document.getElementById('sb-modal-gracias').classList.add('is-visible');
     });
   });
 
   document.getElementById('sb-modal-btn').addEventListener('click', function () {
-    window.location.href = usuarioActual ? 'cuenta.html?tab=pedidos' : 'tienda.html';
+    if (usuarioActual) {
+      window.location.href = 'cuenta.html?tab=pedidos';
+    } else {
+      window.location.href = 'seguimiento.html?folio=' + encodeURIComponent(this.dataset.folio || '') +
+        '&email=' + encodeURIComponent(this.dataset.email || '');
+    }
   });
 
   var observer = new IntersectionObserver(function (entries) {
