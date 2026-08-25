@@ -131,6 +131,7 @@
 </footer>
 
 <script src="assets/cart.js"></script>
+<script src="assets/auto-reload.js"></script>
 <script src="assets/auth.js"></script>
 <script src="assets/cp-lookup.js"></script>
 <script>
@@ -246,8 +247,19 @@
     // Si ya habia datos precargados (se volvio desde pago.html con una
     // direccion en proceso), no se sobreescriben con la primera
     // guardada: se deja seleccionado "nueva" y se respeta lo que ya
-    // estaba escrito.
-    if (saved && saved.calle) {
+    // estaba escrito -- PERO si esos datos precargados son en
+    // realidad identicos a una direccion ya guardada (ej. la ultima
+    // vez se eligio "Casa" y se completo el pedido), no tiene sentido
+    // mostrarla como "nueva": se selecciona esa direccion guardada en
+    // vez de dar la impresion de que "nueva" viene rellena sola.
+    var direccionCoincidente = saved && direccionesGuardadas.find(function (d) {
+      return d.calle === saved.calle && d.colonia === saved.colonia && d.cp === saved.cp &&
+        d.ciudad === saved.ciudad && d.estado === saved.estado;
+    });
+    if (direccionCoincidente) {
+      wrap.querySelector('input[value="' + direccionCoincidente.id + '"]').checked = true;
+      mostrarGuardarDireccion(false);
+    } else if (saved && saved.calle) {
       wrap.querySelector('input[value="nueva"]').checked = true;
       mostrarGuardarDireccion(true);
     } else {

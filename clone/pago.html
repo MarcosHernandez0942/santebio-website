@@ -120,7 +120,12 @@
               </div>
               <div class="sb-form-group">
                 <label for="sb-card-cvv">CVV</label>
-                <input type="text" id="sb-card-cvv" placeholder="•••" inputmode="numeric" autocomplete="off" maxlength="4" />
+                <div class="sb-input-toggle-wrap">
+                  <input type="password" id="sb-card-cvv" placeholder="•••" inputmode="numeric" autocomplete="off" maxlength="4" />
+                  <button type="button" class="sb-input-toggle-btn" data-target="sb-card-cvv" aria-label="Mostrar CVV">
+                    <svg class="sb-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
             <p class="sb-form-hint">Vista previa visual — todavía no está conectada a una pasarela de pago real.</p>
@@ -207,6 +212,7 @@
 </div>
 
 <script src="assets/cart.js"></script>
+<script src="assets/auto-reload.js"></script>
 <script src="assets/auth.js"></script>
 <script src="assets/tiendas-aliadas.js"></script>
 <script>
@@ -276,6 +282,16 @@
 
   cardCvvInput.addEventListener('input', function () {
     this.value = this.value.replace(/\D/g, '').slice(0, marcaActual === 'American Express' ? 4 : 3);
+  });
+
+  document.querySelectorAll('.sb-input-toggle-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var input = document.getElementById(btn.dataset.target);
+      var mostrando = input.type === 'text';
+      input.type = mostrando ? 'password' : 'text';
+      btn.classList.toggle('is-visible', !mostrando);
+      btn.setAttribute('aria-label', mostrando ? 'Mostrar CVV' : 'Ocultar CVV');
+    });
   });
 
   var cardExpInput = document.getElementById('sb-card-exp');

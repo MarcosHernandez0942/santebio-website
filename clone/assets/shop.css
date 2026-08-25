@@ -696,6 +696,33 @@ a {
   margin-left: 6px;
   vertical-align: middle;
 }
+.sb-input-toggle-wrap {
+  position: relative;
+}
+.sb-form-group .sb-input-toggle-wrap input {
+  padding-right: 42px;
+}
+.sb-input-toggle-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: rgba(32, 79, 43, 0.45);
+}
+.sb-input-toggle-btn:hover,
+.sb-input-toggle-btn.is-visible {
+  color: var(--green);
+}
+.sb-eye-icon {
+  width: 18px;
+  height: 18px;
+}
 
 /* Resumen mini (orden), reutilizado en datos.html/pago.html */
 .sb-mini-summary-item {

@@ -10,6 +10,28 @@ var SanteBioAuth = (function () {
   var ADMIN_TOKEN_KEY = 'santebio_admin_token';
   var ADMIN_USUARIO_KEY = 'santebio_admin_usuario';
 
+  var sesionYaExpiro = false;
+
+  /* Si el token que se mando ya no es valido (p. ej. la sesion expiro
+     tras 8 horas, ver api/auth.py), el servidor responde 401 "No
+     autorizado." -- eso antes se quedaba mostrado como un error
+     críptico en cada panel ("No se pudieron cargar tus direcciones:
+     No autorizado"), dando la impresion de que los datos se habian
+     perdido. Ahora se detecta ese caso, se limpia la sesion vencida y
+     se recarga una vez para que la pagina vuelva a mostrar el login. */
+  function manejarSesionExpirada(token) {
+    if (sesionYaExpiro) return;
+    if (token === localStorage.getItem(TOKEN_KEY)) {
+      sesionYaExpiro = true;
+      cerrarSesion();
+      window.location.reload();
+    } else if (token === localStorage.getItem(ADMIN_TOKEN_KEY)) {
+      sesionYaExpiro = true;
+      cerrarSesionAdmin();
+      window.location.reload();
+    }
+  }
+
   function llamarApi(accion, datos, token) {
     return fetch(BASE_URL + '/api/accion', {
       method: 'POST',
@@ -18,6 +40,7 @@ var SanteBioAuth = (function () {
     })
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (data) {
+          if (r.status === 401 && token) manejarSesionExpirada(token);
           if (typeof data.ok === 'boolean') return data;
           if (!r.ok) return { ok: false, error: data.error || 'Error del servidor (' + r.status + ').' };
           return Object.assign({ ok: true }, data);

@@ -150,24 +150,31 @@
             <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-tarjeta" style="margin-top: 8px;">+ Agregar tarjeta (demo)</button>
 
             <form id="sb-tarjeta-form" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line-strong);">
-              <div class="sb-form-row">
-                <div class="sb-form-group">
-                  <label for="sb-tar-marca">Marca</label>
-                  <select id="sb-tar-marca" required>
-                    <option value="Visa">Visa</option>
-                    <option value="Mastercard">Mastercard</option>
-                    <option value="American Express">American Express</option>
-                  </select>
-                </div>
-                <div class="sb-form-group">
-                  <label for="sb-tar-ultimos4">Últimos 4 dígitos</label>
-                  <input type="text" id="sb-tar-ultimos4" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="4242" />
-                </div>
+              <div class="sb-form-group">
+                <label for="sb-tar-numero">Número de tarjeta <span id="sb-tar-brand-badge" class="sb-card-brand-badge" style="display:none;"></span></label>
+                <input type="text" id="sb-tar-numero" required placeholder="•••• •••• •••• ••••" inputmode="numeric" autocomplete="off" />
               </div>
               <div class="sb-form-group">
-                <label for="sb-tar-vencimiento">Vencimiento</label>
-                <input type="text" id="sb-tar-vencimiento" required placeholder="MM/AA" maxlength="5" />
+                <label for="sb-tar-nombre">Nombre en la tarjeta</label>
+                <input type="text" id="sb-tar-nombre" required autocomplete="off" />
               </div>
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-tar-vencimiento">Vencimiento</label>
+                  <input type="text" id="sb-tar-vencimiento" required placeholder="MM/AA" autocomplete="off" />
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-tar-cvv">CVV</label>
+                  <div class="sb-input-toggle-wrap">
+                    <input type="password" id="sb-tar-cvv" required placeholder="•••" inputmode="numeric" autocomplete="off" maxlength="4" />
+                    <button type="button" class="sb-input-toggle-btn" data-target="sb-tar-cvv" aria-label="Mostrar CVV">
+                      <svg class="sb-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p class="sb-form-hint">Vista previa visual — todavía no está conectada a una pasarela de pago real. Solo se guarda la marca, los últimos 4 dígitos y el vencimiento; el número completo y el CVV nunca se envían ni se guardan.</p>
+              <div id="sb-tarjeta-error" class="sb-form-error" style="display:none;"></div>
               <button type="submit" class="sb-btn" id="sb-guardar-tarjeta-btn">Guardar tarjeta</button>
             </form>
           </div>
@@ -254,6 +261,7 @@
 </footer>
 
 <script src="assets/cart.js"></script>
+<script src="assets/auto-reload.js"></script>
 <script src="assets/auth.js"></script>
 <script src="assets/cp-lookup.js"></script>
 <script src="assets/opiniones.js"></script>
@@ -399,6 +407,10 @@
     var lista = document.getElementById('sb-direcciones-lista');
     lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
     SanteBioAuth.llamarApi('listar_direcciones', {}, SanteBioAuth.getToken()).then(function (res) {
+      if (!res.ok) {
+        lista.innerHTML = '<p class="sb-empty-panel">No se pudieron cargar tus direcciones: ' + (res.error || 'error desconocido') + '</p>';
+        return;
+      }
       var direcciones = res.direcciones || [];
       direccionesCargadas = direcciones;
       if (direcciones.length === 0) {
@@ -516,6 +528,10 @@
     var lista = document.getElementById('sb-pedidos-lista');
     if (!silencioso) lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
     SanteBioAuth.llamarApi('mis_pedidos', {}, SanteBioAuth.getToken()).then(function (res) {
+      if (!res.ok) {
+        if (!silencioso) lista.innerHTML = '<p class="sb-empty-panel">No se pudieron cargar tus pedidos: ' + (res.error || 'error desconocido') + '</p>';
+        return;
+      }
       var pedidos = res.pedidos || [];
       var firma = JSON.stringify(pedidos.map(function (p) { return p.id + ':' + p.estado + ':' + (p.productosCalificados || []).length; }));
       if (silencioso && firma === pedidosFirma) return;
@@ -643,6 +659,10 @@
     var lista = document.getElementById('sb-tarjetas-lista');
     lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
     SanteBioAuth.llamarApi('listar_tarjetas', {}, SanteBioAuth.getToken()).then(function (res) {
+      if (!res.ok) {
+        lista.innerHTML = '<p class="sb-empty-panel">No se pudieron cargar tus tarjetas: ' + (res.error || 'error desconocido') + '</p>';
+        return;
+      }
       var tarjetas = res.tarjetas || [];
       if (tarjetas.length === 0) {
         lista.innerHTML = '<p class="sb-empty-panel">Todavía no tienes tarjetas guardadas.</p>';
@@ -676,25 +696,87 @@
     tarjetaForm.style.display = tarjetaForm.style.display === 'block' ? 'none' : 'block';
   });
 
+  var tarNumeroInput = document.getElementById('sb-tar-numero');
+  var tarBrandBadge = document.getElementById('sb-tar-brand-badge');
+  var marcaTarjetaActual = '';
+  tarNumeroInput.addEventListener('input', function () {
+    var digitos = this.value.replace(/\D/g, '');
+    marcaTarjetaActual = '';
+    if (/^4/.test(digitos)) marcaTarjetaActual = 'Visa';
+    else if (/^3[47]/.test(digitos)) marcaTarjetaActual = 'American Express';
+    else if (/^(5[1-5]|2[2-7])/.test(digitos)) marcaTarjetaActual = 'Mastercard';
+    this.value = digitos.slice(0, marcaTarjetaActual === 'American Express' ? 15 : 16);
+    tarBrandBadge.textContent = marcaTarjetaActual;
+    tarBrandBadge.style.display = marcaTarjetaActual ? 'inline-block' : 'none';
+  });
+
+  var tarCvvInput = document.getElementById('sb-tar-cvv');
+  tarCvvInput.addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, marcaTarjetaActual === 'American Express' ? 4 : 3);
+  });
+
+  document.querySelectorAll('.sb-input-toggle-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var input = document.getElementById(btn.dataset.target);
+      var mostrando = input.type === 'text';
+      input.type = mostrando ? 'password' : 'text';
+      btn.classList.toggle('is-visible', !mostrando);
+      btn.setAttribute('aria-label', mostrando ? 'Mostrar CVV' : 'Ocultar CVV');
+    });
+  });
+
+  var tarVencimientoInput = document.getElementById('sb-tar-vencimiento');
+  tarVencimientoInput.addEventListener('input', function () {
+    var digitos = this.value.replace(/\D/g, '').slice(0, 4);
+    this.value = digitos.length > 2 ? digitos.slice(0, 2) + '/' + digitos.slice(2) : digitos;
+  });
+
   tarjetaForm.addEventListener('submit', function (e) {
     e.preventDefault();
     if (!this.checkValidity()) {
       this.reportValidity();
       return;
     }
+    var numero = tarNumeroInput.value;
+    var longitudEsperada = marcaTarjetaActual === 'American Express' ? 15 : 16;
+    var errorDiv = document.getElementById('sb-tarjeta-error');
+    if (numero.length !== longitudEsperada) {
+      errorDiv.textContent = 'Ingresa un número de tarjeta válido.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    if (!/^\d{2}\/\d{2}$/.test(tarVencimientoInput.value.trim())) {
+      errorDiv.textContent = 'Ingresa la vigencia en formato MM/AA.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    var cvvEsperado = marcaTarjetaActual === 'American Express' ? 4 : 3;
+    if (tarCvvInput.value.length !== cvvEsperado) {
+      errorDiv.textContent = 'Ingresa el CVV de tu tarjeta.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    errorDiv.style.display = 'none';
+
     var btn = document.getElementById('sb-guardar-tarjeta-btn');
     btn.disabled = true;
     btn.textContent = 'Guardando…';
 
     SanteBioAuth.llamarApi('guardar_tarjeta', {
-      marca: document.getElementById('sb-tar-marca').value,
-      ultimos4: document.getElementById('sb-tar-ultimos4').value.trim(),
-      vencimiento: document.getElementById('sb-tar-vencimiento').value.trim(),
+      marca: marcaTarjetaActual,
+      ultimos4: numero.slice(-4),
+      vencimiento: tarVencimientoInput.value.trim(),
     }, SanteBioAuth.getToken()).then(function (res) {
       btn.disabled = false;
       btn.textContent = 'Guardar tarjeta';
-      if (!res.ok) return;
+      if (!res.ok) {
+        errorDiv.textContent = res.error || 'No se pudo guardar la tarjeta.';
+        errorDiv.style.display = 'block';
+        return;
+      }
       tarjetaForm.reset();
+      tarBrandBadge.style.display = 'none';
+      marcaTarjetaActual = '';
       tarjetaForm.style.display = 'none';
       cargarTarjetas();
     });
