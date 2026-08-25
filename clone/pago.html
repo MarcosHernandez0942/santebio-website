@@ -90,11 +90,11 @@
               </div>
             </label>
             <label class="sb-payment-method">
-              <input type="radio" name="metodo-pago" value="contraentrega" />
+              <input type="radio" name="metodo-pago" value="tiendas-aliadas" />
               <svg class="sb-payment-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="7" width="15" height="10" rx="1"/><path d="M16 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="18.5" cy="19" r="1.6"/></svg>
               <div>
-                <div class="sb-payment-method-label">Pago contra entrega</div>
-                <div class="sb-payment-method-sub">Pagas en efectivo al recibir</div>
+                <div class="sb-payment-method-label">Pagar en tiendas aliadas</div>
+                <div class="sb-payment-method-sub">Elige una tienda cercana y paga en efectivo</div>
               </div>
             </label>
           </div>
@@ -106,20 +106,48 @@
 
           <div class="sb-card-fields" id="sb-card-fields">
             <div class="sb-form-group">
-              <label for="sb-card-number">Número de tarjeta</label>
+              <label for="sb-card-number">Número de tarjeta <span id="sb-card-brand-badge" class="sb-card-brand-badge" style="display:none;"></span></label>
               <input type="text" id="sb-card-number" placeholder="•••• •••• •••• ••••" inputmode="numeric" autocomplete="off" />
             </div>
+            <div class="sb-form-group">
+              <label for="sb-card-name">Nombre en la tarjeta</label>
+              <input type="text" id="sb-card-name" autocomplete="off" />
+            </div>
             <div class="sb-form-row">
-              <div class="sb-form-group">
-                <label for="sb-card-name">Nombre en la tarjeta</label>
-                <input type="text" id="sb-card-name" autocomplete="off" />
-              </div>
               <div class="sb-form-group">
                 <label for="sb-card-exp">Vencimiento</label>
                 <input type="text" id="sb-card-exp" placeholder="MM/AA" autocomplete="off" />
               </div>
+              <div class="sb-form-group">
+                <label for="sb-card-cvv">CVV</label>
+                <input type="text" id="sb-card-cvv" placeholder="•••" inputmode="numeric" autocomplete="off" maxlength="4" />
+              </div>
             </div>
             <p class="sb-form-hint">Vista previa visual — todavía no está conectada a una pasarela de pago real.</p>
+          </div>
+
+          <div class="sb-form-group" id="sb-transferencia-fields" style="display:none;">
+            <div style="background: rgba(105,148,49,0.1); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+              <p style="font-weight:700; color:var(--ink); margin:0 0 8px;">Datos para tu transferencia (ejemplo)</p>
+              <p style="margin:2px 0; font-size:13px;">Banco: <strong>BBVA</strong></p>
+              <p style="margin:2px 0; font-size:13px;">CLABE: <strong>0123 4567 8901 2345 67</strong></p>
+              <p style="margin:2px 0 12px; font-size:13px;">A nombre de: <strong>SanteBio Cápsulas de Nopal</strong></p>
+              <ol style="margin:0; padding-left:18px; font-size:13px; color:rgba(32,79,43,0.85);">
+                <li>Transfiere el total de tu pedido a esta cuenta.</li>
+                <li>En el concepto de la transferencia, coloca tu nombre completo: <strong id="sb-transferencia-nombre-concepto"></strong> (nos ayuda a identificar tu pago).</li>
+                <li>Sube tu comprobante de transferencia.</li>
+                <li>Un asesor confirmará tu pago y te notificaremos por correo.</li>
+              </ol>
+            </div>
+            <label for="sb-transferencia-comprobante">Comprobante de transferencia (imagen o PDF)</label>
+            <input type="file" id="sb-transferencia-comprobante" accept="image/*,application/pdf" />
+            <p class="sb-form-hint">Adjunta tu comprobante para que podamos validar tu pago.</p>
+          </div>
+
+          <div class="sb-form-group" id="sb-tiendas-aliadas-fields" style="display:none;">
+            <p style="font-weight:700; color:var(--ink); margin:0 0 8px;">Tiendas donde puedes pagar (ejemplo, se actualizará)</p>
+            <ul id="sb-lista-tiendas-aliadas" style="margin:0 0 8px; padding-left:18px; font-size:13px; color:rgba(32,79,43,0.85);"></ul>
+            <p class="sb-form-hint">Puedes pagar en cualquiera de nuestras tiendas aliadas; solo necesitas mostrar el código de tu pedido.</p>
           </div>
 
           <div id="sb-payment-error" class="sb-form-error" style="display:none; margin-top: 20px;"></div>
@@ -169,12 +197,18 @@
       <div style="font-size: 12px; color: rgba(32,79,43,0.65); margin-bottom: 4px;">Tu folio de seguimiento</div>
       <div style="font-size: 20px; font-weight: 700; letter-spacing: 0.05em;" id="sb-modal-folio-valor"></div>
     </div>
+    <div id="sb-modal-voucher-tienda" style="display:none; background: rgba(105,148,49,0.1); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px 16px; margin-top: -10px; margin-bottom: 20px; text-align: left;">
+      <p style="margin:0 0 10px; font-size:13px;">Monto a pagar: <strong id="sb-modal-voucher-monto"></strong></p>
+      <p style="font-weight:700; color:var(--ink); margin:0 0 6px; font-size:13px;">Tiendas donde puedes pagar (ejemplo):</p>
+      <ul id="sb-modal-voucher-tiendas" style="margin:0; padding-left:18px; font-size:12.5px; color:rgba(32,79,43,0.85);"></ul>
+    </div>
     <button type="button" class="sb-btn" id="sb-modal-btn" style="width: 100%;">Ver mis pedidos</button>
   </div>
 </div>
 
 <script src="assets/cart.js"></script>
 <script src="assets/auth.js"></script>
+<script src="assets/tiendas-aliadas.js"></script>
 <script>
 (function () {
   var cart = SanteBioCart.getCart();
@@ -188,6 +222,8 @@
     window.location.href = 'datos.html';
     return;
   }
+
+  document.getElementById('sb-transferencia-nombre-concepto').textContent = checkoutData.nombre;
 
   var miniSummary = document.getElementById('sb-mini-summary');
   miniSummary.innerHTML = cart.map(function (item) {
@@ -207,12 +243,61 @@
     checkoutData.calle + ', ' + checkoutData.colonia + '<br>' +
     checkoutData.ciudad + ', ' + checkoutData.estado + ' ' + checkoutData.cp;
 
+  document.getElementById('sb-lista-tiendas-aliadas').innerHTML = SanteBioTiendas.listaHtml();
+
   var cardFields = document.getElementById('sb-card-fields');
+  var transferenciaFields = document.getElementById('sb-transferencia-fields');
+  var tiendasAliadasFields = document.getElementById('sb-tiendas-aliadas-fields');
+  function actualizarBloquesMetodoPago(valor) {
+    cardFields.style.display = valor === 'tarjeta' ? 'grid' : 'none';
+    transferenciaFields.style.display = valor === 'transferencia' ? 'block' : 'none';
+    tiendasAliadasFields.style.display = valor === 'tiendas-aliadas' ? 'block' : 'none';
+  }
   document.querySelectorAll('input[name="metodo-pago"]').forEach(function (radio) {
     radio.addEventListener('change', function () {
-      cardFields.style.display = radio.value === 'tarjeta' && radio.checked ? 'grid' : 'none';
+      if (radio.checked) actualizarBloquesMetodoPago(radio.value);
     });
   });
+
+  var cardNumberInput = document.getElementById('sb-card-number');
+  var cardBrandBadge = document.getElementById('sb-card-brand-badge');
+  var cardCvvInput = document.getElementById('sb-card-cvv');
+  var marcaActual = '';
+  cardNumberInput.addEventListener('input', function () {
+    var digitos = this.value.replace(/\D/g, '');
+    marcaActual = '';
+    if (/^4/.test(digitos)) marcaActual = 'Visa';
+    else if (/^3[47]/.test(digitos)) marcaActual = 'American Express';
+    else if (/^(5[1-5]|2[2-7])/.test(digitos)) marcaActual = 'Mastercard';
+    this.value = digitos.slice(0, marcaActual === 'American Express' ? 15 : 16);
+    cardBrandBadge.textContent = marcaActual;
+    cardBrandBadge.style.display = marcaActual ? 'inline-block' : 'none';
+  });
+
+  cardCvvInput.addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, marcaActual === 'American Express' ? 4 : 3);
+  });
+
+  var cardExpInput = document.getElementById('sb-card-exp');
+  cardExpInput.addEventListener('input', function () {
+    var digitos = this.value.replace(/\D/g, '').slice(0, 4);
+    this.value = digitos.length > 2 ? digitos.slice(0, 2) + '/' + digitos.slice(2) : digitos;
+  });
+
+  function validarPago(metodo) {
+    if (metodo === 'tarjeta') {
+      var longitudEsperada = marcaActual === 'American Express' ? 15 : 16;
+      if (cardNumberInput.value.length !== longitudEsperada) return 'Ingresa un número de tarjeta válido.';
+      if (!document.getElementById('sb-card-name').value.trim()) return 'Ingresa el nombre en la tarjeta.';
+      if (!/^\d{2}\/\d{2}$/.test(document.getElementById('sb-card-exp').value.trim())) return 'Ingresa la vigencia en formato MM/AA.';
+      var cvvEsperado = marcaActual === 'American Express' ? 4 : 3;
+      if (cardCvvInput.value.length !== cvvEsperado) return 'Ingresa el CVV de tu tarjeta.';
+    } else if (metodo === 'transferencia') {
+      var comprobante = document.getElementById('sb-transferencia-comprobante');
+      if (!comprobante.files || comprobante.files.length === 0) return 'Sube tu comprobante de transferencia.';
+    }
+    return null;
+  }
 
   /* Tarjetas guardadas: si el cliente tiene sesion y ya tiene tarjetas
      en su perfil, se le ofrece elegir una en vez de escribir los
@@ -260,6 +345,14 @@
     var metodoInput = document.querySelector('input[name="metodo-pago"]:checked');
     var errorDiv = document.getElementById('sb-payment-error');
     errorDiv.style.display = 'none';
+
+    var errorValidacion = validarPago(metodoInput ? metodoInput.value : '');
+    if (errorValidacion) {
+      errorDiv.textContent = errorValidacion;
+      errorDiv.style.display = 'block';
+      return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Guardando pedido…';
 
@@ -283,12 +376,26 @@
       SanteBioCart.clearCart();
       SanteBioCart.clearCheckoutData();
 
-      document.getElementById('sb-modal-texto').textContent =
-        'Tu pedido quedó registrado y te enviamos la confirmación a ' + checkoutData.email + '. Esto es una demo: el cobro no se procesó realmente — cuando el sitio tenga las credenciales de una pasarela de pago, este paso confirmará el cobro real.';
+      if (metodoInput && metodoInput.value === 'transferencia') {
+        document.getElementById('sb-modal-texto').textContent =
+          'Recibimos tu comprobante de transferencia. Verificaremos la transacción y te notificaremos por correo en cuanto se confirme. ¡Muchas gracias por tu compra!';
+      } else if (metodoInput && metodoInput.value === 'tiendas-aliadas') {
+        document.getElementById('sb-modal-texto').textContent =
+          'Tu pedido quedó registrado. Muestra tu folio y el monto a pagar en cualquiera de nuestras tiendas aliadas para completar tu compra.';
+      } else {
+        document.getElementById('sb-modal-texto').textContent =
+          'Tu pedido quedó registrado y te enviamos la confirmación a ' + checkoutData.email + '. Esto es una demo: el cobro no se procesó realmente — cuando el sitio tenga las credenciales de una pasarela de pago, este paso confirmará el cobro real.';
+      }
 
       if (res.pedido.folio) {
         document.getElementById('sb-modal-folio-valor').textContent = res.pedido.folio;
         document.getElementById('sb-modal-folio').style.display = 'block';
+      }
+
+      if (metodoInput && metodoInput.value === 'tiendas-aliadas') {
+        document.getElementById('sb-modal-voucher-monto').textContent = SanteBioCart.formatMXN(res.pedido.total);
+        document.getElementById('sb-modal-voucher-tiendas').innerHTML = SanteBioTiendas.listaHtml();
+        document.getElementById('sb-modal-voucher-tienda').style.display = 'block';
       }
 
       var modalBtn = document.getElementById('sb-modal-btn');

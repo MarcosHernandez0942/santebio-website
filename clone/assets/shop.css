@@ -613,6 +613,29 @@ a {
   margin-top: -10px;
   margin-bottom: 16px;
 }
+.sb-form-group input[type="file"] {
+  padding: 10px;
+  cursor: pointer;
+}
+.sb-form-group input[type="file"]::file-selector-button {
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-right: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+.sb-form-group input[type="file"]::file-selector-button:hover {
+  filter: brightness(1.08);
+}
+.sb-form-group input[type="file"] + .sb-form-hint {
+  margin-top: 8px;
+}
 
 /* Metodos de pago */
 .sb-payment-methods {
@@ -661,6 +684,17 @@ a {
   margin-top: 4px;
   padding-top: 16px;
   border-top: 1px dashed var(--line-strong);
+}
+.sb-card-brand-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(105, 148, 49, 0.12);
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 /* Resumen mini (orden), reutilizado en datos.html/pago.html */

@@ -287,17 +287,24 @@ def guardar_direccion(body, datos_token):
     if not calle or not colonia or not cp or not ciudad or not estado:
         return jsonify({"error": "Faltan datos obligatorios de la dirección."}), 400
 
-    direccion = Direccion(
-        usuario_id=datos_token.get("usuarioId"),
-        etiqueta=body.get("etiqueta") or "",
-        calle=calle,
-        colonia=colonia,
-        cp=cp,
-        ciudad=ciudad,
-        estado=estado,
-        referencias=body.get("referencias") or "",
-    )
-    db.session.add(direccion)
+    direccion_id = body.get("id")
+    if direccion_id:
+        direccion = db.session.query(Direccion).filter_by(
+            id=direccion_id, usuario_id=datos_token.get("usuarioId")
+        ).first()
+        if not direccion:
+            return jsonify({"error": "Dirección no encontrada."}), 404
+    else:
+        direccion = Direccion(usuario_id=datos_token.get("usuarioId"))
+        db.session.add(direccion)
+
+    direccion.etiqueta = body.get("etiqueta") or ""
+    direccion.calle = calle
+    direccion.colonia = colonia
+    direccion.cp = cp
+    direccion.ciudad = ciudad
+    direccion.estado = estado
+    direccion.referencias = body.get("referencias") or ""
     db.session.commit()
 
     return jsonify({"ok": True, "direccion": direccion.to_dict()})

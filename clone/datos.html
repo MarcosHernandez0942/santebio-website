@@ -47,7 +47,7 @@
             </div>
             <div class="sb-form-group">
               <label for="sb-telefono">Teléfono</label>
-              <input type="tel" id="sb-telefono" name="telefono" required autocomplete="tel" />
+              <input type="tel" id="sb-telefono" name="telefono" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" />
             </div>
           </div>
           <div class="sb-form-group">
@@ -166,6 +166,10 @@
 
   var cpHelper = SanteBioCP.wire({ cp: 'sb-cp', colonia: 'sb-colonia', ciudad: 'sb-ciudad', estado: 'sb-estado', hint: 'sb-cp-hint' });
 
+  document.getElementById('sb-telefono').addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 10);
+  });
+
   // Si el cliente tiene sesion, ofrecerle elegir una de sus direcciones
   // guardadas (mas rapido) o seguir con una nueva -- si no tiene
   // ninguna guardada todavia, se le ofrece guardar la que esta
@@ -188,6 +192,27 @@
     wrap.style.display = usuarioActual && mostrar ? 'block' : 'none';
   }
 
+  function limpiarCamposDireccion() {
+    document.getElementById('sb-calle').value = '';
+    document.getElementById('sb-ciudad').value = '';
+    document.getElementById('sb-estado').value = '';
+    document.getElementById('sb-referencias').value = '';
+    document.getElementById('sb-cp').value = '';
+    document.getElementById('sb-cp-hint').textContent = '';
+    var coloniaField = document.getElementById('sb-colonia');
+    if (coloniaField.tagName === 'SELECT') {
+      var nuevoInput = document.createElement('input');
+      nuevoInput.type = 'text';
+      nuevoInput.id = 'sb-colonia';
+      nuevoInput.name = 'colonia';
+      nuevoInput.required = true;
+      nuevoInput.placeholder = 'Ingresa tu código postal primero';
+      coloniaField.parentElement.replaceChild(nuevoInput, coloniaField);
+    } else {
+      coloniaField.value = '';
+    }
+  }
+
   function renderDireccionesGuardadas() {
     var wrap = document.getElementById('sb-direcciones-guardadas');
     wrap.style.display = 'block';
@@ -208,6 +233,7 @@
     wrap.querySelectorAll('input[name="direccion-guardada"]').forEach(function (radio) {
       radio.addEventListener('change', function () {
         if (radio.value === 'nueva') {
+          limpiarCamposDireccion();
           mostrarGuardarDireccion(true);
         } else {
           var d = direccionesGuardadas.find(function (x) { return String(x.id) === radio.value; });
