@@ -167,6 +167,47 @@ class Opinion(db.Model):
         }
 
 
+class Producto(db.Model):
+    """Catalogo real de la tienda -- antes vivia como HTML fijo en
+    tienda.html (5 productos con ids 998/999/1250/1252/1253). Sin
+    encriptar a proposito: es informacion publica del catalogo, no
+    datos personales. El id se conserva igual al de los productos
+    existentes al migrar, para no romper opiniones/calificaciones
+    (Opinion.producto_id) ni pedidos historicos, que ya guardan estos
+    ids como texto."""
+
+    __tablename__ = "productos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.Text, nullable=False)
+    precio = db.Column(db.Numeric(10, 2), nullable=False)
+    imagen = db.Column(db.Text, nullable=False, default="")
+    stock = db.Column(db.Integer, nullable=False, default=0)
+    # activo=False es "ocultar" a proposito (temporada/tiempo limitado)
+    # -- no se borra el producto, solo deja de mostrarse en la tienda.
+    activo = db.Column(db.Boolean, nullable=False, default=True)
+    # 'individual' (cuadricula de arriba) o 'paquete' (seccion de
+    # abajo) -- misma separacion visual que ya tenia tienda.html.
+    seccion = db.Column(db.Text, nullable=False, default="individual")
+    insignia = db.Column(db.Text, nullable=True)
+    orden = db.Column(db.Integer, nullable=False, default=0)
+    creado_en = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nombre": self.nombre,
+            "precio": float(self.precio),
+            "imagen": self.imagen,
+            "stock": self.stock,
+            "activo": self.activo,
+            "seccion": self.seccion,
+            "insignia": self.insignia,
+            "orden": self.orden,
+            "disponible": self.activo and self.stock > 0,
+        }
+
+
 class Tarjeta(db.Model):
     """Solo guarda metadatos NO sensibles de la tarjeta (marca, ultimos
     4 digitos, vencimiento) -- nunca el numero completo ni el CVV. El

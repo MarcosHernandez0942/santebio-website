@@ -5,8 +5,13 @@ import bcrypt
 from flask import Blueprint, request, jsonify
 from auth import firmar_token, verificar_token
 from db import db
-from email_utils import enviar_correo_restablecer, enviar_correo_confirmacion_pedido
-from models import Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion
+from email_utils import (
+    enviar_correo_restablecer,
+    enviar_correo_confirmacion_pedido,
+    enviar_correo_nuevo_pedido_admin,
+    enviar_correo_cambio_estado_pedido,
+)
+from models import Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion, Producto
 
 bp = Blueprint("accion", __name__)
 
@@ -16,7 +21,7 @@ ACCIONES_PUBLICAS = {
     "registro_usuario", "login_usuario", "login_admin", "crear_pedido",
     "solicitar_cambio_password", "confirmar_cambio_password",
     "listar_opiniones_publicas", "calificaciones_por_producto",
-    "consultar_pedido_publico",
+    "consultar_pedido_publico", "listar_productos_publico",
 }
 # "nueva_opinion" YA NO es publica a proposito: solo clientes con
 # sesion iniciada pueden opinar (pedido de Marcos, "para que se filtre
@@ -85,6 +90,14 @@ def accion():
             return actualizar_estado_pedido(body, datos_token)
         if tipo_accion == "obtener_comprobante_pedido":
             return obtener_comprobante_pedido(body, datos_token)
+        if tipo_accion == "listar_productos_publico":
+            return listar_productos_publico()
+        if tipo_accion == "listar_productos_admin":
+            return listar_productos_admin(datos_token)
+        if tipo_accion == "crear_producto":
+            return crear_producto(body, datos_token)
+        if tipo_accion == "actualizar_producto":
+            return actualizar_producto(body, datos_token)
         if tipo_accion == "nueva_opinion":
             return nueva_opinion(body, datos_token)
         if tipo_accion == "listar_opiniones_publicas":
@@ -181,6 +194,26 @@ def crear_pedido(body, datos_token):
         comprobante_nombre = comprobante.get("nombre")
         comprobante_tipo = comprobante.get("tipo")
 
+    # Validar y descontar inventario ANTES de crear el pedido -- si a
+    # algun producto ya no le alcanza el stock, se rechaza todo el
+    # pedido en vez de dejarlo a medias.
+    productos_a_descontar = []
+    for item in items:
+        try:
+            producto_id = int(item.get("id"))
+        except (TypeError, ValueError):
+            continue
+        cantidad = item.get("qty") or 0
+        producto = db.session.query(Producto).filter_by(id=producto_id).first()
+        if not producto:
+            continue
+        if producto.stock < cantidad:
+            return jsonify({"error": "Ya no hay suficiente inventario de \"" + producto.nombre + "\"."}), 400
+        productos_a_descontar.append((producto, cantidad))
+
+    for producto, cantidad in productos_a_descontar:
+        producto.stock -= cantidad
+
     usuario_id = None
     if datos_token and datos_token.get("tipo") == "usuario":
         usuario_id = datos_token.get("usuarioId")
@@ -208,6 +241,7 @@ def crear_pedido(body, datos_token):
     correo_cliente = (datos_entrega or {}).get("email")
     if correo_cliente:
         enviar_correo_confirmacion_pedido(correo_cliente, folio, items, float(total))
+    enviar_correo_nuevo_pedido_admin(folio, items, float(total), metodo_pago)
 
     return jsonify({"ok": True, "pedido": pedido.to_dict()})
 
@@ -527,6 +561,76 @@ def listar_pedidos_admin(datos_token):
     return jsonify({"pedidos": resultado})
 
 
+def listar_productos_publico():
+    productos = (
+        db.session.query(Producto)
+        .filter_by(activo=True)
+        .order_by(Producto.seccion, Producto.orden, Producto.id)
+        .all()
+    )
+    return jsonify({"productos": [p.to_dict() for p in productos]})
+
+
+def listar_productos_admin(datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para ver esto."}), 403
+
+    productos = db.session.query(Producto).order_by(Producto.seccion, Producto.orden, Producto.id).all()
+    return jsonify({"productos": [p.to_dict() for p in productos]})
+
+
+def crear_producto(body, datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para hacer esto."}), 403
+
+    nombre = (body.get("nombre") or "").strip()
+    precio = body.get("precio")
+    if not nombre or precio is None:
+        return jsonify({"error": "Faltan datos del producto."}), 400
+
+    producto = Producto(
+        nombre=nombre,
+        precio=precio,
+        imagen=body.get("imagen") or "",
+        stock=int(body.get("stock") or 0),
+        seccion=body.get("seccion") or "individual",
+        insignia=body.get("insignia") or None,
+        orden=int(body.get("orden") or 0),
+    )
+    db.session.add(producto)
+    db.session.commit()
+    return jsonify({"ok": True, "producto": producto.to_dict()})
+
+
+def actualizar_producto(body, datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para hacer esto."}), 403
+
+    producto = db.session.query(Producto).filter_by(id=body.get("id")).first()
+    if not producto:
+        return jsonify({"error": "Producto no encontrado."}), 404
+
+    if "nombre" in body:
+        producto.nombre = body["nombre"]
+    if "precio" in body:
+        producto.precio = body["precio"]
+    if "imagen" in body:
+        producto.imagen = body["imagen"]
+    if "stock" in body:
+        producto.stock = int(body["stock"])
+    if "seccion" in body:
+        producto.seccion = body["seccion"]
+    if "insignia" in body:
+        producto.insignia = body["insignia"] or None
+    if "orden" in body:
+        producto.orden = int(body["orden"])
+    if "activo" in body:
+        producto.activo = bool(body["activo"])
+
+    db.session.commit()
+    return jsonify({"ok": True, "producto": producto.to_dict()})
+
+
 def obtener_comprobante_pedido(body, datos_token):
     if not exigir_tipo(datos_token, "admin"):
         return jsonify({"error": "No tienes permiso para ver esto."}), 403
@@ -543,6 +647,21 @@ def obtener_comprobante_pedido(body, datos_token):
     })
 
 
+def _ajustar_inventario(items, signo):
+    """signo=+1 regresa stock al inventario (pedido se cancela).
+    signo=-1 lo vuelve a descontar (se revierte una cancelacion,
+    volviendo el pedido a un estado activo)."""
+    for item in items:
+        try:
+            producto_id = int(item.get("id"))
+        except (TypeError, ValueError):
+            continue
+        producto = db.session.query(Producto).filter_by(id=producto_id).first()
+        if not producto:
+            continue
+        producto.stock = max(0, producto.stock + signo * (item.get("qty") or 0))
+
+
 def actualizar_estado_pedido(body, datos_token):
     if not exigir_tipo(datos_token, "admin"):
         return jsonify({"error": "No tienes permiso para hacer esto."}), 403
@@ -555,8 +674,20 @@ def actualizar_estado_pedido(body, datos_token):
     if not pedido:
         return jsonify({"error": "Pedido no encontrado."}), 404
 
+    estado_cambio = estado != pedido.estado
+    if estado_cambio:
+        if estado == "Cancelado":
+            _ajustar_inventario(pedido.items, 1)
+        elif pedido.estado == "Cancelado":
+            _ajustar_inventario(pedido.items, -1)
+
     pedido.estado = estado
     db.session.commit()
+
+    if estado_cambio:
+        correo_cliente = (pedido.datos_entrega or {}).get("email")
+        enviar_correo_cambio_estado_pedido(correo_cliente, pedido.folio, estado)
+
     return jsonify({"ok": True, "pedido": pedido.to_dict()})
 
 

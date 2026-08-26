@@ -266,6 +266,7 @@
 <script src="assets/cp-lookup.js"></script>
 <script src="assets/opiniones.js"></script>
 <script src="assets/tiendas-aliadas.js"></script>
+<script src="assets/notificaciones.js"></script>
 <script>
 (function () {
   var sesionCard = document.getElementById('sb-cuenta-sesion');
@@ -523,6 +524,7 @@
   }
 
   var pedidosFirma = null;
+  var estadosPedidosAnteriores = {};
 
   function cargarPedidos(silencioso) {
     var lista = document.getElementById('sb-pedidos-lista');
@@ -533,6 +535,15 @@
         return;
       }
       var pedidos = res.pedidos || [];
+
+      pedidos.forEach(function (p) {
+        var estadoAnterior = estadosPedidosAnteriores[p.id];
+        if (estadoAnterior && estadoAnterior !== p.estado) {
+          SanteBioToast.mostrar('📦 Tu pedido #' + p.id + ' ahora está: ' + p.estado);
+        }
+        estadosPedidosAnteriores[p.id] = p.estado;
+      });
+
       var firma = JSON.stringify(pedidos.map(function (p) { return p.id + ':' + p.estado + ':' + (p.productosCalificados || []).length; }));
       if (silencioso && firma === pedidosFirma) return;
       pedidosFirma = firma;

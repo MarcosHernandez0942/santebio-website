@@ -9,6 +9,7 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
 SMTP_FROM = os.environ.get("SMTP_FROM") or SMTP_USER or "no-reply@santebio.local"
 
 SITIO_URL = os.environ.get("SITIO_URL", "http://localhost:4930")
+ADMIN_CORREO_NOTIFICACIONES = os.environ.get("ADMIN_CORREO_NOTIFICACIONES")
 
 
 def _enviar(destinatario, asunto, cuerpo):
@@ -68,5 +69,52 @@ def enviar_correo_confirmacion_pedido(destinatario, folio, items, total):
         f"Puedes consultar el estatus de tu pedido en cualquier momento, sin necesidad de crear una cuenta, aquí:\n{enlace}\n"
         f"(te pedirá tu folio y el correo con el que hiciste la compra)\n\n"
         "Esto es una demo: el pedido ya se guardó en el sistema, pero el cobro no se procesó realmente."
+    )
+    _enviar(destinatario, asunto, cuerpo)
+
+
+def enviar_correo_nuevo_pedido_admin(folio, items, total, metodo_pago):
+    """Avisa al admin por correo en cuanto entra un pedido nuevo. Si no
+    se configuró ADMIN_CORREO_NOTIFICACIONES todavía, simplemente no se
+    manda nada (no es un error) -- el aviso en vivo dentro del panel de
+    administrador sigue funcionando igual."""
+    if not ADMIN_CORREO_NOTIFICACIONES:
+        print("[correo] ADMIN_CORREO_NOTIFICACIONES no configurado -- no se notificó por correo al admin.", flush=True)
+        return
+    lista_items = "\n".join(f"  - {it.get('qty')}x {it.get('name')}" for it in items)
+    asunto = f"Nuevo pedido {folio} — SanteBio"
+    cuerpo = (
+        "Entró un pedido nuevo.\n\n"
+        f"Folio: {folio}\n"
+        f"Método de pago: {metodo_pago}\n\n"
+        f"Productos:\n{lista_items}\n\n"
+        f"Total: ${total:,.2f} MXN\n\n"
+        f"Revísalo en el panel de administrador: {SITIO_URL}/admin.html"
+    )
+    _enviar(ADMIN_CORREO_NOTIFICACIONES, asunto, cuerpo)
+
+
+_MENSAJES_CAMBIO_ESTADO = {
+    "Enviado": "tu pedido ya va en camino",
+    "Entregado": "tu pedido fue entregado",
+    "Cancelado": "tu pedido fue cancelado",
+}
+
+
+def enviar_correo_cambio_estado_pedido(destinatario, folio, estado_nuevo):
+    """Avisa al cliente por correo cuando el admin cambia el estatus de
+    su pedido a Enviado, Entregado o Cancelado. Los demas estados
+    (Pendiente/Aceptado) no generan correo, para no saturar al cliente
+    con avisos de pasos intermedios."""
+    mensaje_estado = _MENSAJES_CAMBIO_ESTADO.get(estado_nuevo)
+    if not mensaje_estado or not destinatario:
+        return
+    enlace = f"{SITIO_URL}/seguimiento.html?folio={folio}"
+    asunto = f"Actualización de tu pedido {folio} — SanteBio"
+    cuerpo = (
+        f"Te escribimos para avisarte que {mensaje_estado}.\n\n"
+        f"Folio: {folio}\n"
+        f"Nuevo estatus: {estado_nuevo}\n\n"
+        f"Puedes ver el detalle de tu pedido aquí:\n{enlace}\n"
     )
     _enviar(destinatario, asunto, cuerpo)

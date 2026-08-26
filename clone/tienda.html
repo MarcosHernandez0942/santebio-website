@@ -44,60 +44,18 @@
 <main>
   <section class="sb-section">
     <div class="sb-section-inner">
-      <div class="sb-grid">
-        <div class="sb-card sb-reveal">
-          <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
-          <h3>90 Cápsulas</h3>
-          <div class="sb-producto-rating" data-producto-id="998"></div>
-          <div class="sb-price">$269 MXN</div>
-          <button class="sb-btn sb-add-to-cart" data-id="998" data-name="90 Cápsulas" data-price="269" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
-        </div>
-
-        <div class="sb-card sb-reveal">
-          <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
-          <h3>150 Cápsulas</h3>
-          <div class="sb-producto-rating" data-producto-id="999"></div>
-          <div class="sb-price">$399 MXN</div>
-          <button class="sb-btn sb-add-to-cart" data-id="999" data-name="150 Cápsulas" data-price="399" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
-        </div>
-      </div>
+      <div class="sb-grid" id="sb-grid-individual"></div>
     </div>
   </section>
 
-  <section class="sb-section sb-section-tint">
+  <section class="sb-section sb-section-tint" id="sb-seccion-paquetes" style="display:none;">
     <div class="sb-section-inner">
       <div class="sb-section-heading">
         <div class="sb-eyebrow">Paquetes</div>
         <h2>Ahorra más con un plan</h2>
       </div>
 
-      <div class="sb-grid">
-        <div class="sb-card sb-reveal">
-          <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
-          <h3>Paquete 1 — 1 frasco de 150 + 1 de 90</h3>
-          <div class="sb-producto-rating" data-producto-id="1250"></div>
-          <div class="sb-price">$501 MXN</div>
-          <button class="sb-btn sb-add-to-cart" data-id="1250" data-name="Paquete 1 (150 + 90 cápsulas)" data-price="501" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
-        </div>
-
-        <div class="sb-card sb-reveal">
-          <span class="sb-card-badge sb-card-badge-savings">Ahorro especial</span>
-          <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
-          <h3>Paquete 2 — 3x2 de 90 cápsulas</h3>
-          <div class="sb-producto-rating" data-producto-id="1252"></div>
-          <div class="sb-price">$538 MXN</div>
-          <button class="sb-btn sb-add-to-cart" data-id="1252" data-name="Paquete 2 - 3x2 (90 cápsulas)" data-price="538" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
-        </div>
-
-        <div class="sb-card sb-reveal is-recommended">
-          <span class="sb-card-badge sb-card-badge-recommended">Recomendado</span>
-          <img src="wp-content/uploads/2026/03/1.webp" alt="Cápsulas de nopal SanteBio" />
-          <h3>Paquete 3 — 3x2 de 150 cápsulas</h3>
-          <div class="sb-producto-rating" data-producto-id="1253"></div>
-          <div class="sb-price">$798 MXN</div>
-          <button class="sb-btn sb-add-to-cart" data-id="1253" data-name="Paquete 3 - 3x2 (150 cápsulas)" data-price="798" data-image="wp-content/uploads/2026/03/1.webp">Agregar al carrito</button>
-        </div>
-      </div>
+      <div class="sb-grid" id="sb-grid-paquete"></div>
 
       <p class="sb-note" style="text-align: center;">Suplemento alimenticio. Este producto no es un medicamento. El consumo de este producto es responsabilidad de quien lo recomienda y lo usa.</p>
     </div>
@@ -126,19 +84,6 @@
 <script src="assets/auth.js"></script>
 <script src="assets/opiniones.js"></script>
 <script>
-document.querySelectorAll('.sb-add-to-cart').forEach(function (btn) {
-  btn.addEventListener('click', function () {
-    SanteBioCart.addToCart({
-      id: btn.dataset.id,
-      name: btn.dataset.name,
-      price: parseFloat(btn.dataset.price),
-      image: btn.dataset.image,
-      qty: 1,
-    });
-    window.location.href = 'carrito.html';
-  });
-});
-
 /* Mientras un producto no tenga opiniones reales aprobadas, se
    muestra una calificacion base de 4.8 (solo visual, no se crea
    ninguna opinion falsa en la base de datos) para que la tienda no se
@@ -146,27 +91,83 @@ document.querySelectorAll('.sb-add-to-cart').forEach(function (btn) {
    aprobada, este numero se reemplaza solo por el promedio real. */
 var CALIFICACION_BASE = 4.8;
 
-SanteBioAuth.llamarApi('calificaciones_por_producto', {}, null).then(function (res) {
-  var calificaciones = res.calificaciones || {};
-  document.querySelectorAll('.sb-producto-rating').forEach(function (el) {
-    var c = calificaciones[el.dataset.productoId];
-    var promedio = c ? c.promedio : CALIFICACION_BASE;
-    var detalle = c ? (c.total + (c.total === 1 ? ' opinión' : ' opiniones')) : '';
-    el.innerHTML =
-      '<span class="sb-producto-rating-estrellas">' + SanteBioOpiniones.estrellasHtml(Math.round(promedio)) + '</span>' +
-      '<span>' + promedio + (detalle ? ' (' + detalle + ')' : '') + '</span>';
-  });
-});
+function tarjetaProducto(p) {
+  var badgeHtml = p.insignia
+    ? '<span class="sb-card-badge ' + (p.insignia === 'Recomendado' ? 'sb-card-badge-recommended' : 'sb-card-badge-savings') + '">' + p.insignia + '</span>'
+    : '';
+  var accionHtml = p.disponible
+    ? '<button class="sb-btn sb-add-to-cart" data-id="' + p.id + '" data-name="' + p.nombre + '" data-price="' + p.precio + '" data-image="' + p.imagen + '">Agregar al carrito</button>'
+    : '<button class="sb-btn" disabled style="opacity:0.5; cursor:not-allowed;">Agotado</button>';
 
-var revealObserver = new IntersectionObserver(function (entries) {
-  entries.forEach(function (entry) {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('is-visible');
-      revealObserver.unobserve(entry.target);
-    }
+  return (
+    '<div class="sb-card sb-reveal' + (p.insignia === 'Recomendado' ? ' is-recommended' : '') + '">' +
+    badgeHtml +
+    '<img src="' + p.imagen + '" alt="' + p.nombre + '" />' +
+    '<h3>' + p.nombre + '</h3>' +
+    '<div class="sb-producto-rating" data-producto-id="' + p.id + '"></div>' +
+    '<div class="sb-price">$' + p.precio + ' MXN</div>' +
+    accionHtml +
+    '</div>'
+  );
+}
+
+function wireBotonesAgregar() {
+  document.querySelectorAll('.sb-add-to-cart').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      SanteBioCart.addToCart({
+        id: btn.dataset.id,
+        name: btn.dataset.name,
+        price: parseFloat(btn.dataset.price),
+        image: btn.dataset.image,
+        qty: 1,
+      });
+      window.location.href = 'carrito.html';
+    });
   });
-}, { threshold: 0.15 });
-document.querySelectorAll('.sb-reveal').forEach(function (el) { revealObserver.observe(el); });
+}
+
+function cargarCalificaciones() {
+  SanteBioAuth.llamarApi('calificaciones_por_producto', {}, null).then(function (res) {
+    var calificaciones = res.calificaciones || {};
+    document.querySelectorAll('.sb-producto-rating').forEach(function (el) {
+      var c = calificaciones[el.dataset.productoId];
+      var promedio = c ? c.promedio : CALIFICACION_BASE;
+      var detalle = c ? (c.total + (c.total === 1 ? ' opinión' : ' opiniones')) : '';
+      el.innerHTML =
+        '<span class="sb-producto-rating-estrellas">' + SanteBioOpiniones.estrellasHtml(Math.round(promedio)) + '</span>' +
+        '<span>' + promedio + (detalle ? ' (' + detalle + ')' : '') + '</span>';
+    });
+  });
+}
+
+function activarRevealObserver() {
+  var revealObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.sb-reveal').forEach(function (el) { revealObserver.observe(el); });
+}
+
+SanteBioAuth.llamarApi('listar_productos_publico', {}, null).then(function (res) {
+  var productos = res.productos || [];
+  var individuales = productos.filter(function (p) { return p.seccion !== 'paquete'; });
+  var paquetes = productos.filter(function (p) { return p.seccion === 'paquete'; });
+
+  document.getElementById('sb-grid-individual').innerHTML = individuales.map(tarjetaProducto).join('');
+
+  if (paquetes.length > 0) {
+    document.getElementById('sb-grid-paquete').innerHTML = paquetes.map(tarjetaProducto).join('');
+    document.getElementById('sb-seccion-paquetes').style.display = '';
+  }
+
+  wireBotonesAgregar();
+  cargarCalificaciones();
+  activarRevealObserver();
+});
 </script>
 </body>
 </html>
