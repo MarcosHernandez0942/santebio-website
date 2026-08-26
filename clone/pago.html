@@ -300,6 +300,15 @@
     this.value = digitos.length > 2 ? digitos.slice(0, 2) + '/' + digitos.slice(2) : digitos;
   });
 
+  function leerArchivoComoBase64(archivo) {
+    return new Promise(function (resolve, reject) {
+      var lector = new FileReader();
+      lector.onload = function () { resolve(lector.result.split(',')[1]); };
+      lector.onerror = reject;
+      lector.readAsDataURL(archivo);
+    });
+  }
+
   function validarPago(metodo) {
     if (metodo === 'tarjeta') {
       var longitudEsperada = marcaActual === 'American Express' ? 15 : 16;
@@ -311,6 +320,7 @@
     } else if (metodo === 'transferencia') {
       var comprobante = document.getElementById('sb-transferencia-comprobante');
       if (!comprobante.files || comprobante.files.length === 0) return 'Sube tu comprobante de transferencia.';
+      if (comprobante.files[0].size > 5 * 1024 * 1024) return 'El comprobante es demasiado grande (máximo 5 MB).';
     }
     return null;
   }
@@ -374,12 +384,25 @@
 
     var usuario = SanteBioAuth.getUsuarioActual();
 
-    SanteBioAuth.llamarApi('crear_pedido', {
-      items: cart,
-      total: SanteBioCart.cartTotal(),
-      metodoPago: metodoInput ? metodoInput.value : '',
-      datosEntrega: checkoutData,
-    }, usuario ? SanteBioAuth.getToken() : null).then(function (res) {
+    var comprobantePromise = Promise.resolve(null);
+    if (metodoInput && metodoInput.value === 'transferencia') {
+      var archivoComprobante = document.getElementById('sb-transferencia-comprobante').files[0];
+      if (archivoComprobante) {
+        comprobantePromise = leerArchivoComoBase64(archivoComprobante).then(function (base64) {
+          return { nombre: archivoComprobante.name, tipo: archivoComprobante.type, datosBase64: base64 };
+        });
+      }
+    }
+
+    comprobantePromise.then(function (comprobante) {
+      return SanteBioAuth.llamarApi('crear_pedido', {
+        items: cart,
+        total: SanteBioCart.cartTotal(),
+        metodoPago: metodoInput ? metodoInput.value : '',
+        datosEntrega: checkoutData,
+        comprobante: comprobante,
+      }, usuario ? SanteBioAuth.getToken() : null);
+    }).then(function (res) {
       btn.disabled = false;
       btn.textContent = 'Confirmar pedido';
 

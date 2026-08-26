@@ -99,6 +99,12 @@
             <button type="button" data-filtro="Entregado">Entregados</button>
             <button type="button" data-filtro="Cancelado">Cancelados</button>
           </div>
+          <div class="sb-admin-filtros" id="sb-pedidos-metodo-filtros">
+            <button type="button" class="is-active" data-filtro-metodo="todos">Todos los métodos</button>
+            <button type="button" data-filtro-metodo="tarjeta">Tarjeta</button>
+            <button type="button" data-filtro-metodo="transferencia">Transferencia</button>
+            <button type="button" data-filtro-metodo="tiendas-aliadas">Tienda aliada</button>
+          </div>
           <div id="sb-pedidos-admin-lista" class="sb-reveal"></div>
         </div>
 
@@ -141,6 +147,14 @@
   </div>
   <small>Aviso de Privacidad · © 2026 SanteBio</small>
 </footer>
+
+<div class="sb-modal-overlay" id="sb-modal-comprobante">
+  <div class="sb-modal-card sb-modal-comprobante-card">
+    <button type="button" class="sb-modal-cerrar" id="sb-modal-comprobante-cerrar" aria-label="Cerrar">&times;</button>
+    <h2 style="margin-top:0;">Comprobante de transferencia</h2>
+    <div id="sb-modal-comprobante-contenido"></div>
+  </div>
+</div>
 
 <script src="assets/cart.js"></script>
 <script src="assets/auto-reload.js"></script>
@@ -239,6 +253,13 @@
   /* --- Pedidos (admin) --- */
   var todosPedidos = [];
   var filtroPedidoActual = 'todos';
+  var filtroMetodoActual = 'todos';
+  var detallesAbiertos = {};
+
+  function etiquetaMetodoPago(metodo) {
+    var etiquetas = { tarjeta: 'Tarjeta', transferencia: 'Transferencia', 'tiendas-aliadas': 'Tienda aliada' };
+    return etiquetas[metodo] || metodo;
+  }
 
   function cargarPedidosAdmin(token) {
     var lista = document.getElementById('sb-pedidos-admin-lista');
@@ -251,9 +272,11 @@
 
   function renderPedidosAdmin() {
     var lista = document.getElementById('sb-pedidos-admin-lista');
-    var pedidos = filtroPedidoActual === 'todos'
-      ? todosPedidos
-      : todosPedidos.filter(function (p) { return p.estado === filtroPedidoActual; });
+    var pedidos = todosPedidos.filter(function (p) {
+      var pasaEstado = filtroPedidoActual === 'todos' || p.estado === filtroPedidoActual;
+      var pasaMetodo = filtroMetodoActual === 'todos' || p.metodoPago === filtroMetodoActual;
+      return pasaEstado && pasaMetodo;
+    });
 
     if (pedidos.length === 0) {
       lista.innerHTML = '<p class="sb-empty-panel">No hay pedidos en esta categoría.</p>';
@@ -262,9 +285,38 @@
 
     lista.innerHTML = pedidos.map(function (p) {
       var fecha = new Date(p.creadoEn).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-      var itemsTexto = p.items.map(function (it) { return it.qty + 'x ' + it.name; }).join(', ');
       var d = p.datosEntrega || {};
       var estadoClase = 'sb-pedido-estado-' + p.estado.toLowerCase();
+      var abierto = !!detallesAbiertos[p.id];
+
+      var productosHtml = p.items.map(function (it) {
+        return (
+          '<li>' +
+          '<span>' + it.qty + 'x ' + it.name + '</span>' +
+          '<span>' + SanteBioCart.formatMXN(it.price * it.qty) + '</span>' +
+          '</li>'
+        );
+      }).join('');
+
+      var comprobanteHtml = '';
+      if (p.metodoPago === 'transferencia' && p.tieneComprobante) {
+        comprobanteHtml =
+          '<button type="button" class="sb-btn sb-btn-ghost sb-ver-comprobante-btn" data-id="' + p.id + '" style="padding:8px 16px; font-size:12.5px; margin-top:10px;">Ver comprobante de transferencia</button>';
+      }
+
+      var detalleHtml =
+        '<div class="sb-pedido-detalle" id="sb-pedido-detalle-' + p.id + '" style="display:' + (abierto ? 'block' : 'none') + ';">' +
+        '<p class="sb-pedido-detalle-titulo">Productos</p>' +
+        '<ul class="sb-pedido-detalle-productos">' + productosHtml + '</ul>' +
+        '<p class="sb-pedido-detalle-titulo">Dirección de envío</p>' +
+        '<div class="sb-pedido-detalle-envio">' +
+        '<p>' + (d.nombre || '') + (d.telefono ? ' · Tel: ' + d.telefono : '') + '</p>' +
+        '<p>' + (d.calle || '') + ', ' + (d.colonia || '') + '</p>' +
+        '<p>' + (d.ciudad || '') + ', ' + (d.estado || '') + ' ' + (d.cp || '') + '</p>' +
+        '</div>' +
+        comprobanteHtml +
+        '</div>';
+
       return (
         '<div class="sb-pedido-admin-card" data-id="' + p.id + '">' +
         '<div class="sb-pedido-admin-grid">' +
@@ -272,16 +324,15 @@
         '<div class="sb-pedido-card-top">' +
         '<span class="sb-pedido-id">Pedido #' + p.id + '</span>' +
         '<span class="sb-pedido-estado ' + estadoClase + '">' + p.estado + '</span>' +
+        '<span class="sb-metodo-badge">' + etiquetaMetodoPago(p.metodoPago) + '</span>' +
         '</div>' +
         '<div class="sb-pedido-fecha">' + fecha + '</div>' +
         '<div class="sb-pedido-cliente">' + (p.clienteCorreo || 'Cliente invitado') + '</div>' +
-        '<div class="sb-pedido-items">' + itemsTexto + '</div>' +
         '<div class="sb-pedido-total">' + SanteBioCart.formatMXN(p.total) + '</div>' +
-        '<div class="sb-pedido-envio"><strong style="color: var(--ink);">Enviar a:</strong> ' +
-        (d.nombre || '') + ' — ' + (d.calle || '') + ', ' + (d.colonia || '') + ', ' +
-        (d.ciudad || '') + ', ' + (d.estado || '') + ' ' + (d.cp || '') +
-        (d.telefono ? ' · Tel: ' + d.telefono : '') +
-        '</div>' +
+        '<button type="button" class="sb-btn sb-btn-ghost sb-ver-detalle-pedido-btn" data-id="' + p.id + '" style="padding:8px 16px; font-size:12.5px; margin-top:6px;">' +
+        (abierto ? 'Ocultar detalle' : 'Ver detalle') +
+        '</button>' +
+        detalleHtml +
         '</div>' +
         '<select class="sb-pedido-select-estado" data-id="' + p.id + '">' +
         ['Pendiente', 'Aceptado', 'Enviado', 'Entregado', 'Cancelado'].map(function (e) {
@@ -292,6 +343,20 @@
         '</div>'
       );
     }).join('');
+
+    lista.querySelectorAll('.sb-ver-detalle-pedido-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.dataset.id;
+        detallesAbiertos[id] = !detallesAbiertos[id];
+        renderPedidosAdmin();
+      });
+    });
+
+    lista.querySelectorAll('.sb-ver-comprobante-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        verComprobante(btn.dataset.id);
+      });
+    });
 
     lista.querySelectorAll('.sb-pedido-select-estado').forEach(function (select) {
       select.addEventListener('change', function () {
@@ -314,6 +379,48 @@
       filtroPedidoActual = btn.dataset.filtro;
       renderPedidosAdmin();
     });
+  });
+
+  document.querySelectorAll('#sb-pedidos-metodo-filtros button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#sb-pedidos-metodo-filtros button').forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      filtroMetodoActual = btn.dataset.filtroMetodo;
+      renderPedidosAdmin();
+    });
+  });
+
+  /* --- Ver comprobante de transferencia --- */
+  function base64ABlobUrl(base64, tipo) {
+    var binario = atob(base64);
+    var bytes = new Uint8Array(binario.length);
+    for (var i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+    return URL.createObjectURL(new Blob([bytes], { type: tipo }));
+  }
+
+  function verComprobante(pedidoId) {
+    var contenido = document.getElementById('sb-modal-comprobante-contenido');
+    contenido.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    document.getElementById('sb-modal-comprobante').classList.add('is-visible');
+    SanteBioAuth.llamarApi('obtener_comprobante_pedido', { id: pedidoId }, token).then(function (res) {
+      if (!res.ok) {
+        contenido.innerHTML = '<p class="sb-empty-panel">' + (res.error || 'No se pudo cargar el comprobante.') + '</p>';
+        return;
+      }
+      var url = base64ABlobUrl(res.datosBase64, res.tipo || '');
+      if (res.tipo && res.tipo.indexOf('image/') === 0) {
+        contenido.innerHTML = '<img src="' + url + '" alt="Comprobante de transferencia" />';
+      } else {
+        contenido.innerHTML =
+          '<p style="margin-bottom:14px; color: rgba(32,79,43,0.75);">' + (res.nombre || 'comprobante.pdf') + '</p>' +
+          '<a class="sb-btn" href="' + url + '" target="_blank" rel="noopener">Abrir PDF en una pestaña nueva</a>';
+      }
+    });
+  }
+
+  document.getElementById('sb-modal-comprobante-cerrar').addEventListener('click', function () {
+    document.getElementById('sb-modal-comprobante').classList.remove('is-visible');
+    document.getElementById('sb-modal-comprobante-contenido').innerHTML = '';
   });
 
   /* --- Opiniones (admin) --- */

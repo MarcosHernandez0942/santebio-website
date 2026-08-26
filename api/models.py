@@ -56,6 +56,16 @@ class Pedido(db.Model):
     # Trae nombre/telefono/direccion completos del cliente -> se
     # encripta todo el bloque.
     datos_entrega = db.Column(JSONEncriptado, nullable=False)
+    # Comprobante de transferencia (imagen o PDF), guardado como base64
+    # y encriptado -- igual de sensible que un dato bancario, asi que
+    # se trata igual que el resto de la info personal del pedido. Se
+    # separa de to_dict() a proposito (ver comprobante_pendiente abajo)
+    # para no mandar el archivo completo cada vez que el admin carga el
+    # listado de pedidos -- solo se pide bajo demanda, ver la accion
+    # "obtener_comprobante_pedido" en routes.py.
+    comprobante_nombre = db.Column(CampoEncriptado, nullable=True)
+    comprobante_tipo = db.Column(CampoEncriptado, nullable=True)
+    comprobante_datos = db.Column(CampoEncriptado, nullable=True)
     creado_en = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
@@ -69,6 +79,7 @@ class Pedido(db.Model):
             "estado": self.estado,
             "datosEntrega": self.datos_entrega,
             "creadoEn": self.creado_en.isoformat(),
+            "tieneComprobante": bool(self.comprobante_datos),
         }
 
 

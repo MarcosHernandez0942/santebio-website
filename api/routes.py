@@ -83,6 +83,8 @@ def accion():
             return listar_pedidos_admin(datos_token)
         if tipo_accion == "actualizar_estado_pedido":
             return actualizar_estado_pedido(body, datos_token)
+        if tipo_accion == "obtener_comprobante_pedido":
+            return obtener_comprobante_pedido(body, datos_token)
         if tipo_accion == "nueva_opinion":
             return nueva_opinion(body, datos_token)
         if tipo_accion == "listar_opiniones_publicas":
@@ -158,14 +160,26 @@ def login_admin(body):
     return jsonify({"ok": True, "token": token})
 
 
+MAX_COMPROBANTE_BASE64 = 7_000_000  # ~5 MB de archivo real antes de base64
+
+
 def crear_pedido(body, datos_token):
     items = body.get("items")
     total = body.get("total")
     metodo_pago = body.get("metodoPago") or ""
     datos_entrega = body.get("datosEntrega")
+    comprobante = body.get("comprobante")
 
     if not items or total is None or not datos_entrega:
         return jsonify({"error": "Pedido inválido."}), 400
+
+    comprobante_nombre = comprobante_tipo = comprobante_datos = None
+    if comprobante:
+        comprobante_datos = comprobante.get("datosBase64")
+        if comprobante_datos and len(comprobante_datos) > MAX_COMPROBANTE_BASE64:
+            return jsonify({"error": "El comprobante es demasiado grande (máximo 5 MB)."}), 400
+        comprobante_nombre = comprobante.get("nombre")
+        comprobante_tipo = comprobante.get("tipo")
 
     usuario_id = None
     if datos_token and datos_token.get("tipo") == "usuario":
@@ -184,6 +198,9 @@ def crear_pedido(body, datos_token):
         total=total,
         metodo_pago=metodo_pago,
         datos_entrega=datos_entrega,
+        comprobante_nombre=comprobante_nombre,
+        comprobante_tipo=comprobante_tipo,
+        comprobante_datos=comprobante_datos,
     )
     db.session.add(pedido)
     db.session.commit()
@@ -508,6 +525,22 @@ def listar_pedidos_admin(datos_token):
         resultado.append(d)
 
     return jsonify({"pedidos": resultado})
+
+
+def obtener_comprobante_pedido(body, datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para ver esto."}), 403
+
+    pedido = db.session.query(Pedido).filter_by(id=body.get("id")).first()
+    if not pedido or not pedido.comprobante_datos:
+        return jsonify({"error": "Este pedido no tiene comprobante adjunto."}), 404
+
+    return jsonify({
+        "ok": True,
+        "nombre": pedido.comprobante_nombre,
+        "tipo": pedido.comprobante_tipo,
+        "datosBase64": pedido.comprobante_datos,
+    })
 
 
 def actualizar_estado_pedido(body, datos_token):
