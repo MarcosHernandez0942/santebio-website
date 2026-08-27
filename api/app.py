@@ -7,7 +7,7 @@ from flask import Flask
 from flask_cors import CORS
 from db import db, build_database_uri
 from routes import bp as accion_bp
-from bootstrap import crear_admin_inicial_si_hace_falta
+from bootstrap import crear_admin_inicial_si_hace_falta, crear_productos_iniciales_si_hace_falta
 
 app = Flask(__name__)
 CORS(app)
@@ -21,6 +21,7 @@ app.register_blueprint(accion_bp, url_prefix="/api")
 with app.app_context():
     db.create_all()
     crear_admin_inicial_si_hace_falta()
+    crear_productos_iniciales_si_hace_falta()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 4931))
