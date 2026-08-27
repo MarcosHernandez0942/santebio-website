@@ -39,8 +39,19 @@
   }
 
   function obtenerFirma() {
+    // "cache: no-store" solo le dice al NAVEGADOR que no use su propio
+    // cache -- no le dice nada a un proxy/CDN que pudiera estar
+    // enfrente del sitio en un despliegue real (VPS con Nginx,
+    // Cloudflare, etc.), que puede seguir devolviendo una copia vieja
+    // sin enterarse. Por eso se agrega ademas un parametro distinto en
+    // cada revision (timestamp): la URL completa nunca se repite, asi
+    // que ningun cache -- del navegador, de un proxy o de un CDN --
+    // tiene una copia guardada para esa URL exacta y esta obligado a
+    // pedirla de nuevo al servidor de origen.
+    var sello = Date.now();
     return Promise.all(urls.map(function (url) {
-      return fetch(url, { cache: 'no-store' })
+      var urlSinCache = url + (url.indexOf('?') === -1 ? '?' : '&') + '_sb=' + sello;
+      return fetch(urlSinCache, { cache: 'no-store' })
         .then(function (r) { return r.text(); })
         .catch(function () { return null; });
     })).then(function (textos) { return textos.join(' '); });
