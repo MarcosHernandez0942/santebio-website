@@ -68,6 +68,21 @@ a {
   font-size: 14px;
 }
 
+.sb-header-icon-link {
+  gap: 0;
+  color: var(--ink);
+  transition: color 0.15s ease;
+  padding: 8px;
+  margin: -8px;
+}
+.sb-header-icon-link svg {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.sb-header-icon-link:hover {
+  color: var(--green);
+}
 .sb-cart-badge {
   display: none;
   align-items: center;
