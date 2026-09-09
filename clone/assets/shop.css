@@ -711,6 +711,68 @@ a {
   margin-left: 6px;
   vertical-align: middle;
 }
+.sb-payment-method.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.sb-payment-method.is-disabled input {
+  pointer-events: none;
+}
+.sb-payment-method-soon {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(32, 79, 43, 0.55);
+  background: rgba(32, 79, 43, 0.08);
+  border-radius: 6px;
+  padding: 2px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.sb-brands-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin: 2px 0 16px;
+}
+.sb-brands-row img {
+  height: 20px;
+  width: auto;
+  display: block;
+}
+.sb-brands-row .sb-openpay-logo {
+  height: 16px;
+}
+.sb-tiendas-logos-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 0 12px;
+}
+.sb-tiendas-logos-row img {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+.sb-openpay-voucher {
+  text-align: center;
+}
+.sb-openpay-voucher .sb-openpay-referencia {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 6px 0 12px;
+}
+.sb-openpay-voucher img.sb-openpay-barcode {
+  max-width: 100%;
+  height: auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px;
+  border: 1px solid var(--line);
+}
 .sb-input-toggle-wrap {
   position: relative;
 }

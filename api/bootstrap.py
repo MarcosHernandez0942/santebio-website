@@ -4,6 +4,17 @@ from db import db
 from models import Admin, Producto
 
 
+def agregar_columnas_openpay_si_hace_falta():
+    """db.create_all() solo crea tablas nuevas, no altera una tabla
+    "pedidos" que ya existia antes de agregar los campos de Openpay a
+    Pedido (models.py) -- por eso se agregan aqui a mano. Postgres
+    soporta "IF NOT EXISTS" en ADD COLUMN, asi que correr esto en un
+    despliegue que ya tiene las columnas no hace nada."""
+    for columna in ("openpay_charge_id", "openpay_referencia", "openpay_barcode_url", "openpay_estado_pago"):
+        db.session.execute(db.text(f"ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS {columna} TEXT"))
+    db.session.commit()
+
+
 def crear_admin_inicial_si_hace_falta():
     usuario = os.environ.get("ADMIN_USUARIO")
     password = os.environ.get("ADMIN_PASSWORD")

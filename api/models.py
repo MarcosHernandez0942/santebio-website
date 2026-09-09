@@ -66,6 +66,15 @@ class Pedido(db.Model):
     comprobante_nombre = db.Column(CampoEncriptado, nullable=True)
     comprobante_tipo = db.Column(CampoEncriptado, nullable=True)
     comprobante_datos = db.Column(CampoEncriptado, nullable=True)
+    # Datos del cargo de Openpay (tarjeta o pago en tienda/Paynet). No
+    # son sensibles como un numero de tarjeta -- son solo el id del
+    # cargo y, para pago en tienda, la referencia/codigo de barras que
+    # el cliente necesita para pagar -- asi que van sin encriptar,
+    # igual que folio/estado/metodoPago.
+    openpay_charge_id = db.Column(db.Text, nullable=True)
+    openpay_referencia = db.Column(db.Text, nullable=True)
+    openpay_barcode_url = db.Column(db.Text, nullable=True)
+    openpay_estado_pago = db.Column(db.Text, nullable=True)
     creado_en = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
@@ -80,6 +89,10 @@ class Pedido(db.Model):
             "datosEntrega": self.datos_entrega,
             "creadoEn": self.creado_en.isoformat(),
             "tieneComprobante": bool(self.comprobante_datos),
+            "openpayChargeId": self.openpay_charge_id,
+            "openpayReferencia": self.openpay_referencia,
+            "openpayBarcodeUrl": self.openpay_barcode_url,
+            "openpayEstadoPago": self.openpay_estado_pago,
         }
 
 

@@ -580,11 +580,15 @@
         if (p.metodoPago === 'tiendas-aliadas' && p.estado === 'Pendiente') {
           fichaPago = (
             '<button type="button" class="sb-ver-ficha-btn sb-btn sb-btn-ghost" data-pedido-id="' + p.id + '" style="margin-top:10px; padding:8px 16px; font-size:12.5px;">Ver ficha de pago</button>' +
-            '<div class="sb-ficha-pago" id="sb-ficha-pago-' + p.id + '" style="display:none; margin-top:10px; background: rgba(105,148,49,0.1); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px 16px; text-align:left;">' +
-            '<p style="margin:0 0 6px; font-size:12.5px;">Folio: <strong>' + p.folio + '</strong></p>' +
-            '<p style="margin:0 0 10px; font-size:12.5px;">Monto a pagar: <strong>' + SanteBioCart.formatMXN(p.total) + '</strong></p>' +
-            '<p style="font-weight:700; color:var(--ink); margin:0 0 6px; font-size:12.5px;">Tiendas donde puedes pagar (ejemplo):</p>' +
-            '<ul style="margin:0; padding-left:18px; font-size:12px; color:rgba(32,79,43,0.85);">' + SanteBioTiendas.listaHtml() + '</ul>' +
+            '<div class="sb-ficha-pago sb-openpay-voucher" id="sb-ficha-pago-' + p.id + '" style="display:none; margin-top:10px; background: rgba(105,148,49,0.1); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px 16px;">' +
+            '<p style="margin:0 0 4px; font-size:12.5px;">Monto a pagar: <strong>' + SanteBioCart.formatMXN(p.total) + '</strong></p>' +
+            (p.openpayReferencia
+              ? '<p style="margin:0; font-size:11.5px; color:rgba(32,79,43,0.65);">Referencia de pago</p>' +
+                '<div class="sb-openpay-referencia" style="font-size:16px;">' + p.openpayReferencia + '</div>' +
+                (p.openpayBarcodeUrl ? '<img class="sb-openpay-barcode" src="' + p.openpayBarcodeUrl + '" alt="Código de barras para pagar en tienda" />' : '')
+              : '<p style="margin:8px 0; font-size:12px;">Folio: <strong>' + p.folio + '</strong></p>') +
+            '<p style="font-weight:700; color:var(--ink); margin:14px 0 6px; font-size:12.5px;">Tiendas donde puedes pagar:</p>' +
+            '<div class="sb-tiendas-logos-row" style="justify-content:center;">' + SanteBioTiendas.logosHtml() + '</div>' +
             '</div>'
           );
         }

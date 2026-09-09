@@ -12,6 +12,7 @@ from email_utils import (
     enviar_correo_cambio_estado_pedido,
 )
 from models import Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion, Producto
+from openpay_client import openpay_configurado, crear_cargo_tarjeta, crear_cargo_tienda
 
 bp = Blueprint("accion", __name__)
 
@@ -194,9 +195,43 @@ def crear_pedido(body, datos_token):
         comprobante_nombre = comprobante.get("nombre")
         comprobante_tipo = comprobante.get("tipo")
 
-    # Validar y descontar inventario ANTES de crear el pedido -- si a
-    # algun producto ya no le alcanza el stock, se rechaza todo el
-    # pedido en vez de dejarlo a medias.
+    # El folio se genera ANTES de intentar cualquier cargo de Openpay
+    # porque se manda como "order_id" del cargo -- asi se puede
+    # relacionar el cargo con el pedido incluso si algo falla a medias
+    # (el folio simplemente se descarta si el cargo no procede, ver
+    # abajo).
+    folio = generar_folio()
+    while db.session.query(Pedido).filter_by(folio=folio).first():
+        folio = generar_folio()
+
+    descripcion_cargo = f"Pedido {folio} - SanteBio Cápsulas de Nopal"
+    openpay_charge_id = openpay_referencia = openpay_barcode_url = None
+
+    if metodo_pago == "tarjeta":
+        if not openpay_configurado():
+            return jsonify({"error": "Los pagos con tarjeta aún no están disponibles. Intenta con transferencia o en tiendas aliadas."}), 400
+        source_id = body.get("openpayTokenId")
+        device_session_id = body.get("openpayDeviceSessionId")
+        if not source_id or not device_session_id:
+            return jsonify({"error": "No se pudo leer la tarjeta. Intenta de nuevo."}), 400
+        resultado_cargo = crear_cargo_tarjeta(source_id, device_session_id, total, descripcion_cargo, folio)
+        if not resultado_cargo["ok"]:
+            return jsonify({"error": resultado_cargo["error"]}), 400
+        openpay_charge_id = resultado_cargo["chargeId"]
+    elif metodo_pago == "tiendas-aliadas":
+        if not openpay_configurado():
+            return jsonify({"error": "El pago en tiendas aliadas aún no está disponible. Intenta con transferencia o tarjeta."}), 400
+        resultado_cargo = crear_cargo_tienda(total, descripcion_cargo, folio)
+        if not resultado_cargo["ok"]:
+            return jsonify({"error": resultado_cargo["error"]}), 400
+        openpay_charge_id = resultado_cargo["chargeId"]
+        openpay_referencia = resultado_cargo.get("referencia")
+        openpay_barcode_url = resultado_cargo.get("barcodeUrl")
+
+    # Validar y descontar inventario -- despues del cargo (si aplica),
+    # para no descontar stock si el cobro no procedio, pero antes de
+    # crear el pedido, para rechazarlo completo si a algun producto ya
+    # no le alcanza.
     productos_a_descontar = []
     for item in items:
         try:
@@ -218,12 +253,6 @@ def crear_pedido(body, datos_token):
     if datos_token and datos_token.get("tipo") == "usuario":
         usuario_id = datos_token.get("usuarioId")
 
-    folio = generar_folio()
-    # Practicamente imposible que choque, pero por si acaso se
-    # regenera en vez de fallar el pedido.
-    while db.session.query(Pedido).filter_by(folio=folio).first():
-        folio = generar_folio()
-
     pedido = Pedido(
         folio=folio,
         usuario_id=usuario_id,
@@ -234,6 +263,9 @@ def crear_pedido(body, datos_token):
         comprobante_nombre=comprobante_nombre,
         comprobante_tipo=comprobante_tipo,
         comprobante_datos=comprobante_datos,
+        openpay_charge_id=openpay_charge_id,
+        openpay_referencia=openpay_referencia,
+        openpay_barcode_url=openpay_barcode_url,
     )
     db.session.add(pedido)
     db.session.commit()
