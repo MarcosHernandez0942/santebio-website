@@ -128,21 +128,35 @@
           </div>
 
           <div class="sb-form-group" id="sb-transferencia-fields" style="display:none;">
-            <div style="background: rgba(105,148,49,0.1); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
-              <p style="font-weight:700; color:var(--ink); margin:0 0 8px;">Datos para tu transferencia (ejemplo)</p>
-              <p style="margin:2px 0; font-size:13px;">Banco: <strong>BBVA</strong></p>
-              <p style="margin:2px 0; font-size:13px;">CLABE: <strong>0123 4567 8901 2345 67</strong></p>
-              <p style="margin:2px 0 12px; font-size:13px;">A nombre de: <strong>SanteBio Cápsulas de Nopal</strong></p>
-              <ol style="margin:0; padding-left:18px; font-size:13px; color:rgba(32,79,43,0.85);">
-                <li>Transfiere el total de tu pedido a esta cuenta.</li>
-                <li>En el concepto de la transferencia, coloca tu nombre completo: <strong id="sb-transferencia-nombre-concepto"></strong> (nos ayuda a identificar tu pago).</li>
-                <li>Sube tu comprobante de transferencia.</li>
-                <li>Un asesor confirmará tu pago y te notificaremos por correo.</li>
-              </ol>
+            <!-- sb-transferencia-spei: cuando ya hay credenciales de Openpay,
+                 la CLABE la genera Openpay al confirmar el pedido (metodo
+                 "bank_account"/SPEI) -- unica por pedido, se empareja sola,
+                 no hace falta subir comprobante. -->
+            <div id="sb-transferencia-spei" style="display:none;">
+              <div style="background: rgba(105,148,49,0.1); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px 16px;">
+                <p style="font-weight:700; color:var(--ink); margin:0 0 8px;">Transferencia bancaria automática (SPEI)</p>
+                <p style="margin:0; font-size:13px; color:rgba(32,79,43,0.85);">Al confirmar tu pedido generamos una CLABE y una referencia únicas para que transfieras desde tu banco. No necesitas subir ningún comprobante: en cuanto se reciba tu transferencia, lo confirmamos automáticamente y te notificaremos por correo.</p>
+              </div>
             </div>
-            <label for="sb-transferencia-comprobante">Comprobante de transferencia (imagen o PDF)</label>
-            <input type="file" id="sb-transferencia-comprobante" accept="image/*,application/pdf" />
-            <p class="sb-form-hint">Adjunta tu comprobante para que podamos validar tu pago.</p>
+            <!-- sb-transferencia-manual: flujo de siempre, mientras no haya
+                 credenciales de Openpay -- CLABE fija + comprobante. -->
+            <div id="sb-transferencia-manual">
+              <div style="background: rgba(105,148,49,0.1); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                <p style="font-weight:700; color:var(--ink); margin:0 0 8px;">Datos para tu transferencia (ejemplo)</p>
+                <p style="margin:2px 0; font-size:13px;">Banco: <strong>BBVA</strong></p>
+                <p style="margin:2px 0; font-size:13px;">CLABE: <strong>0123 4567 8901 2345 67</strong></p>
+                <p style="margin:2px 0 12px; font-size:13px;">A nombre de: <strong>SanteBio Cápsulas de Nopal</strong></p>
+                <ol style="margin:0; padding-left:18px; font-size:13px; color:rgba(32,79,43,0.85);">
+                  <li>Transfiere el total de tu pedido a esta cuenta.</li>
+                  <li>En el concepto de la transferencia, coloca tu nombre completo: <strong id="sb-transferencia-nombre-concepto"></strong> (nos ayuda a identificar tu pago).</li>
+                  <li>Sube tu comprobante de transferencia.</li>
+                  <li>Un asesor confirmará tu pago y te notificaremos por correo.</li>
+                </ol>
+              </div>
+              <label for="sb-transferencia-comprobante">Comprobante de transferencia (imagen o PDF)</label>
+              <input type="file" id="sb-transferencia-comprobante" accept="image/*,application/pdf" />
+              <p class="sb-form-hint">Adjunta tu comprobante para que podamos validar tu pago.</p>
+            </div>
           </div>
 
           <div class="sb-form-group" id="sb-tiendas-aliadas-fields" style="display:none;">
@@ -206,6 +220,17 @@
       <img class="sb-openpay-barcode" id="sb-modal-voucher-barcode" alt="Código de barras para pagar en tienda" style="display:none;" />
       <p style="font-weight:700; color:var(--ink); margin:14px 0 6px; font-size:13px;">Tiendas donde puedes pagar:</p>
       <div class="sb-tiendas-logos-row" id="sb-modal-voucher-tiendas" style="justify-content:center;"></div>
+    </div>
+    <div id="sb-modal-voucher-transferencia" class="sb-openpay-voucher" style="display:none; background: rgba(105,148,49,0.1); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px 16px; margin-top: -10px; margin-bottom: 20px;">
+      <p style="margin:0 0 4px; font-size:13px;">Monto a pagar: <strong id="sb-modal-transferencia-monto"></strong></p>
+      <p style="margin:0; font-size:12px; color:rgba(32,79,43,0.65);">Banco</p>
+      <p style="margin:0 0 8px; font-size:15px; font-weight:700;" id="sb-modal-transferencia-banco"></p>
+      <p style="margin:0; font-size:12px; color:rgba(32,79,43,0.65);">CLABE interbancaria</p>
+      <div class="sb-openpay-referencia" id="sb-modal-transferencia-clabe" style="font-size:17px;"></div>
+      <p style="margin:0; font-size:12px; color:rgba(32,79,43,0.65);">Referencia</p>
+      <div class="sb-openpay-referencia" id="sb-modal-transferencia-referencia" style="font-size:15px;"></div>
+      <p class="sb-form-hint" style="margin:10px 0 0;" id="sb-modal-transferencia-vigencia"></p>
+      <a class="sb-btn sb-btn-ghost" id="sb-modal-transferencia-pdf" style="width:100%; margin-top:12px;" target="_blank" rel="noopener">Descargar referencia (PDF)</a>
     </div>
     <button type="button" class="sb-btn" id="sb-modal-btn" style="width: 100%;">Ver mis pedidos</button>
   </div>
@@ -287,6 +312,11 @@
     document.querySelector('input[name="metodo-pago"][value="transferencia"]').checked = true;
     actualizarBloquesMetodoPago('transferencia');
   }
+  // "Transferencia" nunca se deshabilita (es el metodo que siempre
+  // funciona), pero su contenido cambia: CLABE automatica por Openpay
+  // si ya hay credenciales, o el flujo manual de comprobante si no.
+  document.getElementById('sb-transferencia-spei').style.display = openpayHabilitado ? 'block' : 'none';
+  document.getElementById('sb-transferencia-manual').style.display = openpayHabilitado ? 'none' : 'block';
 
   var cardNumberInput = document.getElementById('sb-card-number');
   var cardBrandBadge = document.getElementById('sb-card-brand-badge');
@@ -347,7 +377,9 @@
       if (!/^\d{2}\/\d{2}$/.test(document.getElementById('sb-card-exp').value.trim())) return 'Ingresa la vigencia en formato MM/AA.';
       var cvvEsperado = marcaActual === 'American Express' ? 4 : 3;
       if (cardCvvInput.value.length !== cvvEsperado) return 'Ingresa el CVV de tu tarjeta.';
-    } else if (metodo === 'transferencia') {
+    } else if (metodo === 'transferencia' && !openpayHabilitado) {
+      // Con Openpay habilitado la CLABE se genera sola -- no hay
+      // comprobante que subir ni que validar.
       var comprobante = document.getElementById('sb-transferencia-comprobante');
       if (!comprobante.files || comprobante.files.length === 0) return 'Sube tu comprobante de transferencia.';
       if (comprobante.files[0].size > 5 * 1024 * 1024) return 'El comprobante es demasiado grande (máximo 5 MB).';
@@ -476,7 +508,10 @@
       SanteBioCart.clearCart();
       SanteBioCart.clearCheckoutData();
 
-      if (metodo === 'transferencia') {
+      if (metodo === 'transferencia' && res.pedido.openpayClabe) {
+        document.getElementById('sb-modal-texto').textContent =
+          'Tu pedido quedó registrado. Usa los datos de abajo para transferir desde tu banco — en cuanto se reciba tu pago te notificaremos por correo.';
+      } else if (metodo === 'transferencia') {
         document.getElementById('sb-modal-texto').textContent =
           'Recibimos tu comprobante de transferencia. Verificaremos la transacción y te notificaremos por correo en cuanto se confirme. ¡Muchas gracias por tu compra!';
       } else if (metodo === 'tiendas-aliadas') {
@@ -509,6 +544,24 @@
         }
         document.getElementById('sb-modal-voucher-tiendas').innerHTML = SanteBioTiendas.logosHtml();
         document.getElementById('sb-modal-voucher-tienda').style.display = 'block';
+      }
+
+      if (metodo === 'transferencia' && res.pedido.openpayClabe) {
+        document.getElementById('sb-modal-transferencia-monto').textContent = SanteBioCart.formatMXN(res.pedido.total);
+        document.getElementById('sb-modal-transferencia-banco').textContent = res.pedido.openpayBanco || '';
+        document.getElementById('sb-modal-transferencia-clabe').textContent = res.pedido.openpayClabe;
+        document.getElementById('sb-modal-transferencia-referencia').textContent = res.pedido.openpayReferencia || '';
+        if (res.pedido.openpayFechaVencimiento) {
+          var vencimiento = new Date(res.pedido.openpayFechaVencimiento);
+          document.getElementById('sb-modal-transferencia-vigencia').textContent =
+            'Realiza tu transferencia antes del ' +
+            vencimiento.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) +
+            ' a las ' + vencimiento.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }) + '.';
+        }
+        var pdfBtn = document.getElementById('sb-modal-transferencia-pdf');
+        pdfBtn.href = SanteBioAuth.getBaseUrl() + '/api/pedido/referencia-pago.pdf?folio=' +
+          encodeURIComponent(res.pedido.folio) + '&email=' + encodeURIComponent(checkoutData.email);
+        document.getElementById('sb-modal-voucher-transferencia').style.display = 'block';
       }
 
       var modalBtn = document.getElementById('sb-modal-btn');

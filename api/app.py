@@ -14,6 +14,7 @@ from bootstrap import (
     agregar_columnas_openpay_si_hace_falta,
 )
 from webhook_openpay import bp as openpay_webhook_bp
+from routes_pdf import bp as pdf_bp
 
 app = Flask(__name__)
 CORS(app)
@@ -31,6 +32,7 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 db.init_app(app)
 app.register_blueprint(accion_bp, url_prefix="/api")
 app.register_blueprint(openpay_webhook_bp, url_prefix="/api")
+app.register_blueprint(pdf_bp, url_prefix="/api")
 
 with app.app_context():
     db.create_all()

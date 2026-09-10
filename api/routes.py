@@ -12,7 +12,7 @@ from email_utils import (
     enviar_correo_cambio_estado_pedido,
 )
 from models import Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion, Producto
-from openpay_client import openpay_configurado, crear_cargo_tarjeta, crear_cargo_tienda
+from openpay_client import openpay_configurado, crear_cargo_tarjeta, crear_cargo_tienda, crear_cargo_spei
 from pagos_confirmacion import confirmar_pago_si_corresponde
 
 bp = Blueprint("accion", __name__)
@@ -210,6 +210,12 @@ def crear_pedido(body, datos_token):
     openpay_charge_id = openpay_referencia = openpay_barcode_url = None
     openpay_charge_data = None
     openpay_estado_pago = None
+    openpay_clabe = openpay_banco = openpay_fecha_vencimiento = None
+    # True solo si ESTE pedido en particular se cobra a traves de
+    # Openpay -- no se puede usar el nombre del metodo directo porque
+    # "transferencia" tiene dos comportamientos segun si ya hay
+    # credenciales configuradas (ver mas abajo).
+    usa_openpay_para_este_metodo = False
 
     if metodo_pago == "tarjeta":
         if not openpay_configurado():
@@ -224,6 +230,7 @@ def crear_pedido(body, datos_token):
         openpay_charge_id = resultado_cargo["chargeId"]
         openpay_charge_data = resultado_cargo["cuerpo"]
         openpay_estado_pago = resultado_cargo["estado"]
+        usa_openpay_para_este_metodo = True
     elif metodo_pago == "tiendas-aliadas":
         if not openpay_configurado():
             return jsonify({"error": "El pago en tiendas aliadas aún no está disponible. Intenta con transferencia o tarjeta."}), 400
@@ -235,6 +242,25 @@ def crear_pedido(body, datos_token):
         openpay_barcode_url = resultado_cargo.get("barcodeUrl")
         openpay_charge_data = resultado_cargo["cuerpo"]
         openpay_estado_pago = resultado_cargo["estado"]
+        usa_openpay_para_este_metodo = True
+    elif metodo_pago == "transferencia" and openpay_configurado():
+        # Con credenciales reales, "transferencia" ya no pide
+        # comprobante -- Openpay genera una CLABE/referencia unica por
+        # pedido, asi que el pago se empareja solo (webhook/consulta
+        # activa), igual que tarjeta/tiendas-aliadas. Mientras no haya
+        # credenciales, cae al flujo manual de siempre mas abajo (sin
+        # este bloque).
+        resultado_cargo = crear_cargo_spei(total, descripcion_cargo, folio, ip_cliente=ip_cliente)
+        if not resultado_cargo["ok"]:
+            return jsonify({"error": resultado_cargo["error"]}), 400
+        openpay_charge_id = resultado_cargo["chargeId"]
+        openpay_referencia = resultado_cargo.get("referencia")
+        openpay_banco = resultado_cargo.get("banco")
+        openpay_clabe = resultado_cargo.get("clabe")
+        openpay_fecha_vencimiento = resultado_cargo.get("fechaVencimiento")
+        openpay_charge_data = resultado_cargo["cuerpo"]
+        openpay_estado_pago = resultado_cargo["estado"]
+        usa_openpay_para_este_metodo = True
 
     # Validar inventario -- se hace siempre, para rechazar el pedido
     # completo si a algun producto ya no le alcanza, sin importar el
@@ -253,18 +279,19 @@ def crear_pedido(body, datos_token):
             return jsonify({"error": "Ya no hay suficiente inventario de \"" + producto.nombre + "\"."}), 400
         productos_a_descontar.append((producto, cantidad))
 
-    # El inventario solo se descuenta de una vez si el metodo no
+    # El inventario solo se descuenta de una vez si este pedido no
     # depende de una confirmacion asincrona de Openpay (transferencia
-    # se revisa a mano), o si Openpay ya confirmo el cobro como
-    # "completed" al crear el cargo mismo (el caso normal de tarjeta).
-    # Si el cargo quedo en cualquier otro estado -- tiendas aliadas
-    # siempre (se paga dias despues, en efectivo), o una tarjeta que
-    # regreso "in_progress"/un valor no documentado -- el stock se
-    # descuenta despues, solo cuando se confirme de verdad el pago
-    # (ver pagos_confirmacion.confirmar_pago_si_corresponde, llamada
-    # desde el webhook y desde la consulta activa de respaldo). Asi no
-    # se reserva inventario por pedidos que quiza nunca se paguen.
-    stock_descontado = metodo_pago not in ("tarjeta", "tiendas-aliadas") or openpay_estado_pago == "completed"
+    # manual con comprobante, revisada a mano), o si Openpay ya
+    # confirmo el cobro como "completed" al crear el cargo mismo (el
+    # caso normal de tarjeta). Si el cargo quedo en cualquier otro
+    # estado -- tiendas aliadas y transferencia SPEI siempre (se pagan
+    # despues, en efectivo o desde el banco), o una tarjeta que regreso
+    # "in_progress"/un valor no documentado -- el stock se descuenta
+    # despues, solo cuando se confirme de verdad el pago (ver
+    # pagos_confirmacion.confirmar_pago_si_corresponde, llamada desde
+    # el webhook y desde la consulta activa de respaldo). Asi no se
+    # reserva inventario por pedidos que quiza nunca se paguen.
+    stock_descontado = not usa_openpay_para_este_metodo or openpay_estado_pago == "completed"
     if stock_descontado:
         for producto, cantidad in productos_a_descontar:
             producto.stock -= cantidad
@@ -288,6 +315,9 @@ def crear_pedido(body, datos_token):
         openpay_barcode_url=openpay_barcode_url,
         openpay_charge_data=openpay_charge_data,
         openpay_estado_pago=openpay_estado_pago,
+        openpay_clabe=openpay_clabe,
+        openpay_banco=openpay_banco,
+        openpay_fecha_vencimiento=openpay_fecha_vencimiento,
         stock_descontado=stock_descontado,
     )
     db.session.add(pedido)

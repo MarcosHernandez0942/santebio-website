@@ -130,6 +130,10 @@ var SanteBioAuth = (function () {
     return localStorage.getItem(ADMIN_USUARIO_KEY);
   }
 
+  function getBaseUrl() {
+    return BASE_URL;
+  }
+
   /* Cierre de sesion por inactividad -- mismo mecanismo ya usado en
      torre_digital (js/admin-auth.js): si pasan 15 minutos sin ningun
      movimiento/clic/tecla/scroll, se cierra sola la sesion de admin y
@@ -169,6 +173,7 @@ var SanteBioAuth = (function () {
     getUsuarioActual: getUsuarioActual,
     getAdminToken: getAdminToken,
     getAdminUsuario: getAdminUsuario,
+    getBaseUrl: getBaseUrl,
     activarCierreSesionAdminPorInactividad: activarCierreSesionAdminPorInactividad,
   };
 })();

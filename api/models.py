@@ -75,6 +75,14 @@ class Pedido(db.Model):
     openpay_referencia = db.Column(db.Text, nullable=True)
     openpay_barcode_url = db.Column(db.Text, nullable=True)
     openpay_estado_pago = db.Column(db.Text, nullable=True)
+    # Datos de la CLABE de transferencia SPEI (metodo "transferencia"
+    # cuando ya hay credenciales reales de Openpay) -- mismo criterio
+    # que arriba, no son sensibles (a diferencia de un numero de
+    # tarjeta): son la cuenta a la que el propio cliente debe
+    # depositar, no una cuenta suya.
+    openpay_clabe = db.Column(db.Text, nullable=True)
+    openpay_banco = db.Column(db.Text, nullable=True)
+    openpay_fecha_vencimiento = db.Column(db.Text, nullable=True)
     # Respuesta cruda completa del ultimo cargo/consulta a Openpay, sin
     # recortar -- para no perder informacion si Openpay agrega un
     # campo que el codigo todavia no espera explicitamente. No se
@@ -106,6 +114,9 @@ class Pedido(db.Model):
             "openpayReferencia": self.openpay_referencia,
             "openpayBarcodeUrl": self.openpay_barcode_url,
             "openpayEstadoPago": self.openpay_estado_pago,
+            "openpayClabe": self.openpay_clabe,
+            "openpayBanco": self.openpay_banco,
+            "openpayFechaVencimiento": self.openpay_fecha_vencimiento,
         }
 
 

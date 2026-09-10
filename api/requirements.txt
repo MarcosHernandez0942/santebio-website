@@ -8,3 +8,4 @@ python-dotenv==1.2.3
 gunicorn==26.1.0
 cryptography==50.0.0
 requests==2.34.2
+reportlab==5.0.1

@@ -10,7 +10,10 @@ def agregar_columnas_openpay_si_hace_falta():
     Pedido (models.py) -- por eso se agregan aqui a mano. Postgres
     soporta "IF NOT EXISTS" en ADD COLUMN, asi que correr esto en un
     despliegue que ya tiene las columnas no hace nada."""
-    for columna in ("openpay_charge_id", "openpay_referencia", "openpay_barcode_url", "openpay_estado_pago"):
+    for columna in (
+        "openpay_charge_id", "openpay_referencia", "openpay_barcode_url", "openpay_estado_pago",
+        "openpay_clabe", "openpay_banco", "openpay_fecha_vencimiento",
+    ):
         db.session.execute(db.text(f"ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS {columna} TEXT"))
     db.session.execute(db.text("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS openpay_charge_data JSON"))
     db.session.execute(

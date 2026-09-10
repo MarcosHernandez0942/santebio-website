@@ -21,6 +21,11 @@ PRODUCTION_BASE_URL = "https://api.openpay.mx/v1"
 # otro plazo de negocio.
 DIAS_VIGENCIA_REFERENCIA_TIENDA = 3
 
+# Igual que arriba, pero para la CLABE de transferencia SPEI -- se deja
+# como constante aparte para poder ajustar cada plazo de forma
+# independiente si hace falta.
+DIAS_VIGENCIA_SPEI = 3
+
 MENSAJE_ERROR_GENERICO = "No pudimos procesar tu pago. Verifica los datos e intenta de nuevo, o elige otro método de pago."
 
 
@@ -143,5 +148,41 @@ def crear_cargo_tienda(monto, descripcion, order_id, ip_cliente=None):
         "estado": cuerpo.get("status"),
         "referencia": metodo_pago.get("reference"),
         "barcodeUrl": metodo_pago.get("barcode_url"),
+        "cuerpo": cuerpo,
+    }
+
+
+def crear_cargo_spei(monto, descripcion, order_id, ip_cliente=None):
+    """Transferencia bancaria SPEI: Openpay genera una CLABE y una
+    referencia UNICAS para este cargo -- el pago se empareja solo por
+    esos datos, no hace falta que el cliente suba un comprobante. Los
+    nombres de campo (payment_method.bank/.clabe/.name) se confirmaron
+    tanto con la guia de Marcos como viendo en vivo la integracion real
+    de Perrichef (perrichef.com.mx) contra su propio sandbox."""
+    fecha_vencimiento = datetime.now(timezone.utc) + timedelta(days=DIAS_VIGENCIA_SPEI)
+    resultado = _crear_cargo({
+        "method": "bank_account",
+        "amount": _redondear_monto(monto),
+        "currency": "MXN",
+        "description": descripcion,
+        "order_id": order_id,
+        "due_date": fecha_vencimiento.isoformat(),
+    }, ip_cliente=ip_cliente)
+    if not resultado["ok"]:
+        return resultado
+
+    cuerpo = resultado["cuerpo"]
+    metodo_pago = cuerpo.get("payment_method") or {}
+    return {
+        "ok": True,
+        "chargeId": cuerpo.get("id"),
+        "estado": cuerpo.get("status"),
+        "banco": metodo_pago.get("bank"),
+        "clabe": metodo_pago.get("clabe"),
+        # La referencia SPEI vive en payment_method.name, NO en
+        # .reference (hallazgo de la guia, confirmado con la captura
+        # real de Perrichef).
+        "referencia": metodo_pago.get("name"),
+        "fechaVencimiento": cuerpo.get("due_date"),
         "cuerpo": cuerpo,
     }
