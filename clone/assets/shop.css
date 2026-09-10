@@ -1023,6 +1023,52 @@ a {
 }
 
 /* --- Admin: filtro de pedidos por estado --- */
+.sb-admin-mes-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.sb-admin-mes-nav button:not(.sb-admin-mes-actual-btn) {
+  background: #fff;
+  border: 1.5px solid var(--line-strong);
+  color: var(--ink);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.sb-admin-mes-nav button:not(.sb-admin-mes-actual-btn):hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+.sb-admin-mes-nav button:not(.sb-admin-mes-actual-btn):disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.sb-admin-mes-label {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  min-width: 150px;
+  text-align: center;
+}
+.sb-admin-mes-actual-btn {
+  background: none;
+  border: none;
+  color: var(--green);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
 .sb-admin-filtros {
   display: flex;
   flex-wrap: wrap;

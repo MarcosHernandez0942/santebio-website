@@ -130,6 +130,31 @@ var SanteBioAuth = (function () {
     return localStorage.getItem(ADMIN_USUARIO_KEY);
   }
 
+  /* Cierre de sesion por inactividad -- mismo mecanismo ya usado en
+     torre_digital (js/admin-auth.js): si pasan 15 minutos sin ningun
+     movimiento/clic/tecla/scroll, se cierra sola la sesion de admin y
+     se manda a cuenta.html. Es opt-in (admin.html la llama despues de
+     confirmar que hay sesion) en vez de auto-activarse con solo tener
+     un token, porque auth.js aqui es compartido con paginas de
+     cliente (tienda/carrito/etc.) donde no aplica. */
+  function activarCierreSesionAdminPorInactividad() {
+    var INACTIVIDAD_MS = 15 * 60 * 1000;
+    var temporizador = null;
+
+    function reiniciarTemporizador() {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(function () {
+        cerrarSesionAdmin();
+        window.location.href = 'cuenta.html';
+      }, INACTIVIDAD_MS);
+    }
+
+    ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (evento) {
+      document.addEventListener(evento, reiniciarTemporizador, { passive: true });
+    });
+    reiniciarTemporizador();
+  }
+
   return {
     llamarApi: llamarApi,
     registrarUsuario: registrarUsuario,
@@ -144,5 +169,6 @@ var SanteBioAuth = (function () {
     getUsuarioActual: getUsuarioActual,
     getAdminToken: getAdminToken,
     getAdminUsuario: getAdminUsuario,
+    activarCierreSesionAdminPorInactividad: activarCierreSesionAdminPorInactividad,
   };
 })();

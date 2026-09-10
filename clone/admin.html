@@ -109,6 +109,12 @@
 
         <!-- Panel: Pedidos -->
         <div class="sb-dash-panel" id="sb-panel-pedidos" style="display:none;">
+          <div class="sb-admin-mes-nav">
+            <button type="button" id="sb-mes-anterior" aria-label="Mes anterior">‹</button>
+            <span class="sb-admin-mes-label" id="sb-mes-actual-label"></span>
+            <button type="button" id="sb-mes-siguiente" aria-label="Mes siguiente">›</button>
+            <button type="button" class="sb-admin-mes-actual-btn" id="sb-volver-mes-actual" style="display:none;">Volver al mes actual</button>
+          </div>
           <div class="sb-admin-filtros" id="sb-pedidos-filtros">
             <button type="button" class="is-active" data-filtro="todos">Todos</button>
             <button type="button" data-filtro="Pendiente">Pendientes</button>
@@ -239,6 +245,7 @@
     document.getElementById('sb-admin-avatar').textContent = usuario.charAt(0).toUpperCase();
     cargarKpis(token);
     iniciarNotificacionesPedidosNuevos(token);
+    SanteBioAuth.activarCierreSesionAdminPorInactividad();
   }
 
   document.getElementById('sb-cerrar-sesion-admin').addEventListener('click', function () {
@@ -365,6 +372,47 @@
   var filtroMetodoActual = 'todos';
   var detallesAbiertos = {};
 
+  /* Filtro por mes: por default solo se ven los pedidos del mes en
+     curso (evita que la lista crezca indefinidamente con el tiempo),
+     con flechas para navegar a meses anteriores/siguientes. Se
+     normaliza al dia 1 del mes para evitar el bug clasico de sumar/
+     restar meses con setMonth cuando el dia actual no existe en el
+     mes destino (ej. 31 de un mes corto). */
+  function primerDiaDelMes(fecha) {
+    var f = new Date(fecha);
+    f.setDate(1);
+    f.setHours(0, 0, 0, 0);
+    return f;
+  }
+  var mesActual = primerDiaDelMes(new Date());
+
+  function actualizarNavMes() {
+    var etiqueta = mesActual.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+    document.getElementById('sb-mes-actual-label').textContent = etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1);
+
+    var hoy = primerDiaDelMes(new Date());
+    var esMesActualReal = mesActual.getTime() === hoy.getTime();
+    document.getElementById('sb-mes-siguiente').disabled = esMesActualReal;
+    document.getElementById('sb-volver-mes-actual').style.display = esMesActualReal ? 'none' : 'inline-block';
+  }
+  actualizarNavMes();
+
+  document.getElementById('sb-mes-anterior').addEventListener('click', function () {
+    mesActual.setMonth(mesActual.getMonth() - 1);
+    actualizarNavMes();
+    renderPedidosAdmin();
+  });
+  document.getElementById('sb-mes-siguiente').addEventListener('click', function () {
+    mesActual.setMonth(mesActual.getMonth() + 1);
+    actualizarNavMes();
+    renderPedidosAdmin();
+  });
+  document.getElementById('sb-volver-mes-actual').addEventListener('click', function () {
+    mesActual = primerDiaDelMes(new Date());
+    actualizarNavMes();
+    renderPedidosAdmin();
+  });
+
   function etiquetaMetodoPago(metodo) {
     var etiquetas = { tarjeta: 'Tarjeta', transferencia: 'Transferencia', 'tiendas-aliadas': 'Tienda aliada' };
     return etiquetas[metodo] || metodo;
@@ -384,11 +432,14 @@
     var pedidos = todosPedidos.filter(function (p) {
       var pasaEstado = filtroPedidoActual === 'todos' || p.estado === filtroPedidoActual;
       var pasaMetodo = filtroMetodoActual === 'todos' || p.metodoPago === filtroMetodoActual;
-      return pasaEstado && pasaMetodo;
+      var fechaPedido = primerDiaDelMes(new Date(p.creadoEn));
+      var pasaMes = fechaPedido.getTime() === mesActual.getTime();
+      return pasaEstado && pasaMetodo && pasaMes;
     });
 
     if (pedidos.length === 0) {
-      lista.innerHTML = '<p class="sb-empty-panel">No hay pedidos en esta categoría.</p>';
+      var etiquetaMes = document.getElementById('sb-mes-actual-label').textContent;
+      lista.innerHTML = '<p class="sb-empty-panel">No hay pedidos en ' + etiquetaMes + ' para esta categoría.</p>';
       return;
     }
 
