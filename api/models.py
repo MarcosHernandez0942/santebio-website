@@ -75,6 +75,19 @@ class Pedido(db.Model):
     openpay_referencia = db.Column(db.Text, nullable=True)
     openpay_barcode_url = db.Column(db.Text, nullable=True)
     openpay_estado_pago = db.Column(db.Text, nullable=True)
+    # Respuesta cruda completa del ultimo cargo/consulta a Openpay, sin
+    # recortar -- para no perder informacion si Openpay agrega un
+    # campo que el codigo todavia no espera explicitamente. No se
+    # expone en to_dict() a proposito (mismo criterio que
+    # comprobante_datos: el cliente no necesita ver esto).
+    openpay_charge_data = db.Column(db.JSON, nullable=True)
+    # Hace idempotente el descuento de inventario diferido: el pago de
+    # tarjeta/tienda solo descuenta stock hasta que Openpay CONFIRMA el
+    # cobro (no al crear el cargo) -- y esa confirmacion puede llegar
+    # por el webhook o por la consulta activa de respaldo, a veces mas
+    # de una vez para el mismo pedido, asi que se marca aqui para no
+    # descontar el stock dos veces.
+    stock_descontado = db.Column(db.Boolean, nullable=False, default=False)
     creado_en = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):

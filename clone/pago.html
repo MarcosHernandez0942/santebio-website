@@ -482,6 +482,13 @@
       } else if (metodo === 'tiendas-aliadas') {
         document.getElementById('sb-modal-texto').textContent =
           'Tu pedido quedó registrado. Usa la referencia o el código de barras de abajo para pagar en efectivo en cualquiera de nuestras tiendas aliadas.';
+      } else if (metodo === 'tarjeta' && res.pedido.openpayEstadoPago !== 'completed') {
+        // La gran mayoria de los cargos de tarjeta se confirman al
+        // instante, pero Openpay puede regresar un cargo en un estado
+        // distinto a "completed" (ej. "in_progress") -- en ese caso no
+        // se asume pagado todavia, se avisa que se esta verificando.
+        document.getElementById('sb-modal-texto').textContent =
+          'Tu pedido quedó registrado. Estamos verificando tu pago y te notificaremos por correo en cuanto se confirme.';
       } else {
         document.getElementById('sb-modal-texto').textContent =
           'Tu pedido quedó registrado y te enviamos la confirmación a ' + checkoutData.email + '. ¡Muchas gracias por tu compra!';

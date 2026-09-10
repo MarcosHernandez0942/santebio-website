@@ -13,6 +13,7 @@ from email_utils import (
 )
 from models import Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion, Producto
 from openpay_client import openpay_configurado, crear_cargo_tarjeta, crear_cargo_tienda
+from pagos_confirmacion import confirmar_pago_si_corresponde
 
 bp = Blueprint("accion", __name__)
 
@@ -183,6 +184,7 @@ def crear_pedido(body, datos_token):
     metodo_pago = body.get("metodoPago") or ""
     datos_entrega = body.get("datosEntrega")
     comprobante = body.get("comprobante")
+    ip_cliente = request.remote_addr
 
     if not items or total is None or not datos_entrega:
         return jsonify({"error": "Pedido inválido."}), 400
@@ -206,6 +208,8 @@ def crear_pedido(body, datos_token):
 
     descripcion_cargo = f"Pedido {folio} - SanteBio Cápsulas de Nopal"
     openpay_charge_id = openpay_referencia = openpay_barcode_url = None
+    openpay_charge_data = None
+    openpay_estado_pago = None
 
     if metodo_pago == "tarjeta":
         if not openpay_configurado():
@@ -214,24 +218,27 @@ def crear_pedido(body, datos_token):
         device_session_id = body.get("openpayDeviceSessionId")
         if not source_id or not device_session_id:
             return jsonify({"error": "No se pudo leer la tarjeta. Intenta de nuevo."}), 400
-        resultado_cargo = crear_cargo_tarjeta(source_id, device_session_id, total, descripcion_cargo, folio)
+        resultado_cargo = crear_cargo_tarjeta(source_id, device_session_id, total, descripcion_cargo, folio, ip_cliente=ip_cliente)
         if not resultado_cargo["ok"]:
             return jsonify({"error": resultado_cargo["error"]}), 400
         openpay_charge_id = resultado_cargo["chargeId"]
+        openpay_charge_data = resultado_cargo["cuerpo"]
+        openpay_estado_pago = resultado_cargo["estado"]
     elif metodo_pago == "tiendas-aliadas":
         if not openpay_configurado():
             return jsonify({"error": "El pago en tiendas aliadas aún no está disponible. Intenta con transferencia o tarjeta."}), 400
-        resultado_cargo = crear_cargo_tienda(total, descripcion_cargo, folio)
+        resultado_cargo = crear_cargo_tienda(total, descripcion_cargo, folio, ip_cliente=ip_cliente)
         if not resultado_cargo["ok"]:
             return jsonify({"error": resultado_cargo["error"]}), 400
         openpay_charge_id = resultado_cargo["chargeId"]
         openpay_referencia = resultado_cargo.get("referencia")
         openpay_barcode_url = resultado_cargo.get("barcodeUrl")
+        openpay_charge_data = resultado_cargo["cuerpo"]
+        openpay_estado_pago = resultado_cargo["estado"]
 
-    # Validar y descontar inventario -- despues del cargo (si aplica),
-    # para no descontar stock si el cobro no procedio, pero antes de
-    # crear el pedido, para rechazarlo completo si a algun producto ya
-    # no le alcanza.
+    # Validar inventario -- se hace siempre, para rechazar el pedido
+    # completo si a algun producto ya no le alcanza, sin importar el
+    # metodo de pago.
     productos_a_descontar = []
     for item in items:
         try:
@@ -246,8 +253,21 @@ def crear_pedido(body, datos_token):
             return jsonify({"error": "Ya no hay suficiente inventario de \"" + producto.nombre + "\"."}), 400
         productos_a_descontar.append((producto, cantidad))
 
-    for producto, cantidad in productos_a_descontar:
-        producto.stock -= cantidad
+    # El inventario solo se descuenta de una vez si el metodo no
+    # depende de una confirmacion asincrona de Openpay (transferencia
+    # se revisa a mano), o si Openpay ya confirmo el cobro como
+    # "completed" al crear el cargo mismo (el caso normal de tarjeta).
+    # Si el cargo quedo en cualquier otro estado -- tiendas aliadas
+    # siempre (se paga dias despues, en efectivo), o una tarjeta que
+    # regreso "in_progress"/un valor no documentado -- el stock se
+    # descuenta despues, solo cuando se confirme de verdad el pago
+    # (ver pagos_confirmacion.confirmar_pago_si_corresponde, llamada
+    # desde el webhook y desde la consulta activa de respaldo). Asi no
+    # se reserva inventario por pedidos que quiza nunca se paguen.
+    stock_descontado = metodo_pago not in ("tarjeta", "tiendas-aliadas") or openpay_estado_pago == "completed"
+    if stock_descontado:
+        for producto, cantidad in productos_a_descontar:
+            producto.stock -= cantidad
 
     usuario_id = None
     if datos_token and datos_token.get("tipo") == "usuario":
@@ -266,6 +286,9 @@ def crear_pedido(body, datos_token):
         openpay_charge_id=openpay_charge_id,
         openpay_referencia=openpay_referencia,
         openpay_barcode_url=openpay_barcode_url,
+        openpay_charge_data=openpay_charge_data,
+        openpay_estado_pago=openpay_estado_pago,
+        stock_descontado=stock_descontado,
     )
     db.session.add(pedido)
     db.session.commit()
@@ -290,6 +313,12 @@ def consultar_pedido_publico(body):
     # para no revelar cual de los dos esta mal a quien esta adivinando.
     if not pedido or (pedido.datos_entrega or {}).get("email", "").strip().lower() != correo:
         return jsonify({"ok": False, "error": "No encontramos un pedido con ese folio y correo."})
+
+    # Respaldo para cuando Openpay no puede entregar el webhook (nunca
+    # en desarrollo local, ya que exige una URL publica) -- al
+    # consultar el pedido se vuelve a preguntar el estado real. No-op
+    # si el pedido no tiene cargo de Openpay o ya esta confirmado.
+    confirmar_pago_si_corresponde(pedido)
 
     d = pedido.datos_entrega or {}
     return jsonify({
@@ -509,6 +538,7 @@ def mis_pedidos(datos_token):
 
     resultado = []
     for p in pedidos:
+        confirmar_pago_si_corresponde(p)
         d = p.to_dict()
         calificados = db.session.query(Opinion.producto_id).filter_by(pedido_id=p.id).all()
         d["productosCalificados"] = [c[0] for c in calificados]
@@ -708,10 +738,18 @@ def actualizar_estado_pedido(body, datos_token):
 
     estado_cambio = estado != pedido.estado
     if estado_cambio:
-        if estado == "Cancelado":
+        # Un pedido de tarjeta/tienda que todavia no confirma su pago
+        # con Openpay (ver pagos_confirmacion.py) nunca llego a
+        # descontar inventario -- si se cancela antes de eso, no hay
+        # nada que restaurar. Se usa stock_descontado (no el metodo de
+        # pago) para saber si de verdad se le quito stock a este
+        # pedido.
+        if estado == "Cancelado" and pedido.stock_descontado:
             _ajustar_inventario(pedido.items, 1)
-        elif pedido.estado == "Cancelado":
+            pedido.stock_descontado = False
+        elif pedido.estado == "Cancelado" and not pedido.stock_descontado:
             _ajustar_inventario(pedido.items, -1)
+            pedido.stock_descontado = True
 
     pedido.estado = estado
     db.session.commit()

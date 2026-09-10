@@ -3,6 +3,7 @@ import hmac
 from flask import Blueprint, request, jsonify
 from db import db
 from models import Pedido
+from pagos_confirmacion import confirmar_pago_si_corresponde
 
 bp = Blueprint("openpay_webhook", __name__)
 
@@ -44,6 +45,12 @@ def openpay_webhook():
         return jsonify({"ok": True})
 
     if tipo in ("charge.succeeded", "charge.refunded"):
+        # El payload de Openpay NUNCA se usa para decidir el estado del
+        # pedido -- solo sirve para ubicar cual pedido es. El estado
+        # real siempre sale de volver a consultarle a la API de
+        # Openpay con las credenciales propias (confirmar_pago_si_corresponde),
+        # para que nadie pueda marcar un pedido como pagado solo
+        # mandando un POST con la forma correcta.
         transaccion = body.get("transaction") or {}
         charge_id = transaccion.get("id")
         order_id = transaccion.get("order_id")
@@ -55,8 +62,7 @@ def openpay_webhook():
             pedido = db.session.query(Pedido).filter_by(folio=order_id).first()
 
         if pedido:
-            pedido.openpay_estado_pago = transaccion.get("status") or tipo
-            db.session.commit()
+            confirmar_pago_si_corresponde(pedido)
 
     # Openpay reintenta el envio hasta recibir 200 OK -- se regresa
     # siempre, incluso si el pedido no se encontro o el tipo no se

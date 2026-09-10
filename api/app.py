@@ -5,6 +5,7 @@ load_dotenv()
 
 from flask import Flask
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 from db import db, build_database_uri
 from routes import bp as accion_bp
 from bootstrap import (
@@ -16,6 +17,13 @@ from webhook_openpay import bp as openpay_webhook_bp
 
 app = Flask(__name__)
 CORS(app)
+
+# En produccion el sitio corre detras de un proxy/CDN (ya se sabe por
+# el bug de auto-reload resuelto en una sesion anterior) -- sin esto,
+# request.remote_addr daria la IP del proxy en vez de la del cliente
+# real, y Openpay pide la IP real del cliente para antifraude en cada
+# cargo (ver api/openpay_client.py).
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = build_database_uri()
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
