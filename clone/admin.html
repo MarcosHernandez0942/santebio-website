@@ -49,6 +49,14 @@
           <button type="button" class="sb-btn sb-btn-ghost" id="sb-cerrar-sesion-admin">Cerrar sesión</button>
         </div>
 
+        <div class="sb-aviso-stock-banner" id="sb-aviso-stock-banner" style="display:none;">
+          <div class="sb-aviso-stock-texto">
+            <strong id="sb-aviso-stock-titulo"></strong>
+            <div id="sb-aviso-stock-detalle"></div>
+          </div>
+          <button type="button" class="sb-btn sb-btn-ghost" id="sb-aviso-stock-revisado" style="white-space:nowrap;">Marcar como revisado</button>
+        </div>
+
         <div class="sb-dash-tabs sb-reveal">
           <button type="button" class="is-active" data-panel="resumen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
@@ -151,8 +159,15 @@
                   <input type="number" id="sb-prod-precio" required min="0" step="0.01" />
                 </div>
                 <div class="sb-form-group">
+                  <label for="sb-prod-precio-regular">Precio regular (antes de descuento, opcional)</label>
+                  <input type="number" id="sb-prod-precio-regular" min="0" step="0.01" placeholder="Sin descuento" />
+                </div>
+              </div>
+              <div class="sb-form-row">
+                <div class="sb-form-group">
                   <label for="sb-prod-stock">Existencias</label>
                   <input type="number" id="sb-prod-stock" required min="0" step="1" />
+                  <p class="sb-form-hint">Si es un paquete, este número deja de usarse en cuanto se guarda: su disponibilidad se calcula sola con el inventario de los productos individuales que lo componen.</p>
                 </div>
               </div>
               <div class="sb-form-row">
@@ -245,6 +260,8 @@
     document.getElementById('sb-admin-avatar').textContent = usuario.charAt(0).toUpperCase();
     cargarKpis(token);
     iniciarNotificacionesPedidosNuevos(token);
+    iniciarActualizacionAutomaticaProductos(token);
+    iniciarAvisosStock(token);
     SanteBioAuth.activarCierreSesionAdminPorInactividad();
   }
 
@@ -363,6 +380,75 @@
     }, 15000);
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) revisar();
+    });
+  }
+
+  /* --- Actualizacion automatica del Catalogo --- */
+  // El stock de un paquete se recalcula solo con el inventario de sus
+  // productos individuales (ver COMPOSICION_PAQUETES en api/models.py),
+  // pero eso pasa en el servidor -- si alguien compra algo en otra
+  // pestaña/dispositivo, este panel se queda con el numero viejo hasta
+  // que se vuelve a pedir. Se refresca solo cada 10s mientras el panel
+  // de Productos este abierto, salvo que el admin este a la mitad de
+  // editar un campo (no se le pisa lo que esta escribiendo).
+  function iniciarActualizacionAutomaticaProductos(token) {
+    setInterval(function () {
+      if (document.hidden) return;
+      if (!productosCargados) return;
+      if (document.getElementById('sb-panel-productos').style.display === 'none') return;
+      var lista = document.getElementById('sb-productos-lista');
+      var enfocado = document.activeElement;
+      if (lista && enfocado && lista.contains(enfocado)) return;
+      cargarProductosAdmin(token, false);
+    }, 10000);
+  }
+
+  /* --- Aviso fijo de inventario agotado --- */
+  // A diferencia del toast de "nuevo pedido" (que solo se ve si el
+  // admin tiene el panel abierto justo en ese momento), esto es un
+  // banner FIJO: se queda visible en cualquier pestaña del panel,
+  // sobrevive a recargar la pagina y a cerrar sesion, y solo
+  // desaparece cuando el admin le da "Marcar como revisado" -- asi no
+  // se pierde la señal de que se esta rechazando una venta real por
+  // falta de existencias.
+  function cargarAvisosStock(token) {
+    SanteBioAuth.llamarApi('listar_avisos_stock', {}, token).then(function (res) {
+      var avisos = res.avisos || [];
+      var banner = document.getElementById('sb-aviso-stock-banner');
+      if (avisos.length === 0) {
+        banner.style.display = 'none';
+        return;
+      }
+
+      var porProducto = {};
+      avisos.forEach(function (a) {
+        var actual = porProducto[a.productoNombre] || 0;
+        porProducto[a.productoNombre] = actual + 1;
+      });
+      var detalle = Object.keys(porProducto).map(function (nombre) {
+        return nombre + ' (' + porProducto[nombre] + (porProducto[nombre] === 1 ? ' intento' : ' intentos') + ')';
+      }).join(', ');
+
+      document.getElementById('sb-aviso-stock-titulo').textContent =
+        '⚠ Se rechazaron ' + avisos.length + (avisos.length === 1 ? ' compra' : ' compras') + ' por falta de inventario';
+      document.getElementById('sb-aviso-stock-detalle').textContent = detalle;
+      banner.style.display = 'flex';
+    });
+  }
+
+  function iniciarAvisosStock(token) {
+    cargarAvisosStock(token);
+    setInterval(function () {
+      if (!document.hidden) cargarAvisosStock(token);
+    }, 20000);
+
+    document.getElementById('sb-aviso-stock-revisado').addEventListener('click', function (e) {
+      var btn = e.currentTarget;
+      btn.disabled = true;
+      SanteBioAuth.llamarApi('marcar_avisos_stock_revisados', {}, token).then(function () {
+        btn.disabled = false;
+        document.getElementById('sb-aviso-stock-banner').style.display = 'none';
+      });
     });
   }
 
@@ -584,9 +670,15 @@
   });
 
   /* --- Productos (admin) --- */
-  function cargarProductosAdmin(token) {
+  // mostrarCargando=false (usado por la actualizacion automatica de
+  // cada 10s) evita el parpadeo de borrar la lista entera y mostrar
+  // "Cargando..." mientras llega la respuesta -- se sigue mostrando
+  // ese estado solo la primera vez que se abre la pestaña Productos.
+  function cargarProductosAdmin(token, mostrarCargando) {
     var lista = document.getElementById('sb-productos-lista');
-    lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    if (mostrarCargando !== false) {
+      lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    }
     SanteBioAuth.llamarApi('listar_productos_admin', {}, token).then(function (res) {
       var productos = res.productos || [];
       if (productos.length === 0) {
@@ -594,15 +686,30 @@
         return;
       }
       lista.innerHTML = productos.map(function (p) {
+        var esPaquete = p.seccion === 'paquete';
+        // Los paquetes ya no llevan su propio contador de existencias
+        // -- se arman con el inventario real de los productos
+        // individuales que los componen (pedido explicito del
+        // cliente), asi que aqui no hay nada que editar ni que
+        // mostrar. Se deja un espacio invisible del mismo tamaño (en
+        // vez de quitar el hueco por completo) para que Guardar/Ocultar
+        // sigan alineados con las filas de productos individuales. El
+        // descuento de stock al vender un paquete sigue funcionando
+        // igual, solo que contra los productos individuales -- ver
+        // expandir_items_a_individuales en api/models.py.
+        var campoExistencias = esPaquete
+          ? '<label style="visibility:hidden;" aria-hidden="true">Existencias<input type="text" disabled /></label>'
+          : '<label>Existencias<input type="number" min="0" step="1" class="sb-prod-editar-stock" value="' + p.stock + '" /></label>';
         return (
-          '<div class="sb-producto-admin-card" data-id="' + p.id + '">' +
+          '<div class="sb-producto-admin-card" data-id="' + p.id + '" data-paquete="' + esPaquete + '">' +
           '<div class="sb-producto-admin-info">' +
           '<div class="sb-producto-admin-nombre">' + p.nombre + (p.activo ? '' : ' <span class="sb-metodo-badge">Oculto</span>') + '</div>' +
-          '<div class="sb-pedido-cliente">' + (p.seccion === 'paquete' ? 'Paquete' : 'Individual') + (p.insignia ? ' · ' + p.insignia : '') + '</div>' +
+          '<div class="sb-pedido-cliente">' + (esPaquete ? 'Paquete' : 'Individual') + (p.insignia ? ' · ' + p.insignia : '') + '</div>' +
           '</div>' +
           '<div class="sb-producto-admin-campos">' +
           '<label>Precio<input type="number" min="0" step="0.01" class="sb-prod-editar-precio" value="' + p.precio + '" /></label>' +
-          '<label>Existencias<input type="number" min="0" step="1" class="sb-prod-editar-stock" value="' + p.stock + '" /></label>' +
+          '<label>Precio regular (antes de descuento)<input type="number" min="0" step="0.01" class="sb-prod-editar-precio-regular" placeholder="Sin descuento" value="' + (p.precioRegular != null ? p.precioRegular : '') + '" /></label>' +
+          campoExistencias +
           '</div>' +
           '<div class="sb-producto-admin-acciones">' +
           '<button type="button" class="sb-btn sb-guardar-producto-cambios" data-id="' + p.id + '" style="padding:8px 16px; font-size:12.5px;">Guardar</button>' +
@@ -616,12 +723,20 @@
         btn.addEventListener('click', function () {
           var card = btn.closest('.sb-producto-admin-card');
           var precio = parseFloat(card.querySelector('.sb-prod-editar-precio').value);
-          var stock = parseInt(card.querySelector('.sb-prod-editar-stock').value, 10);
+          var precioRegularTexto = card.querySelector('.sb-prod-editar-precio-regular').value.trim();
+          var precioRegular = precioRegularTexto === '' ? null : parseFloat(precioRegularTexto);
+          var datos = { id: btn.dataset.id, precio: precio, precioRegular: precioRegular };
+          // Un paquete no manda "stock": el suyo ya no se edita directo,
+          // se sigue calculando solo de los productos individuales.
+          if (card.dataset.paquete !== 'true') {
+            datos.stock = parseInt(card.querySelector('.sb-prod-editar-stock').value, 10);
+          }
           btn.disabled = true;
           btn.textContent = 'Guardando…';
-          SanteBioAuth.llamarApi('actualizar_producto', { id: btn.dataset.id, precio: precio, stock: stock }, token).then(function () {
+          SanteBioAuth.llamarApi('actualizar_producto', datos, token).then(function () {
             btn.disabled = false;
             btn.textContent = 'Guardar';
+            cargarProductosAdmin(token, false);
           });
         });
       });
@@ -632,7 +747,7 @@
           btn.disabled = true;
           SanteBioAuth.llamarApi('actualizar_producto', { id: btn.dataset.id, activo: nuevoActivo }, token).then(function () {
             btn.disabled = false;
-            cargarProductosAdmin(token);
+            cargarProductosAdmin(token, false);
           });
         });
       });
@@ -654,9 +769,11 @@
     btn.disabled = true;
     btn.textContent = 'Guardando…';
 
+    var precioRegularTexto = document.getElementById('sb-prod-precio-regular').value.trim();
     SanteBioAuth.llamarApi('crear_producto', {
       nombre: document.getElementById('sb-prod-nombre').value.trim(),
       precio: parseFloat(document.getElementById('sb-prod-precio').value),
+      precioRegular: precioRegularTexto === '' ? null : parseFloat(precioRegularTexto),
       stock: parseInt(document.getElementById('sb-prod-stock').value, 10),
       seccion: document.getElementById('sb-prod-seccion').value,
       imagen: document.getElementById('sb-prod-imagen').value.trim() || 'wp-content/uploads/2026/03/1.webp',

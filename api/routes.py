@@ -11,7 +11,10 @@ from email_utils import (
     enviar_correo_nuevo_pedido_admin,
     enviar_correo_cambio_estado_pedido,
 )
-from models import Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion, Producto
+from models import (
+    Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion, Producto, AvisoStock,
+    expandir_items_a_individuales, calcular_stock_paquete,
+)
 from openpay_client import openpay_configurado, crear_cargo_tarjeta, crear_cargo_tienda, crear_cargo_spei
 from pagos_confirmacion import confirmar_pago_si_corresponde
 
@@ -100,6 +103,10 @@ def accion():
             return crear_producto(body, datos_token)
         if tipo_accion == "actualizar_producto":
             return actualizar_producto(body, datos_token)
+        if tipo_accion == "listar_avisos_stock":
+            return listar_avisos_stock(datos_token)
+        if tipo_accion == "marcar_avisos_stock_revisados":
+            return marcar_avisos_stock_revisados(datos_token)
         if tipo_accion == "nueva_opinion":
             return nueva_opinion(body, datos_token)
         if tipo_accion == "listar_opiniones_publicas":
@@ -262,21 +269,51 @@ def crear_pedido(body, datos_token):
         openpay_estado_pago = resultado_cargo["estado"]
         usa_openpay_para_este_metodo = True
 
-    # Validar inventario -- se hace siempre, para rechazar el pedido
-    # completo si a algun producto ya no le alcanza, sin importar el
-    # metodo de pago.
-    productos_a_descontar = []
+    # Un producto/paquete guardado en el carrito de un cliente desde
+    # antes no se revisa contra nada hasta este momento -- si el admin
+    # lo oculta despues de que ya estaba en un carrito, el pedido debe
+    # rechazarse aqui aunque el aviso del carrito (carrito.html) no se
+    # haya visto o se haya saltado. Se revisa el id tal cual lo mando
+    # el cliente (paquete o individual) ANTES de expandirlo, porque un
+    # paquete oculto puede tener sus productos individuales todavia
+    # activos -- expandir_items_a_individuales por si solo no lo
+    # detectaria.
     for item in items:
         try:
-            producto_id = int(item.get("id"))
+            producto_id_directo = int(item.get("id"))
         except (TypeError, ValueError):
             continue
-        cantidad = item.get("qty") or 0
+        producto_directo = db.session.query(Producto).filter_by(id=producto_id_directo).first()
+        if not producto_directo or not producto_directo.activo:
+            nombre = producto_directo.nombre if producto_directo else "Uno de los productos de tu pedido"
+            return jsonify({"error": "Por su gran éxito, \"" + nombre + "\" no está disponible por el momento. En breve tendremos más."}), 400
+
+    # Validar inventario -- se hace siempre, para rechazar el pedido
+    # completo si a algun producto ya no le alcanza, sin importar el
+    # metodo de pago. Los paquetes ya no llevan su propio contador de
+    # existencias: expandir_items_a_individuales los convierte en los
+    # productos individuales reales que hay que descontar (ver
+    # COMPOSICION_PAQUETES en models.py).
+    productos_a_descontar = []
+    for producto_id, cantidad in expandir_items_a_individuales(items):
         producto = db.session.query(Producto).filter_by(id=producto_id).first()
         if not producto:
             continue
+        if not producto.activo:
+            return jsonify({"error": "Por su gran éxito, \"" + producto.nombre + "\" no está disponible por el momento. En breve tendremos más."}), 400
         if producto.stock < cantidad:
-            return jsonify({"error": "Ya no hay suficiente inventario de \"" + producto.nombre + "\"."}), 400
+            # Se deja un registro fijo para el admin (no un simple
+            # aviso pasajero) -- asi no se pierde la señal de que se
+            # esta rechazando una venta real por falta de existencias,
+            # aunque nadie tenga el panel abierto justo en ese momento.
+            db.session.add(AvisoStock(
+                producto_id=producto.id,
+                producto_nombre=producto.nombre,
+                cantidad_solicitada=cantidad,
+                cantidad_disponible=producto.stock,
+            ))
+            db.session.commit()
+            return jsonify({"error": "Por su gran éxito, \"" + producto.nombre + "\" no está disponible por el momento. En breve tendremos más."}), 400
         productos_a_descontar.append((producto, cantidad))
 
     # El inventario solo se descuenta de una vez si este pedido no
@@ -653,6 +690,20 @@ def listar_pedidos_admin(datos_token):
     return jsonify({"pedidos": resultado})
 
 
+def _serializar_producto(p):
+    """Igual que p.to_dict(), pero para un paquete el stock/disponible
+    que se le muestra al cliente (o al admin) no es su propio contador
+    -- que ya no se usa -- sino cuantas veces se puede armar con el
+    stock ACTUAL de sus productos individuales (ver
+    COMPOSICION_PAQUETES/calcular_stock_paquete en models.py)."""
+    d = p.to_dict()
+    stock_paquete = calcular_stock_paquete(p.id, db.session)
+    if stock_paquete is not None:
+        d["stock"] = stock_paquete
+        d["disponible"] = p.activo and stock_paquete > 0
+    return d
+
+
 def listar_productos_publico():
     productos = (
         db.session.query(Producto)
@@ -660,7 +711,7 @@ def listar_productos_publico():
         .order_by(Producto.seccion, Producto.orden, Producto.id)
         .all()
     )
-    return jsonify({"productos": [p.to_dict() for p in productos]})
+    return jsonify({"productos": [_serializar_producto(p) for p in productos]})
 
 
 def listar_productos_admin(datos_token):
@@ -668,7 +719,7 @@ def listar_productos_admin(datos_token):
         return jsonify({"error": "No tienes permiso para ver esto."}), 403
 
     productos = db.session.query(Producto).order_by(Producto.seccion, Producto.orden, Producto.id).all()
-    return jsonify({"productos": [p.to_dict() for p in productos]})
+    return jsonify({"productos": [_serializar_producto(p) for p in productos]})
 
 
 def crear_producto(body, datos_token):
@@ -680,9 +731,11 @@ def crear_producto(body, datos_token):
     if not nombre or precio is None:
         return jsonify({"error": "Faltan datos del producto."}), 400
 
+    precio_regular = body.get("precioRegular")
     producto = Producto(
         nombre=nombre,
         precio=precio,
+        precio_regular=precio_regular if precio_regular not in (None, "") else None,
         imagen=body.get("imagen") or "",
         stock=int(body.get("stock") or 0),
         seccion=body.get("seccion") or "individual",
@@ -691,7 +744,7 @@ def crear_producto(body, datos_token):
     )
     db.session.add(producto)
     db.session.commit()
-    return jsonify({"ok": True, "producto": producto.to_dict()})
+    return jsonify({"ok": True, "producto": _serializar_producto(producto)})
 
 
 def actualizar_producto(body, datos_token):
@@ -706,6 +759,9 @@ def actualizar_producto(body, datos_token):
         producto.nombre = body["nombre"]
     if "precio" in body:
         producto.precio = body["precio"]
+    if "precioRegular" in body:
+        precio_regular = body["precioRegular"]
+        producto.precio_regular = precio_regular if precio_regular not in (None, "") else None
     if "imagen" in body:
         producto.imagen = body["imagen"]
     if "stock" in body:
@@ -720,7 +776,29 @@ def actualizar_producto(body, datos_token):
         producto.activo = bool(body["activo"])
 
     db.session.commit()
-    return jsonify({"ok": True, "producto": producto.to_dict()})
+    return jsonify({"ok": True, "producto": _serializar_producto(producto)})
+
+
+def listar_avisos_stock(datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para ver esto."}), 403
+
+    avisos = (
+        db.session.query(AvisoStock)
+        .filter_by(revisado=False)
+        .order_by(AvisoStock.creado_en.desc())
+        .all()
+    )
+    return jsonify({"avisos": [a.to_dict() for a in avisos]})
+
+
+def marcar_avisos_stock_revisados(datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para hacer esto."}), 403
+
+    db.session.query(AvisoStock).filter_by(revisado=False).update({"revisado": True})
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 def obtener_comprobante_pedido(body, datos_token):
@@ -742,16 +820,13 @@ def obtener_comprobante_pedido(body, datos_token):
 def _ajustar_inventario(items, signo):
     """signo=+1 regresa stock al inventario (pedido se cancela).
     signo=-1 lo vuelve a descontar (se revierte una cancelacion,
-    volviendo el pedido a un estado activo)."""
-    for item in items:
-        try:
-            producto_id = int(item.get("id"))
-        except (TypeError, ValueError):
-            continue
+    volviendo el pedido a un estado activo). Igual que en crear_pedido,
+    los paquetes se resuelven contra sus productos individuales."""
+    for producto_id, cantidad in expandir_items_a_individuales(items):
         producto = db.session.query(Producto).filter_by(id=producto_id).first()
         if not producto:
             continue
-        producto.stock = max(0, producto.stock + signo * (item.get("qty") or 0))
+        producto.stock = max(0, producto.stock + signo * cantidad)
 
 
 def actualizar_estado_pedido(body, datos_token):

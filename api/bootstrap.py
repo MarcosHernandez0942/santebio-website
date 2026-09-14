@@ -22,6 +22,14 @@ def agregar_columnas_openpay_si_hace_falta():
     db.session.commit()
 
 
+def agregar_columna_precio_regular_si_hace_falta():
+    """Igual que agregar_columnas_openpay_si_hace_falta: db.create_all()
+    no altera una tabla "productos" que ya existia antes de agregar
+    precio_regular a Producto (models.py)."""
+    db.session.execute(db.text("ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_regular NUMERIC(10, 2)"))
+    db.session.commit()
+
+
 def crear_admin_inicial_si_hace_falta():
     usuario = os.environ.get("ADMIN_USUARIO")
     password = os.environ.get("ADMIN_PASSWORD")
@@ -48,9 +56,11 @@ def crear_admin_inicial_si_hace_falta():
 # tabla vacia; en un entorno que ya tiene productos capturados a mano
 # desde el panel de administrador, no se toca nada.
 _PRODUCTOS_INICIALES = [
-    {"id": 998, "nombre": "90 Cápsulas", "precio": 269, "imagen": "wp-content/uploads/2026/03/1.webp",
+    {"id": 998, "nombre": "90 Cápsulas", "precio": 269, "precio_regular": 310,
+     "imagen": "wp-content/uploads/2026/03/1.webp",
      "stock": 100, "seccion": "individual", "insignia": None, "orden": 1},
-    {"id": 999, "nombre": "150 Cápsulas", "precio": 399, "imagen": "wp-content/uploads/2026/03/1.webp",
+    {"id": 999, "nombre": "150 Cápsulas", "precio": 399, "precio_regular": 480,
+     "imagen": "wp-content/uploads/2026/03/1.webp",
      "stock": 100, "seccion": "individual", "insignia": None, "orden": 2},
     {"id": 1250, "nombre": "Paquete 1 — 1 frasco de 150 + 1 de 90", "precio": 501,
      "imagen": "wp-content/uploads/2026/03/1.webp", "stock": 50, "seccion": "paquete",

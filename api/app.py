@@ -12,6 +12,7 @@ from bootstrap import (
     crear_admin_inicial_si_hace_falta,
     crear_productos_iniciales_si_hace_falta,
     agregar_columnas_openpay_si_hace_falta,
+    agregar_columna_precio_regular_si_hace_falta,
 )
 from webhook_openpay import bp as openpay_webhook_bp
 from routes_pdf import bp as pdf_bp
@@ -37,6 +38,7 @@ app.register_blueprint(pdf_bp, url_prefix="/api")
 with app.app_context():
     db.create_all()
     agregar_columnas_openpay_si_hace_falta()
+    agregar_columna_precio_regular_si_hace_falta()
     crear_admin_inicial_si_hace_falta()
     crear_productos_iniciales_si_hace_falta()
 

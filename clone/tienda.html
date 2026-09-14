@@ -37,7 +37,7 @@
     </span>
     <span class="sb-trust-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      Pago protegido
+      Pago protegido con Openpay
     </span>
   </div>
 </section>
@@ -99,6 +99,12 @@ function tarjetaProducto(p) {
   var accionHtml = p.disponible
     ? '<button class="sb-btn sb-add-to-cart" data-id="' + p.id + '" data-name="' + p.nombre + '" data-price="' + p.precio + '" data-image="' + p.imagen + '">Agregar al carrito</button>'
     : '<button class="sb-btn" disabled style="opacity:0.5; cursor:not-allowed;">Agotado</button>';
+  // Precio regular tachado en rojo arriba del precio actual -- solo si
+  // el admin capturo uno mayor al precio de venta (si no, no hay
+  // descuento que mostrar).
+  var precioHtml = (p.precioRegular && p.precioRegular > p.precio)
+    ? '<s class="sb-precio-tachado">$' + p.precioRegular.toFixed(2) + '</s><div class="sb-price">$' + p.precio + ' MXN</div>'
+    : '<div class="sb-price">$' + p.precio + ' MXN</div>';
 
   return (
     '<div class="sb-card sb-reveal' + (p.insignia === 'Recomendado' ? ' is-recommended' : '') + '">' +
@@ -106,7 +112,7 @@ function tarjetaProducto(p) {
     '<img src="' + p.imagen + '" alt="' + p.nombre + '" />' +
     '<h3>' + p.nombre + '</h3>' +
     '<div class="sb-producto-rating" data-producto-id="' + p.id + '"></div>' +
-    '<div class="sb-price">$' + p.precio + ' MXN</div>' +
+    precioHtml +
     accionHtml +
     '</div>'
   );

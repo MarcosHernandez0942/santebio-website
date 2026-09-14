@@ -137,9 +137,11 @@
 <script src="assets/cp-lookup.js"></script>
 <script>
 (function () {
-  var cart = SanteBioCart.getCart();
+  // Si viene de un "Comprar ahora" (compra directa), solo ese producto
+  // -- si no, el carrito completo de siempre.
+  var cart = SanteBioCart.itemsCheckout();
 
-  // Sin carrito no hay nada que enviar - de regreso a la tienda.
+  // Sin nada que enviar - de regreso a la tienda.
   if (cart.length === 0) {
     window.location.href = 'tienda.html';
     return;
@@ -155,7 +157,7 @@
     );
   }).join('');
   document.getElementById('sb-mini-total').innerHTML =
-    '<span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.cartTotal()) + '</span>';
+    '<span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.totalCheckout()) + '</span>';
 
   // Precargar datos si ya los habian llenado antes (volvieron desde pago.html)
   var saved = SanteBioCart.getCheckoutData();

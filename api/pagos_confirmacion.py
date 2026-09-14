@@ -1,5 +1,5 @@
 from db import db
-from models import Producto
+from models import Producto, expandir_items_a_individuales
 from openpay_client import consultar_cargo
 
 # Punto UNICO donde se decide si un pedido ya se pago de verdad, para
@@ -10,12 +10,10 @@ from openpay_client import consultar_cargo
 
 
 def descontar_inventario(pedido):
-    for item in pedido.items or []:
-        try:
-            producto_id = int(item.get("id"))
-        except (TypeError, ValueError):
-            continue
-        cantidad = item.get("qty") or 0
+    # Los paquetes ya no llevan su propio contador de existencias: se
+    # descuentan siempre de los productos individuales que los
+    # componen (ver COMPOSICION_PAQUETES en models.py).
+    for producto_id, cantidad in expandir_items_a_individuales(pedido.items):
         producto = db.session.query(Producto).filter_by(id=producto_id).first()
         if producto:
             producto.stock -= cantidad

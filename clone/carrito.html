@@ -62,6 +62,7 @@
 
 <script src="assets/cart.js"></script>
 <script src="assets/auto-reload.js"></script>
+<script src="assets/auth.js"></script>
 <script>
 function money(n) {
   return SanteBioCart.formatMXN(n);
@@ -110,6 +111,7 @@ function render() {
     '<div class="sb-summary-row"><span>Subtotal</span><span>' + money(subtotal) + '</span></div>' +
     '<div class="sb-summary-row"><span>Envío</span><span class="sb-shipping-free">Gratis</span></div>' +
     '<div class="sb-cart-summary"><span>Total</span><span>' + money(subtotal) + '</span></div>' +
+    '<div class="sb-cart-aviso-general" id="sb-cart-aviso" style="display:none;">Hay productos en tu carrito que ya no están disponibles o que superan las existencias — ajústalos abajo para poder continuar.</div>' +
     '<div class="sb-cart-actions" style="flex-direction: column;">' +
     '<button class="sb-btn" id="sb-checkout" style="width: 100%;">Finalizar compra</button>' +
     '<a class="sb-btn sb-btn-ghost" href="tienda.html" style="width: 100%;">Seguir comprando</a>' +
@@ -146,10 +148,71 @@ function render() {
   if (clearBtn) clearBtn.addEventListener('click', function () { SanteBioCart.clearCart(); render(); });
   var checkoutBtn = document.getElementById('sb-checkout');
   if (checkoutBtn) checkoutBtn.addEventListener('click', function () {
+    // Si habia quedado una "compra directa" a medias (Comprar ahora
+    // sin terminar de pagar), se cancela: al entrar por el carrito
+    // normal siempre se cobra el carrito completo, no un solo producto.
+    SanteBioCart.cancelarCompraDirecta();
     window.location.href = 'datos.html';
   });
 
   setupReveal();
+  verificarDisponibilidad();
+}
+
+/* Un producto guardado en el carrito (localStorage) desde antes no se
+   revisa contra nada -- si el admin lo oculta o se le acaba el stock
+   despues de que el cliente ya lo agrego, el carrito lo seguia
+   mostrando normal y dejaba pasar hasta "Finalizar compra" sin ningun
+   aviso (la unica valla real era el rechazo silencioso al confirmar el
+   pedido, ya muy tarde en el flujo). Aqui se revisa contra el catalogo
+   real cada vez que se pinta el carrito, se marca cada producto que ya
+   no alcanza o que ya no esta disponible, y se bloquea "Finalizar
+   compra" hasta que el cliente lo arregle (quitandolo o bajandole la
+   cantidad). */
+function verificarDisponibilidad() {
+  var checkoutBtn = document.getElementById('sb-checkout');
+  var avisoGeneral = document.getElementById('sb-cart-aviso');
+  if (!checkoutBtn || !window.SanteBioAuth) return;
+
+  SanteBioAuth.llamarApi('listar_productos_publico', {}).then(function (res) {
+    var porId = {};
+    (res.productos || []).forEach(function (p) { porId[String(p.id)] = p; });
+
+    var cart = SanteBioCart.getCart();
+    var hayProblema = false;
+
+    cart.forEach(function (item) {
+      var fila = document.querySelector('.sb-cart-item[data-id="' + item.id + '"]');
+      if (!fila) return;
+
+      var p = porId[String(item.id)];
+      var mensaje = null;
+      if (!p || !p.disponible) {
+        mensaje = 'Ya no está disponible. Quítalo del carrito para continuar.';
+      } else if (p.stock < item.qty) {
+        mensaje = 'Solo quedan ' + p.stock + ' disponibles. Reduce la cantidad para continuar.';
+      }
+
+      fila.classList.toggle('is-sin-disponibilidad', !!mensaje);
+      var infoDiv = fila.querySelector('.sb-item-name').parentElement;
+      var avisoExistente = infoDiv.querySelector('.sb-item-aviso');
+      if (avisoExistente) avisoExistente.remove();
+      if (mensaje) {
+        hayProblema = true;
+        var aviso = document.createElement('div');
+        aviso.className = 'sb-item-aviso';
+        aviso.textContent = mensaje;
+        infoDiv.appendChild(aviso);
+      }
+    });
+
+    checkoutBtn.disabled = hayProblema;
+    if (avisoGeneral) avisoGeneral.style.display = hayProblema ? 'block' : 'none';
+  }).catch(function () {
+    // Si la API no responde no se bloquea el carrito -- la validacion
+    // real (contra el inventario de verdad) de todos modos vuelve a
+    // ocurrir en el servidor al confirmar el pedido.
+  });
 }
 
 function setupReveal() {

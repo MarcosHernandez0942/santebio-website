@@ -245,7 +245,9 @@
 <script src="https://openpay.s3.amazonaws.com/openpay-data.v1.min.js"></script>
 <script>
 (function () {
-  var cart = SanteBioCart.getCart();
+  // Si viene de un "Comprar ahora" (compra directa), solo ese producto
+  // -- si no, el carrito completo de siempre.
+  var cart = SanteBioCart.itemsCheckout();
   var checkoutData = SanteBioCart.getCheckoutData();
 
   if (cart.length === 0) {
@@ -269,7 +271,7 @@
     );
   }).join('');
   document.getElementById('sb-mini-total').innerHTML =
-    '<span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.cartTotal()) + '</span>';
+    '<span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.totalCheckout()) + '</span>';
 
   document.getElementById('sb-shipping-recap').innerHTML =
     '<strong style="color: var(--ink);">Enviar a:</strong><br>' +
@@ -485,7 +487,7 @@
       return comprobantePromise.then(function (comprobante) {
         return SanteBioAuth.llamarApi('crear_pedido', {
           items: cart,
-          total: SanteBioCart.cartTotal(),
+          total: SanteBioCart.totalCheckout(),
           metodoPago: metodo,
           datosEntrega: checkoutData,
           comprobante: comprobante,
@@ -505,7 +507,10 @@
         return;
       }
 
-      SanteBioCart.clearCart();
+      // Si fue "Comprar ahora" (compra directa), solo se quita ESE
+      // producto del carrito (no se pierde lo demas que ya tuviera el
+      // cliente); si fue el carrito completo, se vacia entero.
+      SanteBioCart.finalizarCompra();
       SanteBioCart.clearCheckoutData();
 
       if (metodo === 'transferencia' && res.pedido.openpayClabe) {

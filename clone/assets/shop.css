@@ -169,6 +169,21 @@ a {
   color: var(--ink);
 }
 
+/* Precio "de lista" tachado en rojo cuando el admin capturo un precio
+   regular mayor al precio de venta actual (promocion/descuento) --
+   mismo estilo que ya se usaba a mano en el inicio para 90/150
+   capsulas. */
+.sb-precio-tachado {
+  display: block;
+  font-size: 13px;
+  color: rgb(249, 6, 6);
+  text-decoration-color: rgb(249, 6, 6);
+  margin-top: 6px;
+}
+.sb-precio-tachado + .sb-price {
+  margin-top: 0;
+}
+
 .sb-btn {
   display: inline-flex;
   align-items: center;
@@ -190,6 +205,14 @@ a {
   transform: translateY(-2px);
   box-shadow: 0 10px 18px -10px rgba(32, 79, 43, 0.55);
   filter: brightness(1.08);
+}
+
+.sb-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  filter: none;
 }
 
 .sb-btn-ghost {
@@ -298,6 +321,31 @@ a {
 .sb-cart-item .sb-item-price {
   color: rgba(32, 79, 43, 0.7);
   font-size: 14px;
+}
+
+/* Aviso por producto cuando ya no esta disponible o ya no alcanza el
+   stock (se revisa contra el catalogo real al pintar el carrito, ver
+   verificarDisponibilidad() en carrito.html) -- y el banner general
+   arriba del boton "Finalizar compra" mientras haya algun problema. */
+.sb-cart-item.is-sin-disponibilidad {
+  opacity: 0.7;
+}
+.sb-item-aviso {
+  color: #c0392b;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.sb-cart-aviso-general {
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  color: #c0392b;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 4px 0 16px;
 }
 
 .sb-qty {
@@ -917,6 +965,35 @@ a {
   margin: 0;
   font-size: 13.5px;
   color: rgba(32, 79, 43, 0.65);
+}
+
+/* Banner fijo de "se rechazaron compras por falta de inventario" --
+   se queda visible hasta que el admin le da "Marcar como revisado"
+   (ver iniciarAvisosStock en admin.html), a diferencia de un toast
+   pasajero. */
+.sb-aviso-stock-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.sb-aviso-stock-texto {
+  color: #c0392b;
+}
+.sb-aviso-stock-texto strong {
+  display: block;
+  font-size: 14.5px;
+  margin-bottom: 2px;
+}
+.sb-aviso-stock-texto div {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.9;
 }
 
 .sb-dash-tabs {
