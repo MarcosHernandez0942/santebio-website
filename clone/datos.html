@@ -14,7 +14,7 @@
   </a>
   <div class="sb-header-actions">
     <a class="sb-tienda-link sb-header-icon-link" href="tienda.html" aria-label="Ir a la tienda"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 8h14l1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 8V7a4 4 0 0 1 8 0v1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
-    <a class="sb-cart-link sb-header-icon-link" href="carrito.html" aria-label="Ver carrito">
+    <a class="sb-cart-link sb-header-icon-link" href="datos.html" aria-label="Ver carrito">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.8h7.2a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/></svg>
       <span class="sb-cart-badge">0</span>
     </a>
@@ -27,11 +27,9 @@
   <h1>Datos de envío</h1>
   <p class="sb-subhead">Necesitamos estos datos para entregar tu pedido.</p>
   <div class="sb-steps">
-    <a href="carrito.html" class="sb-step" style="text-decoration:none;"><span class="sb-step-num">✓</span> Carrito</a>
+    <div class="sb-step is-active"><span class="sb-step-num">1</span> Datos</div>
     <div class="sb-step-sep"></div>
-    <div class="sb-step is-active"><span class="sb-step-num">2</span> Datos</div>
-    <div class="sb-step-sep"></div>
-    <div class="sb-step"><span class="sb-step-num">3</span> Pago</div>
+    <div class="sb-step"><span class="sb-step-num">2</span> Pago</div>
   </div>
 </section>
 
@@ -99,14 +97,15 @@
           </div>
 
           <div class="sb-cart-actions" style="flex-direction: column; margin-top: 8px;">
-            <button type="submit" class="sb-btn" style="width: 100%;">Continuar a pago</button>
-            <a class="sb-btn sb-btn-ghost" href="carrito.html" style="width: 100%;">Volver al carrito</a>
+            <button type="submit" class="sb-btn" id="sb-continuar-pago" style="width: 100%;">Continuar a pago</button>
+            <a class="sb-btn sb-btn-ghost" href="tienda.html" style="width: 100%;">Seguir comprando</a>
           </div>
         </form>
 
         <div class="sb-summary-card sb-reveal">
           <h3>Tu pedido</h3>
-          <div id="sb-mini-summary"></div>
+          <div id="sb-mini-items"></div>
+          <div class="sb-cart-aviso-general" id="sb-cart-aviso" style="display:none;">Hay productos en tu pedido que ya no están disponibles o que superan las existencias — ajústalos arriba para poder continuar.</div>
           <div class="sb-cart-summary" id="sb-mini-total"></div>
         </div>
       </div>
@@ -137,27 +136,119 @@
 <script src="assets/cp-lookup.js"></script>
 <script>
 (function () {
-  // Si viene de un "Comprar ahora" (compra directa), solo ese producto
-  // -- si no, el carrito completo de siempre.
-  var cart = SanteBioCart.itemsCheckout();
+  // El carrito ya no es una pagina/paso aparte -- "Tu pedido" aqui
+  // mismo deja agregar, quitar o ajustar cantidades en todo momento
+  // antes de pagar, igual que antes solo se podia en carrito.html.
+  function renderPedido() {
+    // Si viene de un "Comprar ahora" (compra directa), solo ese
+    // producto -- si no, el carrito completo de siempre.
+    var cart = SanteBioCart.itemsCheckout();
 
-  // Sin nada que enviar - de regreso a la tienda.
-  if (cart.length === 0) {
-    window.location.href = 'tienda.html';
-    return;
+    // Sin nada que enviar - de regreso a la tienda.
+    if (cart.length === 0) {
+      window.location.href = 'tienda.html';
+      return;
+    }
+
+    var miniItems = document.getElementById('sb-mini-items');
+    miniItems.innerHTML = cart.map(function (item) {
+      return (
+        '<div class="sb-cart-item sb-cart-item-mini" data-id="' + item.id + '">' +
+        '<img src="' + item.image + '" alt="' + item.name + '" />' +
+        '<div>' +
+        '<div class="sb-item-name">' + item.name + '</div>' +
+        '<div class="sb-item-price">' + SanteBioCart.formatMXN(item.price) + ' c/u</div>' +
+        '</div>' +
+        '<div class="sb-qty">' +
+        '<button type="button" class="sb-qty-minus" aria-label="Quitar uno">−</button>' +
+        '<span>' + item.qty + '</span>' +
+        '<button type="button" class="sb-qty-plus" aria-label="Agregar uno">+</button>' +
+        '</div>' +
+        '<button type="button" class="sb-remove">Quitar</button>' +
+        '</div>'
+      );
+    }).join('');
+    document.getElementById('sb-mini-total').innerHTML =
+      '<span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.totalCheckout()) + '</span>';
+
+    miniItems.querySelectorAll('.sb-qty-minus').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.closest('.sb-cart-item').dataset.id;
+        var item = SanteBioCart.itemsCheckout().find(function (i) { return String(i.id) === id; });
+        if (item) SanteBioCart.actualizarCantidadCheckout(id, item.qty - 1);
+        renderPedido();
+      });
+    });
+    miniItems.querySelectorAll('.sb-qty-plus').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.closest('.sb-cart-item').dataset.id;
+        var item = SanteBioCart.itemsCheckout().find(function (i) { return String(i.id) === id; });
+        if (item) SanteBioCart.actualizarCantidadCheckout(id, item.qty + 1);
+        renderPedido();
+      });
+    });
+    miniItems.querySelectorAll('.sb-remove').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.closest('.sb-cart-item').dataset.id;
+        SanteBioCart.quitarDeCheckout(id);
+        renderPedido();
+      });
+    });
+
+    verificarDisponibilidadPedido(cart);
   }
 
-  var miniSummary = document.getElementById('sb-mini-summary');
-  miniSummary.innerHTML = cart.map(function (item) {
-    return (
-      '<div class="sb-mini-summary-item">' +
-      '<span class="sb-mini-name">' + item.name + ' <span class="sb-mini-qty">x' + item.qty + '</span></span>' +
-      '<span>' + SanteBioCart.formatMXN(item.price * item.qty) + '</span>' +
-      '</div>'
-    );
-  }).join('');
-  document.getElementById('sb-mini-total').innerHTML =
-    '<span>Total</span><span>' + SanteBioCart.formatMXN(SanteBioCart.totalCheckout()) + '</span>';
+  // Mismo criterio que ya se usaba en carrito.html: revisar contra el
+  // catalogo real (no solo lo que quedo guardado en localStorage) y
+  // bloquear "Continuar a pago" si algo ya no esta disponible o ya no
+  // alcanza -- aqui se revisa solo lo que se esta comprando de verdad
+  // (itemsCheckout), no todo el carrito completo si es una compra
+  // directa.
+  function verificarDisponibilidadPedido(cart) {
+    var continuarBtn = document.getElementById('sb-continuar-pago');
+    var avisoGeneral = document.getElementById('sb-cart-aviso');
+    if (!continuarBtn || !window.SanteBioAuth) return;
+
+    SanteBioAuth.llamarApi('listar_productos_publico', {}).then(function (res) {
+      var porId = {};
+      (res.productos || []).forEach(function (p) { porId[String(p.id)] = p; });
+
+      var hayProblema = false;
+      cart.forEach(function (item) {
+        var fila = document.querySelector('#sb-mini-items .sb-cart-item[data-id="' + item.id + '"]');
+        if (!fila) return;
+
+        var p = porId[String(item.id)];
+        var mensaje = null;
+        if (!p || !p.disponible) {
+          mensaje = 'Ya no está disponible. Quítalo para continuar.';
+        } else if (p.stock < item.qty) {
+          mensaje = 'Solo quedan ' + p.stock + ' disponibles. Reduce la cantidad para continuar.';
+        }
+
+        fila.classList.toggle('is-sin-disponibilidad', !!mensaje);
+        var infoDiv = fila.querySelector('.sb-item-name').parentElement;
+        var avisoExistente = infoDiv.querySelector('.sb-item-aviso');
+        if (avisoExistente) avisoExistente.remove();
+        if (mensaje) {
+          hayProblema = true;
+          var aviso = document.createElement('div');
+          aviso.className = 'sb-item-aviso';
+          aviso.textContent = mensaje;
+          infoDiv.appendChild(aviso);
+        }
+      });
+
+      continuarBtn.disabled = hayProblema;
+      if (avisoGeneral) avisoGeneral.style.display = hayProblema ? 'block' : 'none';
+    }).catch(function () {
+      // Si la API no responde no se bloquea el paso -- la validacion
+      // real (contra el inventario de verdad) de todos modos vuelve a
+      // ocurrir en el servidor al confirmar el pedido.
+    });
+  }
+
+  renderPedido();
 
   // Precargar datos si ya los habian llenado antes (volvieron desde pago.html)
   var saved = SanteBioCart.getCheckoutData();
@@ -288,6 +379,7 @@
 
   document.getElementById('sb-datos-form').addEventListener('submit', function (e) {
     e.preventDefault();
+    if (document.getElementById('sb-continuar-pago').disabled) return;
     if (!this.checkValidity()) {
       this.reportValidity();
       return;

@@ -126,6 +126,34 @@
     return itemsCheckout().reduce(function (sum, i) { return sum + i.qty * i.price; }, 0);
   }
 
+  /* datos.html deja editar el pedido (cantidad/quitar) igual que antes
+     se hacia en el carrito -- estas dos funciones deciden solo si el
+     id que se esta editando es el de una compra directa en curso o un
+     producto normal del carrito, para que datos.html no tenga que
+     duplicar esa logica. */
+  function actualizarCantidadCheckout(id, qty) {
+    if (qty <= 0) { quitarDeCheckout(id); return; }
+    var directa = getCompraDirecta();
+    if (directa && String(directa.id) === String(id)) {
+      directa.qty = qty;
+      try { localStorage.setItem(BUYNOW_KEY, JSON.stringify(directa)); } catch (e) {}
+      // El mismo producto tambien vive en el carrito normal (se agrego
+      // ahi desde iniciarCompraDirecta) -- se mantiene la cantidad
+      // sincronizada por si el cliente abandona el pago a la mitad.
+      updateQty(id, qty);
+    } else {
+      updateQty(id, qty);
+    }
+  }
+
+  function quitarDeCheckout(id) {
+    var directa = getCompraDirecta();
+    if (directa && String(directa.id) === String(id)) {
+      cancelarCompraDirecta();
+    }
+    removeFromCart(id);
+  }
+
   /* Se llama tras crear el pedido exitosamente: si fue compra directa
      solo se quita ESE producto del carrito (sin tocar lo demas que el
      cliente ya tuviera ahi); si fue el carrito completo, se vacia
@@ -208,6 +236,8 @@
     cancelarCompraDirecta: cancelarCompraDirecta,
     itemsCheckout: itemsCheckout,
     totalCheckout: totalCheckout,
+    actualizarCantidadCheckout: actualizarCantidadCheckout,
+    quitarDeCheckout: quitarDeCheckout,
     finalizarCompra: finalizarCompra,
     irACheckoutDirecto: irACheckoutDirecto,
   };
