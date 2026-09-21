@@ -876,7 +876,32 @@ def listar_planes_suscripcion_admin(datos_token):
         return jsonify({"error": "No tienes permiso para ver esto."}), 403
 
     planes = db.session.query(PlanSuscripcion).order_by(PlanSuscripcion.orden, PlanSuscripcion.frecuencia_dias).all()
-    return jsonify({"planes": [p.to_dict() for p in planes]})
+    # El descuento del plan ya no se aplica solo para cobrar (ver
+    # Suscripcion.precio_entrega/crear_suscripcion_admin), pero el
+    # admin lo sigue necesitando como referencia rapida de "a cuanto
+    # equivaldria" ese % sobre el precio ACTUAL de cada presentacion
+    # individual, para poder decidir el precio real sin hacer la
+    # cuenta a mano cada vez.
+    individuales = (
+        db.session.query(Producto)
+        .filter_by(seccion="individual", activo=True)
+        .order_by(Producto.orden, Producto.id)
+        .all()
+    )
+
+    def referencia(plan):
+        return [
+            {
+                "productoId": p.id,
+                "productoNombre": p.nombre,
+                "precioConDescuento": round(float(p.precio) * (1 - float(plan.descuento_porcentaje) / 100), 2),
+            }
+            for p in individuales
+        ]
+
+    return jsonify({
+        "planes": [dict(p.to_dict(), preciosReferencia=referencia(p)) for p in planes]
+    })
 
 
 def crear_plan_suscripcion(body, datos_token):

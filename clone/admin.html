@@ -954,11 +954,19 @@
         return;
       }
       lista.innerHTML = planes.map(function (p) {
+        // Solo de referencia (a cuanto equivaldria el % sobre el
+        // precio ACTUAL de cada presentacion) -- no se guarda ni se
+        // cobra solo, el precio real de cada suscripcion se captura a
+        // mano abajo en "Suscripciones de clientes".
+        var referenciaHtml = (p.preciosReferencia || []).map(function (r) {
+          return r.productoNombre + ' ' + SanteBioCart.formatMXN(r.precioConDescuento);
+        }).join(' · ');
         return (
           '<div class="sb-producto-admin-card" data-id="' + p.id + '">' +
           '<div class="sb-producto-admin-info">' +
           '<div class="sb-producto-admin-nombre">' + p.nombre + (p.destacado ? ' <span class="sb-metodo-badge">Destacado</span>' : '') + (p.activo ? '' : ' <span class="sb-metodo-badge">Oculto</span>') + '</div>' +
           '<div class="sb-pedido-cliente">' + p.descripcion + '</div>' +
+          (referenciaHtml ? '<div class="sb-pedido-cliente">Referencia con el % actual: ' + referenciaHtml + '</div>' : '') +
           '</div>' +
           '<div class="sb-producto-admin-campos">' +
           '<label>Descuento (%)<input type="number" min="0" max="100" step="0.01" class="sb-plan-editar-descuento" value="' + p.descuentoPorcentaje + '" /></label>' +
