@@ -160,7 +160,10 @@
             <h3>Catálogo</h3>
             <div id="sb-productos-lista"></div>
 
-            <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-producto" style="margin-top: 8px;">+ Agregar producto</button>
+            <div style="display:flex; gap:10px; margin-top: 8px;">
+              <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-producto">+ Agregar producto</button>
+              <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-paquete">+ Agregar paquete</button>
+            </div>
 
             <form id="sb-producto-form" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line-strong);">
               <div class="sb-form-group">
@@ -181,16 +184,6 @@
                 <div class="sb-form-group">
                   <label for="sb-prod-stock">Existencias</label>
                   <input type="number" id="sb-prod-stock" required min="0" step="1" />
-                  <p class="sb-form-hint">Si es un paquete, este número deja de usarse en cuanto se guarda: su disponibilidad se calcula sola con el inventario de los productos individuales que lo componen.</p>
-                </div>
-              </div>
-              <div class="sb-form-row">
-                <div class="sb-form-group">
-                  <label for="sb-prod-seccion">Sección</label>
-                  <select id="sb-prod-seccion">
-                    <option value="individual">Presentación individual</option>
-                    <option value="paquete">Paquete</option>
-                  </select>
                 </div>
                 <div class="sb-form-group">
                   <label for="sb-prod-imagen">Imagen (ruta)</label>
@@ -198,6 +191,36 @@
                 </div>
               </div>
               <button type="submit" class="sb-btn" id="sb-guardar-producto-btn">Agregar producto</button>
+            </form>
+
+            <form id="sb-paquete-form" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line-strong);">
+              <div class="sb-form-group">
+                <label for="sb-paq-nombre">Nombre del paquete</label>
+                <input type="text" id="sb-paq-nombre" placeholder="Ej. Paquete Ahorro" required />
+              </div>
+              <div class="sb-form-group">
+                <label>Productos que incluye</label>
+                <div class="sb-plan-items-box">
+                  <div id="sb-paq-items"></div>
+                  <p class="sb-form-hint" id="sb-paq-total-capsulas" style="margin:6px 0 0;">Total: 0 cápsulas</p>
+                </div>
+              </div>
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-paq-precio">Precio (MXN)</label>
+                  <input type="number" id="sb-paq-precio" required min="0" step="0.01" />
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-paq-precio-regular">Precio regular (antes de descuento, opcional)</label>
+                  <input type="number" id="sb-paq-precio-regular" min="0" step="0.01" placeholder="Sin descuento" />
+                </div>
+              </div>
+              <div class="sb-form-group">
+                <label for="sb-paq-imagen">Imagen (ruta)</label>
+                <input type="text" id="sb-paq-imagen" placeholder="wp-content/uploads/2026/03/1.webp" />
+              </div>
+              <div id="sb-paquete-form-error" class="sb-form-error" style="display:none;"></div>
+              <button type="submit" class="sb-btn" id="sb-guardar-paquete-btn">Agregar paquete</button>
             </form>
           </div>
         </div>
@@ -841,35 +864,29 @@
     }
     SanteBioAuth.llamarApi('listar_productos_admin', {}, token).then(function (res) {
       var productos = res.productos || [];
+      // Se comparte con el checklist de "Agregar paquete" (y con el de
+      // Suscripciones si esa pestana ya cargo) -- cualquiera que se
+      // abra primero deja esta lista lista para el otro.
+      productosIndividualesCache = productos.filter(function (p) { return p.seccion === 'individual'; });
+      renderChecklistPaqueteNuevo();
       if (productos.length === 0) {
         lista.innerHTML = '<p class="sb-empty-panel">Todavía no hay productos.</p>';
         return;
       }
       lista.innerHTML = productos.map(function (p) {
         var esPaquete = p.seccion === 'paquete';
-        // Los paquetes ya no llevan su propio contador de existencias
-        // -- se arman con el inventario real de los productos
-        // individuales que los componen (pedido explicito del
-        // cliente), asi que aqui no hay nada que editar ni que
-        // mostrar. Se deja un espacio invisible del mismo tamaño (en
-        // vez de quitar el hueco por completo) para que Guardar/Ocultar
-        // sigan alineados con las filas de productos individuales. El
-        // descuento de stock al vender un paquete sigue funcionando
-        // igual, solo que contra los productos individuales -- ver
-        // expandir_items_a_individuales en api/models.py.
-        var campoExistencias = esPaquete
-          ? '<label style="visibility:hidden;" aria-hidden="true">Existencias<input type="text" disabled /></label>'
-          : '<label>Existencias<input type="number" min="0" step="1" class="sb-prod-editar-stock" value="' + p.stock + '" /></label>';
+        if (esPaquete) return tarjetaPaqueteAdmin(p);
+
         return (
-          '<div class="sb-producto-admin-card" data-id="' + p.id + '" data-paquete="' + esPaquete + '">' +
+          '<div class="sb-producto-admin-card" data-id="' + p.id + '">' +
           '<div class="sb-producto-admin-info">' +
           '<div class="sb-producto-admin-nombre">' + p.nombre + (p.activo ? '' : ' <span class="sb-metodo-badge">Oculto</span>') + '</div>' +
-          '<div class="sb-pedido-cliente">' + (esPaquete ? 'Paquete' : 'Individual') + (p.insignia ? ' · ' + p.insignia : '') + '</div>' +
+          '<div class="sb-pedido-cliente">Individual' + (p.insignia ? ' · ' + p.insignia : '') + '</div>' +
           '</div>' +
           '<div class="sb-producto-admin-campos">' +
           '<label>Precio<input type="number" min="0" step="0.01" class="sb-prod-editar-precio" value="' + p.precio + '" /></label>' +
           '<label>Precio regular (antes de descuento)<input type="number" min="0" step="0.01" class="sb-prod-editar-precio-regular" placeholder="Sin descuento" value="' + (p.precioRegular != null ? p.precioRegular : '') + '" /></label>' +
-          campoExistencias +
+          '<label>Existencias<input type="number" min="0" step="1" class="sb-prod-editar-stock" value="' + p.stock + '" /></label>' +
           '</div>' +
           '<div class="sb-producto-admin-acciones">' +
           '<button type="button" class="sb-btn sb-guardar-producto-cambios" data-id="' + p.id + '" style="padding:8px 16px; font-size:12.5px;">Guardar</button>' +
@@ -879,6 +896,11 @@
         );
       }).join('');
 
+      lista.querySelectorAll('.sb-plan-admin-card[data-id]').forEach(function (card) {
+        var contenedorItems = card.querySelector('.sb-plan-editar-items');
+        if (contenedorItems) activarChecklist(contenedorItems, card.querySelector('.sb-plan-editar-total'));
+      });
+
       lista.querySelectorAll('.sb-guardar-producto-cambios').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var card = btn.closest('.sb-producto-admin-card');
@@ -886,16 +908,20 @@
           var precioRegularTexto = card.querySelector('.sb-prod-editar-precio-regular').value.trim();
           var precioRegular = precioRegularTexto === '' ? null : parseFloat(precioRegularTexto);
           var datos = { id: btn.dataset.id, precio: precio, precioRegular: precioRegular };
-          // Un paquete no manda "stock": el suyo ya no se edita directo,
-          // se sigue calculando solo de los productos individuales.
-          if (card.dataset.paquete !== 'true') {
-            datos.stock = parseInt(card.querySelector('.sb-prod-editar-stock').value, 10);
-          }
+          var stockInput = card.querySelector('.sb-prod-editar-stock');
+          if (stockInput) datos.stock = parseInt(stockInput.value, 10);
+          var nombreInput = card.querySelector('.sb-paq-editar-nombre');
+          if (nombreInput) datos.nombre = nombreInput.value.trim();
+          var imagenInput = card.querySelector('.sb-paq-editar-imagen');
+          if (imagenInput) datos.imagen = imagenInput.value.trim();
+          var itemsBox = card.querySelector('.sb-plan-editar-items');
+          if (itemsBox) datos.items = leerItemsChecklist(itemsBox);
           btn.disabled = true;
           btn.textContent = 'Guardando…';
-          SanteBioAuth.llamarApi('actualizar_producto', datos, token).then(function () {
+          SanteBioAuth.llamarApi('actualizar_producto', datos, token).then(function (res) {
             btn.disabled = false;
             btn.textContent = 'Guardar';
+            if (!res.ok) { alert(res.error || 'No se pudo guardar.'); return; }
             cargarProductosAdmin(token, false);
           });
         });
@@ -912,6 +938,44 @@
         });
       });
     });
+  }
+
+  // Tarjeta de un paquete en el catalogo -- mismo patron visual que
+  // un plan de suscripcion (checklist de productos/cantidades en su
+  // propia caja, campos apilados, acciones al fondo), reusando las
+  // mismas funciones/clases (checklistProductosHtml, activarChecklist,
+  // leerItemsChecklist, .sb-plan-admin-card) para que se vea igual que
+  // en la pestaña Suscripciones.
+  function tarjetaPaqueteAdmin(p) {
+    var composicion = (p.items || []).map(function (it) {
+      var producto = productosIndividualesCache.filter(function (ind) { return ind.id === it.productoId; })[0];
+      return it.cantidad + 'x ' + (producto ? producto.nombre : 'Producto eliminado');
+    }).join(' + ') || 'Sin productos';
+    return (
+      '<div class="sb-producto-admin-card sb-plan-admin-card" data-id="' + p.id + '">' +
+      '<div class="sb-producto-admin-info">' +
+      '<div class="sb-producto-admin-nombre">' + p.nombre + (p.activo ? '' : ' <span class="sb-metodo-badge">Oculto</span>') + '</div>' +
+      '<div class="sb-pedido-cliente">Paquete · ' + composicion + (p.insignia ? ' · ' + p.insignia : '') + '</div>' +
+      '</div>' +
+      '<div class="sb-producto-admin-campos">' +
+      '<label>Nombre del paquete<input type="text" class="sb-paq-editar-nombre" value="' + p.nombre + '" /></label>' +
+      '<div>' +
+      '<div class="sb-form-hint" style="margin-bottom:6px;">Productos que incluye</div>' +
+      '<div class="sb-plan-items-box"><div class="sb-plan-editar-items">' + checklistProductosHtml(mapaItems(p.items)) + '</div>' +
+      '<p class="sb-form-hint sb-plan-editar-total" style="margin:6px 0 0;">Total: 0 cápsulas</p></div>' +
+      '</div>' +
+      '<div class="sb-form-row">' +
+      '<label>Precio<input type="number" min="0" step="0.01" class="sb-prod-editar-precio" value="' + p.precio + '" /></label>' +
+      '<label>Precio regular (opcional)<input type="number" min="0" step="0.01" class="sb-prod-editar-precio-regular" placeholder="Sin descuento" value="' + (p.precioRegular != null ? p.precioRegular : '') + '" /></label>' +
+      '</div>' +
+      '<label>Imagen (ruta)<input type="text" class="sb-paq-editar-imagen" value="' + (p.imagen || '') + '" /></label>' +
+      '</div>' +
+      '<div class="sb-producto-admin-acciones">' +
+      '<button type="button" class="sb-btn sb-guardar-producto-cambios" data-id="' + p.id + '" style="padding:8px 16px; font-size:12.5px;">Guardar</button>' +
+      '<button type="button" class="sb-btn sb-btn-ghost sb-toggle-activo-producto" data-id="' + p.id + '" data-activo="' + p.activo + '" style="padding:8px 16px; font-size:12.5px;">' + (p.activo ? 'Ocultar' : 'Mostrar') + '</button>' +
+      '</div>' +
+      '</div>'
+    );
   }
 
   var productoForm = document.getElementById('sb-producto-form');
@@ -935,7 +999,7 @@
       precio: parseFloat(document.getElementById('sb-prod-precio').value),
       precioRegular: precioRegularTexto === '' ? null : parseFloat(precioRegularTexto),
       stock: parseInt(document.getElementById('sb-prod-stock').value, 10),
-      seccion: document.getElementById('sb-prod-seccion').value,
+      seccion: 'individual',
       imagen: document.getElementById('sb-prod-imagen').value.trim() || 'wp-content/uploads/2026/03/1.webp',
     }, token).then(function (res) {
       btn.disabled = false;
@@ -943,6 +1007,55 @@
       if (!res.ok) return;
       productoForm.reset();
       productoForm.style.display = 'none';
+      cargarProductosAdmin(token);
+    });
+  });
+
+  function renderChecklistPaqueteNuevo() {
+    var contenedor = document.getElementById('sb-paq-items');
+    if (!contenedor) return;
+    contenedor.innerHTML = checklistProductosHtml({});
+    activarChecklist(contenedor, document.getElementById('sb-paq-total-capsulas'));
+  }
+
+  var paqueteForm = document.getElementById('sb-paquete-form');
+  document.getElementById('sb-mostrar-form-paquete').addEventListener('click', function () {
+    paqueteForm.style.display = paqueteForm.style.display === 'block' ? 'none' : 'block';
+  });
+
+  paqueteForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!this.checkValidity()) { this.reportValidity(); return; }
+    var errorDivPaquete = document.getElementById('sb-paquete-form-error');
+    errorDivPaquete.style.display = 'none';
+    var items = leerItemsChecklist(document.getElementById('sb-paq-items'));
+    if (items.length === 0) {
+      errorDivPaquete.textContent = 'Selecciona al menos un producto para el paquete.';
+      errorDivPaquete.style.display = 'block';
+      return;
+    }
+    var btn = document.getElementById('sb-guardar-paquete-btn');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+    var precioRegularTexto = document.getElementById('sb-paq-precio-regular').value.trim();
+    SanteBioAuth.llamarApi('crear_producto', {
+      nombre: document.getElementById('sb-paq-nombre').value.trim(),
+      precio: parseFloat(document.getElementById('sb-paq-precio').value),
+      precioRegular: precioRegularTexto === '' ? null : parseFloat(precioRegularTexto),
+      seccion: 'paquete',
+      imagen: document.getElementById('sb-paq-imagen').value.trim() || 'wp-content/uploads/2026/03/1.webp',
+      items: items,
+    }, token).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Agregar paquete';
+      if (!res.ok) {
+        errorDivPaquete.textContent = res.error || 'No se pudo crear el paquete.';
+        errorDivPaquete.style.display = 'block';
+        return;
+      }
+      paqueteForm.reset();
+      renderChecklistPaqueteNuevo();
+      paqueteForm.style.display = 'none';
       cargarProductosAdmin(token);
     });
   });

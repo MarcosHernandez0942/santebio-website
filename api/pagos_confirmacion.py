@@ -12,8 +12,8 @@ from openpay_client import consultar_cargo
 def descontar_inventario(pedido):
     # Los paquetes ya no llevan su propio contador de existencias: se
     # descuentan siempre de los productos individuales que los
-    # componen (ver COMPOSICION_PAQUETES en models.py).
-    for producto_id, cantidad in expandir_items_a_individuales(pedido.items):
+    # componen (ver PaqueteProducto en models.py).
+    for producto_id, cantidad in expandir_items_a_individuales(pedido.items, db.session):
         producto = db.session.query(Producto).filter_by(id=producto_id).first()
         if producto:
             producto.stock -= cantidad

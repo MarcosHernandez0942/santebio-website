@@ -252,20 +252,24 @@ class Producto(db.Model):
         }
 
 
-# Que productos INDIVIDUALES (y cuantas unidades de cada uno) hay que
-# descontar cuando se vende un paquete -- los paquetes ya no llevan su
-# propio contador de existencias (pedido explicito del cliente): su
-# disponibilidad y su descuento de inventario se resuelven siempre
-# contra el stock real de los productos individuales que los componen.
-# Si se agrega un paquete nuevo, hay que agregar aqui su composicion.
-COMPOSICION_PAQUETES = {
-    1250: [(998, 1), (999, 1)],  # 1 frasco de 150 + 1 de 90
-    1252: [(998, 3)],            # 3x2 de 90 -> se entregan 3 frascos de 90
-    1253: [(999, 3)],            # 3x2 de 150 -> se entregan 3 frascos de 150
-}
+class PaqueteProducto(db.Model):
+    """Composicion de un paquete: que productos individuales y cuantos
+    de cada uno lo componen -- antes vivia fijo en codigo
+    (COMPOSICION_PAQUETES, ver historial de git), ahora se captura
+    desde el panel de admin al crear/editar un paquete (checklist de
+    productos + cantidad, mismo patron que PlanSuscripcionProducto).
+    expandir_items_a_individuales y calcular_stock_paquete leen de
+    aqui en vez de un dict fijo."""
+
+    __tablename__ = "paquete_productos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    paquete_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
+    cantidad = db.Column(db.Integer, nullable=False, default=1)
 
 
-def expandir_items_a_individuales(items):
+def expandir_items_a_individuales(items, db_session):
     """Convierte los items de un pedido (que pueden incluir paquetes)
     en pares (producto_id, cantidad) de solo productos INDIVIDUALES --
     usado por crear_pedido/descontar_inventario/_ajustar_inventario
@@ -278,10 +282,10 @@ def expandir_items_a_individuales(items):
         except (TypeError, ValueError):
             continue
         cantidad = item.get("qty") or 0
-        composicion = COMPOSICION_PAQUETES.get(producto_id)
+        composicion = db_session.query(PaqueteProducto).filter_by(paquete_id=producto_id).all()
         if composicion:
-            for individual_id, unidades_por_paquete in composicion:
-                expandido[individual_id] = expandido.get(individual_id, 0) + unidades_por_paquete * cantidad
+            for c in composicion:
+                expandido[c.producto_id] = expandido.get(c.producto_id, 0) + c.cantidad * cantidad
         else:
             expandido[producto_id] = expandido.get(producto_id, 0) + cantidad
     return list(expandido.items())
@@ -293,15 +297,15 @@ def calcular_stock_paquete(producto_id, db_session):
     todos, ej. si necesita 1x90 y 1x150, y hay 90 de un lado y 5 del
     otro, solo alcanza para 5 paquetes). Regresa None si el id no
     corresponde a un paquete con composicion definida."""
-    composicion = COMPOSICION_PAQUETES.get(producto_id)
+    composicion = db_session.query(PaqueteProducto).filter_by(paquete_id=producto_id).all()
     if not composicion:
         return None
     disponibles = []
-    for individual_id, unidades_por_paquete in composicion:
-        individual = db_session.query(Producto).filter_by(id=individual_id).first()
+    for c in composicion:
+        individual = db_session.query(Producto).filter_by(id=c.producto_id).first()
         if not individual:
             return 0
-        disponibles.append(individual.stock // unidades_por_paquete)
+        disponibles.append(individual.stock // c.cantidad)
     return min(disponibles) if disponibles else 0
 
 

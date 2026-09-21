@@ -2,7 +2,7 @@ import os
 import bcrypt
 from sqlalchemy import inspect as sa_inspect
 from db import db
-from models import Admin, Producto
+from models import Admin, Producto, PaqueteProducto
 
 
 def agregar_columnas_openpay_si_hace_falta():
@@ -94,6 +94,38 @@ def crear_productos_iniciales_si_hace_falta():
     )
     db.session.commit()
     print(f"[bootstrap] {len(_PRODUCTOS_INICIALES)} productos iniciales creados.")
+
+
+# Composicion que ANTES vivia fija en codigo (COMPOSICION_PAQUETES en
+# models.py, ver historial de git) para los 3 paquetes de ejemplo --
+# ahora la composicion de un paquete se captura desde el panel de
+# admin (tabla paquete_productos), pero estos 3 paquetes ya existian
+# con pedidos reales detras que dependen de que su composicion se seed
+# igual que antes. Solo se usa para migrar UNA VEZ un despliegue que
+# ya tenia estos paquetes desde antes de que existiera la tabla; un
+# paquete nuevo creado desde el admin ya trae su propia composicion.
+_COMPOSICION_PAQUETES_HEREDADA = {
+    1250: [(998, 1), (999, 1)],  # 1 frasco de 150 + 1 de 90
+    1252: [(998, 3)],            # 3x2 de 90 -> se entregan 3 frascos de 90
+    1253: [(999, 3)],            # 3x2 de 150 -> se entregan 3 frascos de 150
+}
+
+
+def crear_composicion_paquetes_inicial_si_hace_falta():
+    if db.session.query(PaqueteProducto).count() > 0:
+        return  # ya hay composiciones capturadas (heredadas o creadas desde el admin) -- no tocar nada
+
+    creados = 0
+    for paquete_id, composicion in _COMPOSICION_PAQUETES_HEREDADA.items():
+        paquete = db.session.query(Producto).filter_by(id=paquete_id).first()
+        if not paquete:
+            continue  # este despliegue no sembró ese paquete de ejemplo
+        for producto_id, cantidad in composicion:
+            db.session.add(PaqueteProducto(paquete_id=paquete_id, producto_id=producto_id, cantidad=cantidad))
+            creados += 1
+    db.session.commit()
+    if creados:
+        print(f"[bootstrap] {creados} composiciones de paquete migradas desde el código.")
 
 
 def migrar_planes_suscripcion_a_combos_si_hace_falta():

@@ -14,8 +14,8 @@ from email_utils import (
 )
 from models import (
     Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion, Producto, AvisoStock,
-    PlanSuscripcion, PlanSuscripcionProducto, Suscripcion,
-    expandir_items_a_individuales, calcular_stock_paquete, COMPOSICION_PAQUETES,
+    PlanSuscripcion, PlanSuscripcionProducto, Suscripcion, PaqueteProducto,
+    expandir_items_a_individuales, calcular_stock_paquete,
 )
 from openpay_client import openpay_configurado, crear_cargo_tarjeta, crear_cargo_tienda, crear_cargo_spei
 from pagos_confirmacion import confirmar_pago_si_corresponde
@@ -316,7 +316,7 @@ def crear_pedido(body, datos_token):
     # productos individuales reales que hay que descontar (ver
     # COMPOSICION_PAQUETES en models.py).
     productos_a_descontar = []
-    for producto_id, cantidad in expandir_items_a_individuales(items):
+    for producto_id, cantidad in expandir_items_a_individuales(items, db.session):
         producto = db.session.query(Producto).filter_by(id=producto_id).first()
         if not producto:
             continue
@@ -480,13 +480,9 @@ def listar_kpis_admin(datos_token):
     seccion_individual = {"unidades": 0, "monto": 0.0}
     seccion_paquete = {"unidades": 0, "monto": 0.0}
     por_paquete = {
-        pid: {
-            "id": pid,
-            "nombre": producto_por_id[pid].nombre if pid in producto_por_id else None,
-            "unidades": 0,
-            "monto": 0.0,
-        }
-        for pid in COMPOSICION_PAQUETES
+        p.id: {"id": p.id, "nombre": p.nombre, "unidades": 0, "monto": 0.0}
+        for p in productos
+        if p.seccion == "paquete"
     }
     for entrada in ventas_por_producto:
         producto = producto_por_id.get(entrada["id"]) if entrada["id"] is not None else None
@@ -780,13 +776,43 @@ def _serializar_producto(p):
     que se le muestra al cliente (o al admin) no es su propio contador
     -- que ya no se usa -- sino cuantas veces se puede armar con el
     stock ACTUAL de sus productos individuales (ver
-    COMPOSICION_PAQUETES/calcular_stock_paquete en models.py)."""
+    PaqueteProducto/calcular_stock_paquete en models.py). Si es un
+    paquete, tambien manda su composicion (que producto individual y
+    cuantos frascos de cada uno) para que el admin la pueda editar."""
     d = p.to_dict()
     stock_paquete = calcular_stock_paquete(p.id, db.session)
     if stock_paquete is not None:
         d["stock"] = stock_paquete
         d["disponible"] = p.activo and stock_paquete > 0
+    if p.seccion == "paquete":
+        composicion = db.session.query(PaqueteProducto).filter_by(paquete_id=p.id).all()
+        d["items"] = [{"productoId": c.producto_id, "cantidad": c.cantidad} for c in composicion]
     return d
+
+
+def _guardar_composicion_paquete(paquete_id, items_body):
+    """Valida y reemplaza (borra + recrea) la composicion de un
+    paquete -- usado por crear_producto/actualizar_producto cuando
+    seccion es 'paquete'. Regresa None si todo salio bien, o una
+    respuesta de error (jsonify(...), status) lista para regresar tal
+    cual desde quien la llamo."""
+    if not items_body:
+        return jsonify({"error": "Selecciona al menos un producto para el paquete."}), 400
+    normalizados = {}
+    for it in items_body:
+        producto_id = it.get("productoId")
+        cantidad = it.get("cantidad")
+        if not producto_id or not cantidad or int(cantidad) < 1:
+            return jsonify({"error": "Cada producto marcado necesita una cantidad de frascos válida."}), 400
+        producto = db.session.query(Producto).filter_by(id=producto_id).first()
+        if not producto or producto.seccion != "individual":
+            return jsonify({"error": "Producto no encontrado."}), 404
+        normalizados[producto.id] = int(cantidad)
+
+    db.session.query(PaqueteProducto).filter_by(paquete_id=paquete_id).delete()
+    for producto_id, cantidad in normalizados.items():
+        db.session.add(PaqueteProducto(paquete_id=paquete_id, producto_id=producto_id, cantidad=cantidad))
+    return None
 
 
 def listar_productos_publico():
@@ -813,6 +839,7 @@ def crear_producto(body, datos_token):
 
     nombre = (body.get("nombre") or "").strip()
     precio = body.get("precio")
+    seccion = body.get("seccion") or "individual"
     if not nombre or precio is None:
         return jsonify({"error": "Faltan datos del producto."}), 400
 
@@ -822,12 +849,23 @@ def crear_producto(body, datos_token):
         precio=precio,
         precio_regular=precio_regular if precio_regular not in (None, "") else None,
         imagen=body.get("imagen") or "",
+        # Un paquete no usa su propio contador de existencias (ver
+        # calcular_stock_paquete) -- se deja en 0, sin pedirlo en el
+        # formulario de alta de paquete.
         stock=int(body.get("stock") or 0),
-        seccion=body.get("seccion") or "individual",
+        seccion=seccion,
         insignia=body.get("insignia") or None,
         orden=int(body.get("orden") or 0),
     )
     db.session.add(producto)
+    db.session.flush()  # para tener producto.id antes de crear su composicion (si es paquete)
+
+    if seccion == "paquete":
+        error = _guardar_composicion_paquete(producto.id, body.get("items") or [])
+        if error:
+            db.session.rollback()
+            return error
+
     db.session.commit()
     return jsonify({"ok": True, "producto": _serializar_producto(producto)})
 
@@ -859,6 +897,10 @@ def actualizar_producto(body, datos_token):
         producto.orden = int(body["orden"])
     if "activo" in body:
         producto.activo = bool(body["activo"])
+    if "items" in body:
+        error = _guardar_composicion_paquete(producto.id, body["items"] or [])
+        if error:
+            return error
 
     db.session.commit()
     return jsonify({"ok": True, "producto": _serializar_producto(producto)})
@@ -1339,7 +1381,7 @@ def _ajustar_inventario(items, signo):
     signo=-1 lo vuelve a descontar (se revierte una cancelacion,
     volviendo el pedido a un estado activo). Igual que en crear_pedido,
     los paquetes se resuelven contra sus productos individuales."""
-    for producto_id, cantidad in expandir_items_a_individuales(items):
+    for producto_id, cantidad in expandir_items_a_individuales(items, db.session):
         producto = db.session.query(Producto).filter_by(id=producto_id).first()
         if not producto:
             continue
