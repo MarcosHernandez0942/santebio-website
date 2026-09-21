@@ -1103,10 +1103,8 @@
           '<label>Precio (MXN)<input type="number" min="0" step="0.01" class="sb-plan-editar-precio" value="' + p.precio + '" /></label>' +
           '<label>Precio regular (opcional)<input type="number" min="0" step="0.01" class="sb-plan-editar-precio-regular" value="' + (p.precioRegular != null ? p.precioRegular : '') + '" placeholder="Sin descuento" /></label>' +
           '</div>' +
-          '<div class="sb-form-row">' +
-          '<label>Frecuencia (días)<input type="number" min="1" step="1" class="sb-plan-editar-frecuencia" value="' + p.frecuenciaDias + '" /></label>' +
-          '<label>Descripción<input type="text" class="sb-plan-editar-descripcion" value="' + (p.descripcion || '') + '" /></label>' +
-          '</div>' +
+          '<label style="max-width:220px;">Frecuencia (días)<input type="number" min="1" step="1" class="sb-plan-editar-frecuencia" value="' + p.frecuenciaDias + '" /></label>' +
+          '<label>Descripción<textarea class="sb-plan-editar-descripcion" rows="3">' + (p.descripcion || '') + '</textarea></label>' +
           '</div>' +
           '<div class="sb-producto-admin-acciones">' +
           '<button type="button" class="sb-btn sb-guardar-plan-cambios" data-id="' + p.id + '" style="padding:8px 16px; font-size:12.5px;">Guardar</button>' +

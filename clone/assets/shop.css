@@ -1373,6 +1373,16 @@ a {
   width: 100%;
   box-sizing: border-box;
 }
+.sb-plan-editar-descripcion {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
 .sb-plan-admin-card .sb-form-row {
   display: flex;
   gap: 14px;
@@ -1426,18 +1436,26 @@ a {
   color: var(--ink);
 }
 .sb-plan-item-check-row input {
-  width: auto;
+  width: auto !important;
 }
 .sb-plan-item-cantidad-row {
   font-size: 11.5px;
   font-weight: 600;
   color: rgba(32, 79, 43, 0.65);
 }
+/* !important en las 3 -- el checklist del formulario de ALTA vive
+   dentro de ".sb-form-group" (".sb-form-group input" mas arriba en
+   este archivo, linea ~724, ya pone width:100% + su propio padding a
+   CUALQUIER input adentro), y esa regla gana el empate de
+   especificidad por venir despues... pero en la practica seguia
+   ganando ella -- de ahi el input de cantidad estirado a todo lo
+   ancho en vez de quedarse chico. Blindado para que este control se
+   vea igual sin importar en que formulario este metido. */
 .sb-plan-item-cantidad-row input {
-  width: 60px;
-  padding: 6px 8px;
+  width: 60px !important;
+  padding: 6px 8px !important;
   border: 1px solid var(--line-strong);
-  border-radius: 8px;
+  border-radius: 8px !important;
   font-size: 13px;
 }
 .sb-plan-admin-card .sb-producto-admin-acciones {
