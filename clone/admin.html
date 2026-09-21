@@ -224,7 +224,7 @@
         <div class="sb-dash-panel" id="sb-panel-suscripciones" style="display:none;">
           <div class="sb-kpi-section sb-reveal">
             <h3>Planes de suscripción</h3>
-            <p class="sb-form-hint" style="margin-top:-8px;">Estos son los planes que se muestran en suscripciones.html. El % es solo el gancho de venta; el precio de cada presentación se captura aquí abajo y es el que se usa como punto de partida al dar de alta una suscripción.</p>
+            <p class="sb-form-hint" style="margin-top:-8px;">Cada plan es UN precio para UNA presentación con UNA frecuencia (ej. "90 Cápsulas cada 30 días — $242.10"). Si quieres ofrecer la misma frecuencia para 90 y 150 cápsulas, son dos planes distintos. El % que se muestra en suscripciones.html se calcula solo comparando este precio contra el precio normal del producto.</p>
             <div id="sb-planes-suscripcion-lista"></div>
 
             <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-plan" style="margin-top: 8px;">+ Agregar plan</button>
@@ -232,8 +232,8 @@
             <form id="sb-plan-suscripcion-form" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line-strong);">
               <div class="sb-form-row">
                 <div class="sb-form-group">
-                  <label for="sb-plan-nombre">Nombre</label>
-                  <input type="text" id="sb-plan-nombre" placeholder="Cada 45 días" required />
+                  <label for="sb-plan-producto">Producto</label>
+                  <select id="sb-plan-producto" required></select>
                 </div>
                 <div class="sb-form-group">
                   <label for="sb-plan-frecuencia">Frecuencia (días)</label>
@@ -242,8 +242,8 @@
               </div>
               <div class="sb-form-row">
                 <div class="sb-form-group">
-                  <label for="sb-plan-descuento">Descuento (%)</label>
-                  <input type="number" id="sb-plan-descuento" required min="0" max="100" step="0.01" />
+                  <label for="sb-plan-precio">Precio por entrega (MXN)</label>
+                  <input type="number" id="sb-plan-precio" required min="0" step="0.01" />
                 </div>
                 <div class="sb-form-group">
                   <label for="sb-plan-descripcion">Descripción corta</label>
@@ -257,7 +257,7 @@
 
           <div class="sb-kpi-section sb-reveal" style="margin-top: 24px;">
             <h3>Suscripciones de clientes</h3>
-            <p class="sb-form-hint" style="margin-top:-8px;">El cobro automático todavía no está conectado: cada entrega se registra aquí a mano y descuenta inventario igual que un pedido normal. El % de descuento del plan es solo el gancho de venta que se muestra en suscripciones.html — el precio real que se cobra se captura aquí abajo.</p>
+            <p class="sb-form-hint" style="margin-top:-8px;">El cobro automático todavía no está conectado: cada entrega se registra aquí a mano con "Registrar entrega" y descuenta inventario igual que un pedido normal.</p>
             <div id="sb-suscripciones-lista"></div>
 
             <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-suscripcion" style="margin-top: 8px;">+ Agregar suscripción</button>
@@ -269,27 +269,23 @@
               </div>
               <div class="sb-form-row">
                 <div class="sb-form-group">
-                  <label for="sb-susc-producto">Producto</label>
-                  <select id="sb-susc-producto" required></select>
-                </div>
-                <div class="sb-form-group">
                   <label for="sb-susc-plan">Plan</label>
                   <select id="sb-susc-plan" required></select>
                 </div>
-              </div>
-              <div class="sb-form-row">
                 <div class="sb-form-group">
                   <label for="sb-susc-precio">Precio por entrega (MXN)</label>
                   <input type="number" id="sb-susc-precio" min="0" step="0.01" required />
                 </div>
+              </div>
+              <div class="sb-form-row">
                 <div class="sb-form-group">
                   <label for="sb-susc-proxima">Próxima entrega (opcional)</label>
                   <input type="date" id="sb-susc-proxima" />
                 </div>
-              </div>
-              <div class="sb-form-group">
-                <label for="sb-susc-notas">Notas (opcional)</label>
-                <input type="text" id="sb-susc-notas" placeholder="Ej. pidió por WhatsApp el 20/sep" />
+                <div class="sb-form-group">
+                  <label for="sb-susc-notas">Notas (opcional)</label>
+                  <input type="text" id="sb-susc-notas" placeholder="Ej. pidió por WhatsApp el 20/sep" />
+                </div>
               </div>
               <div id="sb-suscripcion-form-error" class="sb-form-error" style="display:none;"></div>
               <button type="submit" class="sb-btn" id="sb-guardar-suscripcion-btn">Agregar suscripción</button>
@@ -387,8 +383,12 @@
       }
       if (btn.dataset.panel === 'suscripciones' && !suscripcionesCargadas) {
         suscripcionesCargadas = true;
-        cargarPlanesSuscripcionAdmin(token);
-        cargarSuscripcionesAdmin(token);
+        // Las suscripciones necesitan planesSuscripcionCache ya lleno
+        // para armar su selector de Plan -- se encadena en vez de
+        // lanzar los dos fetch en paralelo.
+        cargarPlanesSuscripcionAdmin(token).then(function () {
+          cargarSuscripcionesAdmin(token);
+        });
       }
     });
   });
@@ -937,44 +937,81 @@
   });
 
   /* --- Suscripciones (admin) --- */
+  // Estructura: un PLAN es una combinacion concreta de UN producto +
+  // UNA frecuencia + UN precio real (ej. "90 Cápsulas cada 30 días --
+  // $242.10"), como una variante de producto normal -- nunca dos
+  // precios que se sumen ni nada que se calcule con un %. Una
+  // SUSCRIPCION de cliente solo referencia un plan_id: cambiar el plan
+  // de una suscripcion cambia producto y frecuencia juntos (eso es
+  // "cambiar el frasco o dosis").
   var planesSuscripcionCache = [];
   var productosIndividualesCache = [];
+
+  function etiquetaPlan(p) {
+    return p.productoNombre + ' · Cada ' + p.frecuenciaDias + ' días';
+  }
+
+  function opcionesProductoHtml(seleccionadoId) {
+    return productosIndividualesCache.map(function (p) {
+      return '<option value="' + p.id + '"' + (p.id === seleccionadoId ? ' selected' : '') + '>' + p.nombre + '</option>';
+    }).join('');
+  }
+
+  function opcionesPlanHtml(seleccionadoId) {
+    return planesSuscripcionCache
+      .filter(function (p) { return p.activo || p.id === seleccionadoId; })
+      .map(function (p) {
+        return '<option value="' + p.id + '"' + (p.id === seleccionadoId ? ' selected' : '') + '>' + etiquetaPlan(p) + ' — ' + SanteBioCart.formatMXN(p.precio) + '</option>';
+      }).join('');
+  }
+
+  function llenarSelectProductoPlan() {
+    var select = document.getElementById('sb-plan-producto');
+    if (!select) return;
+    var seleccionadoPrevio = select.value;
+    select.innerHTML = productosIndividualesCache.map(function (p) {
+      return '<option value="' + p.id + '">' + p.nombre + ' (precio normal ' + SanteBioCart.formatMXN(p.precio) + ')</option>';
+    }).join('');
+    if (seleccionadoPrevio) select.value = seleccionadoPrevio;
+  }
+
+  function cargarProductosIndividuales(token) {
+    return SanteBioAuth.llamarApi('listar_productos_admin', {}, token).then(function (res) {
+      // Solo presentaciones individuales -- un plan de suscripcion
+      // siempre entrega un producto real, nunca un paquete (los
+      // paquetes ya ni tienen su propio stock, ver COMPOSICION_PAQUETES).
+      productosIndividualesCache = (res.productos || []).filter(function (p) { return p.seccion === 'individual'; });
+      llenarSelectProductoPlan();
+    });
+  }
 
   function cargarPlanesSuscripcionAdmin(token, mostrarCargando) {
     var lista = document.getElementById('sb-planes-suscripcion-lista');
     if (mostrarCargando !== false) {
       lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
     }
-    SanteBioAuth.llamarApi('listar_planes_suscripcion_admin', {}, token).then(function (res) {
-      var planes = res.planes || [];
+    return Promise.all([
+      cargarProductosIndividuales(token),
+      SanteBioAuth.llamarApi('listar_planes_suscripcion_admin', {}, token),
+    ]).then(function (resultados) {
+      var planes = resultados[1].planes || [];
       planesSuscripcionCache = planes;
-      llenarSelectPlanes();
+      llenarSelectPlanSuscripcion();
       if (planes.length === 0) {
         lista.innerHTML = '<p class="sb-empty-panel">Todavía no hay planes.</p>';
         return;
       }
       lista.innerHTML = planes.map(function (p) {
-        // Un input de precio editable por cada presentacion individual
-        // (90/150 capsulas) -- si el admin todavia no le ha puesto un
-        // precio propio a esta combinacion plan+producto, se precarga
-        // con el calculado a partir del % nada mas como punto de
-        // partida (personalizado:false), pero en cuanto se le da
-        // Guardar queda fijo como precio real (ver
-        // actualizar_plan_suscripcion en routes.py).
-        var preciosHtml = (p.precios || []).map(function (r) {
-          return (
-            '<label>Precio ' + r.productoNombre + '<input type="number" min="0" step="0.01" class="sb-plan-editar-precio" data-producto-id="' + r.productoId + '" value="' + r.precio + '" /></label>'
-          );
-        }).join('');
         return (
           '<div class="sb-producto-admin-card" data-id="' + p.id + '">' +
           '<div class="sb-producto-admin-info">' +
-          '<div class="sb-producto-admin-nombre">' + p.nombre + (p.destacado ? ' <span class="sb-metodo-badge">Destacado</span>' : '') + (p.activo ? '' : ' <span class="sb-metodo-badge">Oculto</span>') + '</div>' +
-          '<div class="sb-pedido-cliente">' + p.descripcion + '</div>' +
+          '<div class="sb-producto-admin-nombre">' + etiquetaPlan(p) + (p.destacado ? ' <span class="sb-metodo-badge">Destacado</span>' : '') + (p.activo ? '' : ' <span class="sb-metodo-badge">Oculto</span>') + '</div>' +
+          '<div class="sb-pedido-cliente">' + (p.descripcion || 'Sin descripción') + '</div>' +
+          '<div class="sb-pedido-cliente">Precio normal del producto: ' + SanteBioCart.formatMXN(p.precioListaProducto) + ' · Ahorra ' + p.descuentoPorcentaje + '% (se calcula solo comparando con el precio de abajo, no se edita aparte)</div>' +
           '</div>' +
           '<div class="sb-producto-admin-campos">' +
-          preciosHtml +
-          '<label>Descuento (%)<input type="number" min="0" max="100" step="0.01" class="sb-plan-editar-descuento" value="' + p.descuentoPorcentaje + '" /></label>' +
+          '<label>Producto<select class="sb-plan-editar-producto">' + opcionesProductoHtml(p.productoId) + '</select></label>' +
+          '<label>Precio por entrega<input type="number" min="0" step="0.01" class="sb-plan-editar-precio" value="' + p.precio + '" /></label>' +
           '<label>Frecuencia (días)<input type="number" min="1" step="1" class="sb-plan-editar-frecuencia" value="' + p.frecuenciaDias + '" /></label>' +
           '<label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="sb-plan-editar-destacado" ' + (p.destacado ? 'checked' : '') + ' style="width:auto;" />Destacado</label>' +
           '</div>' +
@@ -989,16 +1026,12 @@
       lista.querySelectorAll('.sb-guardar-plan-cambios').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var card = btn.closest('.sb-producto-admin-card');
-          var precios = {};
-          card.querySelectorAll('.sb-plan-editar-precio').forEach(function (input) {
-            precios[input.dataset.productoId] = parseFloat(input.value);
-          });
           var datos = {
             id: btn.dataset.id,
-            descuentoPorcentaje: parseFloat(card.querySelector('.sb-plan-editar-descuento').value),
+            productoId: parseInt(card.querySelector('.sb-plan-editar-producto').value, 10),
+            precio: parseFloat(card.querySelector('.sb-plan-editar-precio').value),
             frecuenciaDias: parseInt(card.querySelector('.sb-plan-editar-frecuencia').value, 10),
             destacado: card.querySelector('.sb-plan-editar-destacado').checked,
-            precios: precios,
           };
           btn.disabled = true;
           btn.textContent = 'Guardando…';
@@ -1028,6 +1061,16 @@
     planForm.style.display = planForm.style.display === 'block' ? 'none' : 'block';
   });
 
+  // Al elegir el producto en el alta de un plan nuevo, se sugiere un
+  // precio con 10% de descuento sobre su precio normal -- solo un
+  // punto de partida comodo, se edita libremente antes de guardar.
+  document.getElementById('sb-plan-producto').addEventListener('change', function () {
+    var productoId = parseInt(this.value, 10);
+    var producto = productosIndividualesCache.filter(function (p) { return p.id === productoId; })[0];
+    var precioInput = document.getElementById('sb-plan-precio');
+    if (producto) precioInput.value = Math.round(producto.precio * 0.9 * 100) / 100;
+  });
+
   planForm.addEventListener('submit', function (e) {
     e.preventDefault();
     if (!this.checkValidity()) { this.reportValidity(); return; }
@@ -1037,9 +1080,9 @@
     btn.disabled = true;
     btn.textContent = 'Guardando…';
     SanteBioAuth.llamarApi('crear_plan_suscripcion', {
-      nombre: document.getElementById('sb-plan-nombre').value.trim(),
+      productoId: parseInt(document.getElementById('sb-plan-producto').value, 10),
       frecuenciaDias: parseInt(document.getElementById('sb-plan-frecuencia').value, 10),
-      descuentoPorcentaje: parseFloat(document.getElementById('sb-plan-descuento').value),
+      precio: parseFloat(document.getElementById('sb-plan-precio').value),
       descripcion: document.getElementById('sb-plan-descripcion').value.trim(),
     }, token).then(function (res) {
       btn.disabled = false;
@@ -1055,52 +1098,28 @@
     });
   });
 
-  function llenarSelectPlanes() {
+  function llenarSelectPlanSuscripcion() {
     var select = document.getElementById('sb-susc-plan');
     if (!select) return;
     var seleccionadoPrevio = select.value;
-    // "% desc." aqui es solo referencia (el mismo dato de mercadeo de
-    // suscripciones.html) -- no se aplica solo, el precio real se
-    // captura a mano en el campo de abajo.
-    select.innerHTML = planesSuscripcionCache.filter(function (p) { return p.activo; }).map(function (p) {
-      return '<option value="' + p.id + '">' + p.nombre + ' (referencia: ' + p.descuentoPorcentaje + '% desc.)</option>';
-    }).join('');
+    select.innerHTML = opcionesPlanHtml(null);
     if (seleccionadoPrevio) select.value = seleccionadoPrevio;
     // Este select se repuebla cada vez que se guarda un cambio en
-    // "Planes de suscripción" (cargarPlanesSuscripcionAdmin) -- si el
-    // formulario de alta ya estaba abierto con un precio sugerido
-    // viejo, se refresca aqui mismo para que no se quede desactualizado
-    // frente al precio que el admin acaba de guardar en el plan.
+    // "Planes de suscripción" -- si el formulario de alta ya estaba
+    // abierto, se refresca aqui mismo el precio sugerido para que no
+    // se quede desactualizado frente al precio que se acaba de guardar.
     actualizarPrecioSugeridoSuscripcion();
   }
 
-  function llenarSelectProductos() {
-    var select = document.getElementById('sb-susc-producto');
-    if (!select) return;
-    select.innerHTML = productosIndividualesCache.map(function (p) {
-      return '<option value="' + p.id + '">' + p.nombre + ' — ' + SanteBioCart.formatMXN(p.precio) + '</option>';
-    }).join('');
-    var precioInput = document.getElementById('sb-susc-precio');
-    if (precioInput && !precioInput.value && select.options.length > 0) {
-      actualizarPrecioSugeridoSuscripcion();
-    }
+  // Al elegir un plan se sugiere su precio como precio de entrega --
+  // solo un punto de partida comodo, el admin lo puede editar
+  // libremente antes de guardar.
+  function actualizarPrecioSugeridoSuscripcion() {
+    var planId = parseInt(document.getElementById('sb-susc-plan').value, 10);
+    var plan = planesSuscripcionCache.filter(function (p) { return p.id === planId; })[0];
+    if (plan) document.getElementById('sb-susc-precio').value = plan.precio;
   }
-
-  function cargarProductosParaSuscripcion(token) {
-    return SanteBioAuth.llamarApi('listar_productos_admin', {}, token).then(function (res) {
-      // Solo presentaciones individuales -- una suscripcion siempre
-      // entrega un producto real, nunca un paquete (los paquetes ya
-      // ni tienen su propio stock, ver COMPOSICION_PAQUETES).
-      productosIndividualesCache = (res.productos || []).filter(function (p) { return p.seccion === 'individual'; });
-      llenarSelectProductos();
-    });
-  }
-
-  function opcionesProductoHtml(seleccionadoId) {
-    return productosIndividualesCache.map(function (p) {
-      return '<option value="' + p.id + '"' + (p.id === seleccionadoId ? ' selected' : '') + '>' + p.nombre + ' — ' + SanteBioCart.formatMXN(p.precio) + '</option>';
-    }).join('');
-  }
+  document.getElementById('sb-susc-plan').addEventListener('change', actualizarPrecioSugeridoSuscripcion);
 
   var etiquetasEstadoSuscripcion = { activa: 'Activa', pausada: 'Pausada', cancelada: 'Cancelada' };
 
@@ -1109,14 +1128,7 @@
     if (mostrarCargando !== false) {
       lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
     }
-    // Se espera a que los productos individuales esten cargados antes
-    // de pintar la lista -- cada fila necesita productosIndividualesCache
-    // ya listo para armar su selector de "Producto" (frasco/dosis).
-    Promise.all([
-      cargarProductosParaSuscripcion(token),
-      SanteBioAuth.llamarApi('listar_suscripciones_admin', {}, token),
-    ]).then(function (resultados) {
-      var res = resultados[1];
+    SanteBioAuth.llamarApi('listar_suscripciones_admin', {}, token).then(function (res) {
       var suscripciones = res.suscripciones || [];
       if (suscripciones.length === 0) {
         lista.innerHTML = '<p class="sb-empty-panel">Todavía no hay suscripciones. Se dan de alta a mano mientras se conecta el cobro automático.</p>';
@@ -1130,11 +1142,11 @@
           '<div class="sb-producto-admin-card" data-id="' + s.id + '">' +
           '<div class="sb-producto-admin-info">' +
           '<div class="sb-producto-admin-nombre">' + s.clienteNombre + ' <span class="sb-kpi-sub">· ' + s.clienteCorreo + '</span></div>' +
-          '<div class="sb-pedido-cliente">' + s.productoNombre + ' · ' + s.planNombre + ' · Próxima entrega: ' + proxima + '</div>' +
+          '<div class="sb-pedido-cliente">' + s.productoNombre + ' · Cada ' + s.frecuenciaDias + ' días · Próxima entrega: ' + proxima + '</div>' +
           '<div class="sb-pedido-cliente">Stock actual del producto: ' + s.productoStock + (s.notas ? ' · Notas: ' + s.notas : '') + '</div>' +
           '</div>' +
           '<div class="sb-producto-admin-campos">' +
-          '<label>Producto (frasco/dosis)<select class="sb-susc-editar-producto">' + opcionesProductoHtml(s.productoId) + '</select></label>' +
+          '<label>Plan (producto + frecuencia)<select class="sb-susc-editar-plan">' + opcionesPlanHtml(s.planId) + '</select></label>' +
           '<label>Precio por entrega<input type="number" min="0" step="0.01" class="sb-susc-editar-precio" value="' + s.precioEntrega + '" /></label>' +
           '<label>Estado<select class="sb-susc-editar-estado">' +
           Object.keys(etiquetasEstadoSuscripcion).map(function (k) {
@@ -1155,7 +1167,7 @@
           var card = btn.closest('.sb-producto-admin-card');
           var datos = {
             id: btn.dataset.id,
-            productoId: parseInt(card.querySelector('.sb-susc-editar-producto').value, 10),
+            planId: parseInt(card.querySelector('.sb-susc-editar-plan').value, 10),
             precioEntrega: parseFloat(card.querySelector('.sb-susc-editar-precio').value),
             estado: card.querySelector('.sb-susc-editar-estado').value,
           };
@@ -1192,27 +1204,6 @@
     suscripcionForm.style.display = suscripcionForm.style.display === 'block' ? 'none' : 'block';
   });
 
-  // Al cambiar el producto o el plan elegidos, se refresca el precio
-  // por entrega -- primero se busca si el plan ya tiene un precio
-  // propio capturado para ese producto (ver "Precio 90/150 Cápsulas"
-  // en Planes de suscripción); si no, se cae al precio de lista del
-  // producto. Siempre es solo un punto de partida comodo, el admin lo
-  // sigue pudiendo editar libremente antes de guardar.
-  function actualizarPrecioSugeridoSuscripcion() {
-    var productoId = parseInt(document.getElementById('sb-susc-producto').value, 10);
-    var planId = parseInt(document.getElementById('sb-susc-plan').value, 10);
-    var plan = planesSuscripcionCache.filter(function (p) { return p.id === planId; })[0];
-    var entradaPlan = plan && (plan.precios || []).filter(function (r) { return r.productoId === productoId; })[0];
-    if (entradaPlan) {
-      document.getElementById('sb-susc-precio').value = entradaPlan.precio;
-      return;
-    }
-    var producto = productosIndividualesCache.filter(function (p) { return p.id === productoId; })[0];
-    if (producto) document.getElementById('sb-susc-precio').value = producto.precio;
-  }
-  document.getElementById('sb-susc-producto').addEventListener('change', actualizarPrecioSugeridoSuscripcion);
-  document.getElementById('sb-susc-plan').addEventListener('change', actualizarPrecioSugeridoSuscripcion);
-
   suscripcionForm.addEventListener('submit', function (e) {
     e.preventDefault();
     if (!this.checkValidity()) { this.reportValidity(); return; }
@@ -1224,7 +1215,6 @@
     var precioTexto = document.getElementById('sb-susc-precio').value.trim();
     SanteBioAuth.llamarApi('crear_suscripcion_admin', {
       correo: document.getElementById('sb-susc-correo').value.trim(),
-      productoId: parseInt(document.getElementById('sb-susc-producto').value, 10),
       planId: parseInt(document.getElementById('sb-susc-plan').value, 10),
       precioEntrega: precioTexto === '' ? null : parseFloat(precioTexto),
       proximaEntrega: document.getElementById('sb-susc-proxima').value || null,

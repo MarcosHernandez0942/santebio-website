@@ -306,92 +306,64 @@ def calcular_stock_paquete(producto_id, db_session):
 
 
 class PlanSuscripcion(db.Model):
-    """Catalogo de frecuencias de suscripcion -- antes vivia fijo como
-    texto/CSS en suscripciones.html ("cada 30/60/90 dias" con 10/12/15%
-    de descuento). Se migra a tabla para que el admin pueda editar
-    nombre/descuento/destacado desde el panel sin tocar codigo, y para
-    que suscripciones.html los muestre en vivo (ver
-    listar_planes_suscripcion_publico en routes.py). Sin encriptar: es
-    informacion publica de marketing, igual que Producto."""
+    """Un plan de suscripcion es una combinacion CONCRETA de una
+    presentacion (producto individual) + una frecuencia de entrega,
+    con su propio precio real -- como una variante de producto normal
+    (ej. "90 Capsulas cada 30 dias -- $242.10"). Cada combinacion que
+    se quiera ofrecer es su propia fila con su propio precio.
+
+    Version anterior (para quien lea el historial de git): un plan
+    aplicaba de forma generica a cualquier producto, con un % de
+    descuento aparte y un precio "de referencia" calculado por
+    presentacion -- resulto confuso (parecia que dos precios distintos
+    se sumaban). Se rediseño para que cada plan tenga un solo precio,
+    sin ambiguedad. El "Ahorra X%" que se muestra en
+    suscripciones.html ya no se guarda: se calcula al vuelo comparando
+    este precio contra el precio de lista del producto (ver
+    _serializar_plan en routes.py), asi nunca puede quedar
+    desincronizado del precio real. Sin encriptar: es informacion
+    publica de catalogo, igual que Producto."""
 
     __tablename__ = "planes_suscripcion"
 
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.Text, nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
     frecuencia_dias = db.Column(db.Integer, nullable=False)
-    # Puramente informativo/de mercadeo ("Ahorra 10%" en
-    # suscripciones.html) -- pedido explicito de Marcos: NO se usa para
-    # calcular ningun precio real. El precio que de verdad se cobra
-    # vive en Suscripcion.precio_entrega, capturado y editado siempre a
-    # mano por el admin.
-    descuento_porcentaje = db.Column(db.Numeric(5, 2), nullable=False, default=0)
+    # Precio real que paga el cliente en cada entrega de ESTE plan --
+    # lo captura el admin directamente, no se deriva de ninguna
+    # formula ni de ningun otro campo.
+    precio = db.Column(db.Numeric(10, 2), nullable=False)
     descripcion = db.Column(db.Text, nullable=False, default="")
     destacado = db.Column(db.Boolean, nullable=False, default=False)
     activo = db.Column(db.Boolean, nullable=False, default=True)
     orden = db.Column(db.Integer, nullable=False, default=0)
     creado_en = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "frecuenciaDias": self.frecuencia_dias,
-            "descuentoPorcentaje": float(self.descuento_porcentaje),
-            "descripcion": self.descripcion,
-            "destacado": self.destacado,
-            "activo": self.activo,
-            "orden": self.orden,
-        }
-
-
-class PrecioPlanProducto(db.Model):
-    """Precio real, editable a mano por el admin, de un plan de
-    suscripcion para una presentacion (producto individual) puntual --
-    ej. "Cada 30 dias" + "90 Capsulas" = $242.10. Antes ese numero solo
-    se mostraba como referencia calculada con el % de descuento del
-    plan; pedido explicito de Marcos: poder capturarlo/editarlo el
-    mismo directo en la tarjeta del plan, sin depender de la formula.
-    Si no existe una fila aqui para un plan+producto, el admin todavia
-    no le ha puesto un precio propio -- el frontend sugiere el
-    calculado con el % mientras tanto, pero no se guarda solo."""
-
-    __tablename__ = "precios_plan_producto"
-
-    id = db.Column(db.Integer, primary_key=True)
-    plan_id = db.Column(db.Integer, db.ForeignKey("planes_suscripcion.id"), nullable=False)
-    producto_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
-    precio = db.Column(db.Numeric(10, 2), nullable=False)
-
-    __table_args__ = (db.UniqueConstraint("plan_id", "producto_id", name="uq_precio_plan_producto"),)
-
 
 class Suscripcion(db.Model):
-    """Suscripcion de un cliente a un producto con entregas periodicas.
-    El cobro/envio automatico TODAVIA NO EXISTE (suscripciones.html ya
-    avisa "muy pronto" -- falta conectar una pasarela con cobro
-    recurrente real). Mientras tanto, cada entrega se registra a mano
-    desde el panel de admin con la accion
+    """Suscripcion de un cliente a un plan (producto + frecuencia +
+    precio ya definidos ahi, ver PlanSuscripcion) con entregas
+    periodicas. El cobro/envio automatico TODAVIA NO EXISTE
+    (suscripciones.html ya avisa "muy pronto" -- falta conectar una
+    pasarela con cobro recurrente real). Mientras tanto, cada entrega
+    se registra a mano desde el panel de admin con la accion
     "registrar_entrega_suscripcion" (routes.py), que crea un Pedido
     real y descuenta inventario exactamente igual que una compra
     normal -- asi el stock nunca se desincroniza aunque el cobro
     todavia sea manual. Sin encriptar a proposito: no guarda datos de
-    contacto propios, solo referencias (usuario_id/producto_id/plan_id)
-    -- los datos sensibles siguen viviendo solo en Usuario/Direccion."""
+    contacto propios, solo referencias (usuario_id/plan_id) -- los
+    datos sensibles siguen viviendo solo en Usuario/Direccion."""
 
     __tablename__ = "suscripciones"
 
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
-    producto_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey("planes_suscripcion.id"), nullable=False)
-    # Precio que paga el cliente en CADA entrega. El "% de descuento"
-    # del plan (PlanSuscripcion.descuento_porcentaje) es solo un dato
-    # de mercadeo para suscripciones.html ("Ahorra 10%") -- pedido
-    # explicito de Marcos: el descuento NO se aplica solo para calcular
-    # este precio, el admin lo captura y lo edita siempre a mano
-    # (ver crear_suscripcion_admin/actualizar_suscripcion_admin en
-    # routes.py), para que el monto real cobrado quede bajo su control
-    # y no dependa de una formula automatica.
+    # Precio que paga el cliente en CADA entrega de esta suscripcion en
+    # particular. Se precarga con PlanSuscripcion.precio al darla de
+    # alta, pero el admin lo puede ajustar a mano despues (pedido
+    # explicito: "que puedan modificar precios") -- ej. una cortesia
+    # puntual sin tener que crear un plan nuevo solo para un cliente.
     precio_entrega = db.Column(db.Numeric(10, 2), nullable=False)
     estado = db.Column(db.Text, nullable=False, default="activa")  # activa | pausada | cancelada
     proxima_entrega = db.Column(db.Date, nullable=True)
@@ -402,7 +374,6 @@ class Suscripcion(db.Model):
         return {
             "id": self.id,
             "usuarioId": self.usuario_id,
-            "productoId": self.producto_id,
             "planId": self.plan_id,
             "precioEntrega": float(self.precio_entrega),
             "estado": self.estado,

@@ -72,8 +72,19 @@
     margin-bottom: 6px;
   }
   .sb-plan-card h3 {
-    margin: 0 0 4px;
+    margin: 0 0 2px;
     font-size: 20px;
+  }
+  .sb-plan-card-sub {
+    font-size: 13px;
+    color: rgba(32, 79, 43, 0.65);
+    margin: 0 0 10px;
+  }
+  .sb-plan-card-precio {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 4px;
   }
   .sb-plan-card p {
     font-size: 13px;
@@ -162,17 +173,23 @@
       <div class="sb-planes-grid sb-reveal" id="sb-planes-grid">
         <div class="sb-plan-card">
           <div class="sb-plan-card-ahorro">Ahorra 10%</div>
-          <h3>Cada 30 días</h3>
+          <h3>90 Cápsulas</h3>
+          <div class="sb-plan-card-sub">Cada 30 días</div>
+          <div class="sb-plan-card-precio">$242 MXN</div>
           <p>Ideal para 1 frasco al mes. Envío preferente incluido.</p>
         </div>
         <div class="sb-plan-card is-destacado">
           <div class="sb-plan-card-ahorro">Ahorra 12%</div>
-          <h3>Cada 60 días</h3>
+          <h3>90 Cápsulas</h3>
+          <div class="sb-plan-card-sub">Cada 60 días</div>
+          <div class="sb-plan-card-precio">$237 MXN</div>
           <p>El plan más elegido. Envío gratis en cada entrega.</p>
         </div>
         <div class="sb-plan-card">
           <div class="sb-plan-card-ahorro">Ahorra 15%</div>
-          <h3>Cada 90 días</h3>
+          <h3>90 Cápsulas</h3>
+          <div class="sb-plan-card-sub">Cada 90 días</div>
+          <div class="sb-plan-card-precio">$229 MXN</div>
           <p>Máximo ahorro para quienes ya tienen su rutina. Envío gratis.</p>
         </div>
       </div>
@@ -224,11 +241,17 @@
 SanteBioAuth.llamarApi('listar_planes_suscripcion_publico', {}).then(function (res) {
   if (!res.ok || !res.planes || res.planes.length === 0) return;
   var grid = document.getElementById('sb-planes-grid');
+  // Cada plan ya trae un producto + una frecuencia + un precio real
+  // fijo (no un % que se reste sobre la marcha) -- si hay planes para
+  // mas de una presentacion (90 y 150 capsulas), salen como tarjetas
+  // separadas, cada una con su propio precio exacto.
   grid.innerHTML = res.planes.map(function (p) {
     return (
       '<div class="sb-plan-card' + (p.destacado ? ' is-destacado' : '') + '">' +
       '<div class="sb-plan-card-ahorro">Ahorra ' + p.descuentoPorcentaje + '%</div>' +
-      '<h3>' + p.nombre + '</h3>' +
+      '<h3>' + p.productoNombre + '</h3>' +
+      '<div class="sb-plan-card-sub">Cada ' + p.frecuenciaDias + ' días</div>' +
+      '<div class="sb-plan-card-precio">' + SanteBioCart.formatMXN(p.precio) + '</div>' +
       '<p>' + p.descripcion + '</p>' +
       '</div>'
     );
