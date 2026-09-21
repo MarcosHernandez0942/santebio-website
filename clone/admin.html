@@ -979,16 +979,24 @@
   // un plan (todo vacio) y al editar uno existente (su composicion ya
   // guardada).
   function checklistProductosHtml(seleccion) {
+    // Una "tarjetita" por producto (checkbox + nombre arriba, frascos +
+    // cantidad abajo) para que quepan varias una junto a otra en vez de
+    // una fila completa por producto -- el contenedor las acomoda en
+    // fila con flex-wrap (ver .sb-plan-item-row en shop.css).
     return productosIndividualesCache.map(function (p) {
       var marcado = seleccion && seleccion[p.id] != null;
       var cantidad = marcado ? seleccion[p.id] : 1;
       return (
-        '<label style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">' +
-        '<input type="checkbox" class="sb-plan-item-check" data-producto-id="' + p.id + '" style="width:auto;"' + (marcado ? ' checked' : '') + ' />' +
-        '<span style="flex:1;">' + p.nombre + '</span>' +
+        '<div class="sb-plan-item-row">' +
+        '<label class="sb-plan-item-check-row">' +
+        '<input type="checkbox" class="sb-plan-item-check" data-producto-id="' + p.id + '"' + (marcado ? ' checked' : '') + ' />' +
+        '<span>' + p.nombre + '</span>' +
+        '</label>' +
+        '<label class="sb-plan-item-cantidad-row">' +
         '<span class="sb-kpi-sub">frascos</span>' +
-        '<input type="number" class="sb-plan-item-cantidad" data-producto-id="' + p.id + '" min="1" step="1" value="' + cantidad + '" style="width:64px;"' + (marcado ? '' : ' disabled') + ' />' +
-        '</label>'
+        '<input type="number" class="sb-plan-item-cantidad" data-producto-id="' + p.id + '" min="1" step="1" value="' + cantidad + '"' + (marcado ? '' : ' disabled') + ' />' +
+        '</label>' +
+        '</div>'
       );
     }).join('');
   }

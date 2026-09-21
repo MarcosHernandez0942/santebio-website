@@ -1384,11 +1384,61 @@ a {
 .sb-plan-items-box {
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 14px;
   background: rgba(32, 79, 43, 0.03);
 }
-.sb-plan-items-box label:last-child {
-  margin-bottom: 0 !important;
+/* El checklist de productos (dentro de la caja de arriba) -- una
+   "tarjetita" por producto en vez de una fila completa cada uno, para
+   que quepan varias una junto a otra. #sb-plan-items es el mismo
+   contenedor en el formulario de alta; .sb-plan-editar-items es la
+   version de cada tarjeta ya creada. */
+#sb-plan-items,
+.sb-plan-editar-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.sb-plan-item-row {
+  flex: 1 1 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+/* Se sobreescribe con !important porque ".sb-producto-admin-campos
+   label" (mas arriba en este archivo) ya pone flex-direction:column a
+   CUALQUIER <label> dentro de una tarjeta de admin -- sin esto, el
+   checkbox/texto y el "frascos"/cantidad se apilaban en vertical en
+   vez de quedar en su propia fila horizontal. */
+.sb-plan-item-check-row,
+.sb-plan-item-cantidad-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+}
+.sb-plan-item-check-row {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+}
+.sb-plan-item-check-row input {
+  width: auto;
+}
+.sb-plan-item-cantidad-row {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(32, 79, 43, 0.65);
+}
+.sb-plan-item-cantidad-row input {
+  width: 60px;
+  padding: 6px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  font-size: 13px;
 }
 .sb-plan-admin-card .sb-producto-admin-acciones {
   justify-content: flex-end;
