@@ -224,29 +224,38 @@
         <div class="sb-dash-panel" id="sb-panel-suscripciones" style="display:none;">
           <div class="sb-kpi-section sb-reveal">
             <h3>Planes de suscripción</h3>
-            <p class="sb-form-hint" style="margin-top:-8px;">Cada plan es UN precio para UNA presentación con UNA frecuencia (ej. "90 Cápsulas cada 30 días — $242.10"). Si quieres ofrecer la misma frecuencia para 90 y 150 cápsulas, son dos planes distintos. El % que se muestra en suscripciones.html se calcula solo comparando este precio contra el precio normal del producto.</p>
+            <p class="sb-form-hint" style="margin-top:-8px;">Cada plan es un combo con su propio nombre: marca los productos que incluye y cuántos frascos de cada uno, ponle precio y la frecuencia de entrega. Si a algún producto del combo no le alcanza el inventario, la suscripción no deja registrar la entrega.</p>
             <div id="sb-planes-suscripcion-lista"></div>
 
             <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-plan" style="margin-top: 8px;">+ Agregar plan</button>
 
             <form id="sb-plan-suscripcion-form" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line-strong);">
+              <div class="sb-form-group">
+                <label for="sb-plan-nombre">Nombre del plan</label>
+                <input type="text" id="sb-plan-nombre" placeholder="Ej. Plan Familiar" required />
+              </div>
+              <div class="sb-form-group">
+                <label>Productos que incluye</label>
+                <div id="sb-plan-items"></div>
+                <p class="sb-form-hint" id="sb-plan-total-capsulas" style="margin-top:8px; margin-bottom:0;">Total: 0 cápsulas</p>
+              </div>
               <div class="sb-form-row">
                 <div class="sb-form-group">
-                  <label for="sb-plan-producto">Producto</label>
-                  <select id="sb-plan-producto" required></select>
+                  <label for="sb-plan-precio">Precio (MXN)</label>
+                  <input type="number" id="sb-plan-precio" required min="0" step="0.01" />
                 </div>
                 <div class="sb-form-group">
-                  <label for="sb-plan-frecuencia">Frecuencia (días)</label>
-                  <input type="number" id="sb-plan-frecuencia" required min="1" step="1" />
+                  <label for="sb-plan-precio-regular">Precio regular (antes de descuento, opcional)</label>
+                  <input type="number" id="sb-plan-precio-regular" min="0" step="0.01" placeholder="Sin descuento" />
                 </div>
               </div>
               <div class="sb-form-row">
                 <div class="sb-form-group">
-                  <label for="sb-plan-precio">Precio por entrega (MXN)</label>
-                  <input type="number" id="sb-plan-precio" required min="0" step="0.01" />
+                  <label for="sb-plan-frecuencia">Frecuencia (días)</label>
+                  <input type="number" id="sb-plan-frecuencia" required min="1" step="1" />
                 </div>
                 <div class="sb-form-group">
-                  <label for="sb-plan-descripcion">Descripción corta</label>
+                  <label for="sb-plan-descripcion">Descripción (opcional)</label>
                   <input type="text" id="sb-plan-descripcion" placeholder="Envío gratis en cada entrega." />
                 </div>
               </div>
@@ -937,51 +946,111 @@
   });
 
   /* --- Suscripciones (admin) --- */
-  // Estructura: un PLAN es una combinacion concreta de UN producto +
-  // UNA frecuencia + UN precio real (ej. "90 Cápsulas cada 30 días --
-  // $242.10"), como una variante de producto normal -- nunca dos
-  // precios que se sumen ni nada que se calcule con un %. Una
-  // SUSCRIPCION de cliente solo referencia un plan_id: cambiar el plan
-  // de una suscripcion cambia producto y frecuencia juntos (eso es
-  // "cambiar el frasco o dosis").
+  // Estructura: un PLAN es un combo con nombre propio armado de uno o
+  // mas productos individuales en ciertas cantidades (checkbox +
+  // cantidad de frascos), con un precio real y un precio regular
+  // opcional (igual que Producto), una frecuencia de entrega y una
+  // descripcion. Una SUSCRIPCION de cliente solo referencia un
+  // plan_id: cambiar el plan de una suscripcion cambia toda la
+  // composicion de productos junto con la frecuencia (eso es "cambiar
+  // el frasco o dosis"). Si a un producto del plan no le alcanza el
+  // inventario, el backend rechaza "Registrar entrega" -- aqui nada
+  // mas se refleja ese estado (badge "Sin stock suficiente" y el
+  // boton deshabilitado) para que se vea antes de intentarlo.
   var planesSuscripcionCache = [];
   var productosIndividualesCache = [];
 
-  function etiquetaPlan(p) {
-    return p.productoNombre + ' · Cada ' + p.frecuenciaDias + ' días';
+  function capsulasPorFrasco(producto) {
+    var match = /(\d+)/.exec(producto.nombre);
+    return match ? parseInt(match[1], 10) : 0;
   }
 
-  function opcionesProductoHtml(seleccionadoId) {
+  function mapaItems(items) {
+    var mapa = {};
+    (items || []).forEach(function (it) { mapa[it.productoId] = it.cantidad; });
+    return mapa;
+  }
+
+  // Una fila con checkbox + "cuantos frascos" por cada producto
+  // individual que existe -- "seleccion" (opcional) precarga cuales ya
+  // estan marcados y con que cantidad, para reusar esto mismo al crear
+  // un plan (todo vacio) y al editar uno existente (su composicion ya
+  // guardada).
+  function checklistProductosHtml(seleccion) {
     return productosIndividualesCache.map(function (p) {
-      return '<option value="' + p.id + '"' + (p.id === seleccionadoId ? ' selected' : '') + '>' + p.nombre + '</option>';
+      var marcado = seleccion && seleccion[p.id] != null;
+      var cantidad = marcado ? seleccion[p.id] : 1;
+      return (
+        '<label style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">' +
+        '<input type="checkbox" class="sb-plan-item-check" data-producto-id="' + p.id + '" style="width:auto;"' + (marcado ? ' checked' : '') + ' />' +
+        '<span style="flex:1;">' + p.nombre + '</span>' +
+        '<span class="sb-kpi-sub">frascos</span>' +
+        '<input type="number" class="sb-plan-item-cantidad" data-producto-id="' + p.id + '" min="1" step="1" value="' + cantidad + '" style="width:64px;"' + (marcado ? '' : ' disabled') + ' />' +
+        '</label>'
+      );
     }).join('');
+  }
+
+  // Habilita/deshabilita el input de cantidad al (des)marcar su
+  // checkbox y mantiene actualizado el texto "Total: N cápsulas" de
+  // ese checklist en particular (el de alta o el de cada tarjeta de
+  // edicion, cada uno independiente).
+  function activarChecklist(contenedor, totalLabel) {
+    function recalcularTotal() {
+      if (!totalLabel) return;
+      var total = 0;
+      contenedor.querySelectorAll('.sb-plan-item-check:checked').forEach(function (chk) {
+        var producto = productosIndividualesCache.filter(function (p) { return p.id === parseInt(chk.dataset.productoId, 10); })[0];
+        var cantidadInput = contenedor.querySelector('.sb-plan-item-cantidad[data-producto-id="' + chk.dataset.productoId + '"]');
+        var cantidad = cantidadInput ? parseInt(cantidadInput.value, 10) || 0 : 0;
+        if (producto) total += capsulasPorFrasco(producto) * cantidad;
+      });
+      totalLabel.textContent = 'Total: ' + total + ' cápsulas';
+    }
+    contenedor.querySelectorAll('.sb-plan-item-check').forEach(function (chk) {
+      chk.addEventListener('change', function () {
+        var cantidadInput = contenedor.querySelector('.sb-plan-item-cantidad[data-producto-id="' + chk.dataset.productoId + '"]');
+        if (cantidadInput) cantidadInput.disabled = !chk.checked;
+        recalcularTotal();
+      });
+    });
+    contenedor.querySelectorAll('.sb-plan-item-cantidad').forEach(function (input) {
+      input.addEventListener('input', recalcularTotal);
+    });
+    recalcularTotal();
+  }
+
+  function leerItemsChecklist(contenedor) {
+    var items = [];
+    contenedor.querySelectorAll('.sb-plan-item-check:checked').forEach(function (chk) {
+      var cantidadInput = contenedor.querySelector('.sb-plan-item-cantidad[data-producto-id="' + chk.dataset.productoId + '"]');
+      items.push({ productoId: parseInt(chk.dataset.productoId, 10), cantidad: parseInt(cantidadInput.value, 10) || 1 });
+    });
+    return items;
   }
 
   function opcionesPlanHtml(seleccionadoId) {
     return planesSuscripcionCache
       .filter(function (p) { return p.activo || p.id === seleccionadoId; })
       .map(function (p) {
-        return '<option value="' + p.id + '"' + (p.id === seleccionadoId ? ' selected' : '') + '>' + etiquetaPlan(p) + ' — ' + SanteBioCart.formatMXN(p.precio) + '</option>';
+        return '<option value="' + p.id + '"' + (p.id === seleccionadoId ? ' selected' : '') + '>' + p.nombre + ' — ' + SanteBioCart.formatMXN(p.precio) + '</option>';
       }).join('');
   }
 
-  function llenarSelectProductoPlan() {
-    var select = document.getElementById('sb-plan-producto');
-    if (!select) return;
-    var seleccionadoPrevio = select.value;
-    select.innerHTML = productosIndividualesCache.map(function (p) {
-      return '<option value="' + p.id + '">' + p.nombre + ' (precio normal ' + SanteBioCart.formatMXN(p.precio) + ')</option>';
-    }).join('');
-    if (seleccionadoPrevio) select.value = seleccionadoPrevio;
+  function renderChecklistPlanNuevo() {
+    var contenedor = document.getElementById('sb-plan-items');
+    if (!contenedor) return;
+    contenedor.innerHTML = checklistProductosHtml({});
+    activarChecklist(contenedor, document.getElementById('sb-plan-total-capsulas'));
   }
 
   function cargarProductosIndividuales(token) {
     return SanteBioAuth.llamarApi('listar_productos_admin', {}, token).then(function (res) {
       // Solo presentaciones individuales -- un plan de suscripcion
-      // siempre entrega un producto real, nunca un paquete (los
+      // siempre entrega productos reales, nunca un paquete (los
       // paquetes ya ni tienen su propio stock, ver COMPOSICION_PAQUETES).
       productosIndividualesCache = (res.productos || []).filter(function (p) { return p.seccion === 'individual'; });
-      llenarSelectProductoPlan();
+      renderChecklistPlanNuevo();
     });
   }
 
@@ -1002,42 +1071,63 @@
         return;
       }
       lista.innerHTML = planes.map(function (p) {
+        var composicion = p.items.map(function (it) { return it.cantidad + 'x ' + it.productoNombre; }).join(' + ') || 'Sin productos';
+        var precioHtml = (p.precioRegular && p.precioRegular > p.precio)
+          ? '<s style="opacity:0.6;">' + SanteBioCart.formatMXN(p.precioRegular) + '</s> ' + SanteBioCart.formatMXN(p.precio)
+          : SanteBioCart.formatMXN(p.precio);
         return (
           '<div class="sb-producto-admin-card" data-id="' + p.id + '">' +
           '<div class="sb-producto-admin-info">' +
-          '<div class="sb-producto-admin-nombre">' + etiquetaPlan(p) + (p.destacado ? ' <span class="sb-metodo-badge">Destacado</span>' : '') + (p.activo ? '' : ' <span class="sb-metodo-badge">Oculto</span>') + '</div>' +
-          '<div class="sb-pedido-cliente">' + (p.descripcion || 'Sin descripción') + '</div>' +
-          '<div class="sb-pedido-cliente">Precio normal del producto: ' + SanteBioCart.formatMXN(p.precioListaProducto) + ' · Ahorra ' + p.descuentoPorcentaje + '% (se calcula solo comparando con el precio de abajo, no se edita aparte)</div>' +
+          '<div class="sb-producto-admin-nombre">' + p.nombre + (p.activo ? '' : ' <span class="sb-metodo-badge">Oculto</span>') + (p.disponible ? '' : ' <span class="sb-metodo-badge">Sin stock suficiente</span>') + '</div>' +
+          '<div class="sb-pedido-cliente">' + composicion + ' · ' + p.totalCapsulas + ' cápsulas totales · Cada ' + p.frecuenciaDias + ' días</div>' +
+          '<div class="sb-pedido-cliente">' + precioHtml + (p.descripcion ? ' · ' + p.descripcion : '') + '</div>' +
           '</div>' +
-          '<div class="sb-producto-admin-campos">' +
-          '<label>Producto<select class="sb-plan-editar-producto">' + opcionesProductoHtml(p.productoId) + '</select></label>' +
-          '<label>Precio por entrega<input type="number" min="0" step="0.01" class="sb-plan-editar-precio" value="' + p.precio + '" /></label>' +
+          '<div class="sb-producto-admin-campos" style="flex-direction:column; align-items:stretch; gap:10px;">' +
+          '<label>Nombre del plan<input type="text" class="sb-plan-editar-nombre" value="' + p.nombre + '" /></label>' +
+          '<div class="sb-plan-editar-items">' + checklistProductosHtml(mapaItems(p.items)) + '</div>' +
+          '<p class="sb-form-hint sb-plan-editar-total" style="margin:-4px 0 0;">Total: ' + p.totalCapsulas + ' cápsulas</p>' +
+          '<div class="sb-form-row">' +
+          '<label>Precio (MXN)<input type="number" min="0" step="0.01" class="sb-plan-editar-precio" value="' + p.precio + '" /></label>' +
+          '<label>Precio regular (opcional)<input type="number" min="0" step="0.01" class="sb-plan-editar-precio-regular" value="' + (p.precioRegular != null ? p.precioRegular : '') + '" placeholder="Sin descuento" /></label>' +
+          '</div>' +
+          '<div class="sb-form-row">' +
           '<label>Frecuencia (días)<input type="number" min="1" step="1" class="sb-plan-editar-frecuencia" value="' + p.frecuenciaDias + '" /></label>' +
-          '<label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="sb-plan-editar-destacado" ' + (p.destacado ? 'checked' : '') + ' style="width:auto;" />Destacado</label>' +
+          '<label>Descripción<input type="text" class="sb-plan-editar-descripcion" value="' + (p.descripcion || '') + '" /></label>' +
+          '</div>' +
           '</div>' +
           '<div class="sb-producto-admin-acciones">' +
           '<button type="button" class="sb-btn sb-guardar-plan-cambios" data-id="' + p.id + '" style="padding:8px 16px; font-size:12.5px;">Guardar</button>' +
           '<button type="button" class="sb-btn sb-btn-ghost sb-toggle-activo-plan" data-id="' + p.id + '" data-activo="' + p.activo + '" style="padding:8px 16px; font-size:12.5px;">' + (p.activo ? 'Ocultar' : 'Mostrar') + '</button>' +
+          '<button type="button" class="sb-btn sb-btn-ghost sb-eliminar-plan" data-id="' + p.id + '" style="padding:8px 16px; font-size:12.5px; color:#b42318; border-color:#f0c9c4;">Eliminar</button>' +
           '</div>' +
           '</div>'
         );
       }).join('');
 
+      lista.querySelectorAll('.sb-producto-admin-card').forEach(function (card) {
+        var contenedorItems = card.querySelector('.sb-plan-editar-items');
+        if (contenedorItems) activarChecklist(contenedorItems, card.querySelector('.sb-plan-editar-total'));
+      });
+
       lista.querySelectorAll('.sb-guardar-plan-cambios').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var card = btn.closest('.sb-producto-admin-card');
+          var precioRegularTexto = card.querySelector('.sb-plan-editar-precio-regular').value.trim();
           var datos = {
             id: btn.dataset.id,
-            productoId: parseInt(card.querySelector('.sb-plan-editar-producto').value, 10),
+            nombre: card.querySelector('.sb-plan-editar-nombre').value.trim(),
             precio: parseFloat(card.querySelector('.sb-plan-editar-precio').value),
+            precioRegular: precioRegularTexto === '' ? null : parseFloat(precioRegularTexto),
             frecuenciaDias: parseInt(card.querySelector('.sb-plan-editar-frecuencia').value, 10),
-            destacado: card.querySelector('.sb-plan-editar-destacado').checked,
+            descripcion: card.querySelector('.sb-plan-editar-descripcion').value.trim(),
+            items: leerItemsChecklist(card.querySelector('.sb-plan-editar-items')),
           };
           btn.disabled = true;
           btn.textContent = 'Guardando…';
-          SanteBioAuth.llamarApi('actualizar_plan_suscripcion', datos, token).then(function () {
+          SanteBioAuth.llamarApi('actualizar_plan_suscripcion', datos, token).then(function (res) {
             btn.disabled = false;
             btn.textContent = 'Guardar';
+            if (!res.ok) { alert(res.error || 'No se pudo guardar el plan.'); return; }
             cargarPlanesSuscripcionAdmin(token, false);
           });
         });
@@ -1053,6 +1143,18 @@
           });
         });
       });
+
+      lista.querySelectorAll('.sb-eliminar-plan').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!confirm('¿Eliminar este plan por completo? Esta acción no se puede deshacer.')) return;
+          btn.disabled = true;
+          SanteBioAuth.llamarApi('eliminar_plan_suscripcion', { id: btn.dataset.id }, token).then(function (res) {
+            btn.disabled = false;
+            if (!res.ok) { alert(res.error || 'No se pudo eliminar el plan.'); return; }
+            cargarPlanesSuscripcionAdmin(token, false);
+          });
+        });
+      });
     });
   }
 
@@ -1061,29 +1163,28 @@
     planForm.style.display = planForm.style.display === 'block' ? 'none' : 'block';
   });
 
-  // Al elegir el producto en el alta de un plan nuevo, se sugiere un
-  // precio con 10% de descuento sobre su precio normal -- solo un
-  // punto de partida comodo, se edita libremente antes de guardar.
-  document.getElementById('sb-plan-producto').addEventListener('change', function () {
-    var productoId = parseInt(this.value, 10);
-    var producto = productosIndividualesCache.filter(function (p) { return p.id === productoId; })[0];
-    var precioInput = document.getElementById('sb-plan-precio');
-    if (producto) precioInput.value = Math.round(producto.precio * 0.9 * 100) / 100;
-  });
-
   planForm.addEventListener('submit', function (e) {
     e.preventDefault();
     if (!this.checkValidity()) { this.reportValidity(); return; }
     var errorDivPlan = document.getElementById('sb-plan-form-error');
     errorDivPlan.style.display = 'none';
+    var items = leerItemsChecklist(document.getElementById('sb-plan-items'));
+    if (items.length === 0) {
+      errorDivPlan.textContent = 'Selecciona al menos un producto para el plan.';
+      errorDivPlan.style.display = 'block';
+      return;
+    }
     var btn = document.getElementById('sb-guardar-plan-btn');
     btn.disabled = true;
     btn.textContent = 'Guardando…';
+    var precioRegularTexto = document.getElementById('sb-plan-precio-regular').value.trim();
     SanteBioAuth.llamarApi('crear_plan_suscripcion', {
-      productoId: parseInt(document.getElementById('sb-plan-producto').value, 10),
+      nombre: document.getElementById('sb-plan-nombre').value.trim(),
       frecuenciaDias: parseInt(document.getElementById('sb-plan-frecuencia').value, 10),
       precio: parseFloat(document.getElementById('sb-plan-precio').value),
+      precioRegular: precioRegularTexto === '' ? null : parseFloat(precioRegularTexto),
       descripcion: document.getElementById('sb-plan-descripcion').value.trim(),
+      items: items,
     }, token).then(function (res) {
       btn.disabled = false;
       btn.textContent = 'Agregar plan';
@@ -1093,6 +1194,7 @@
         return;
       }
       planForm.reset();
+      renderChecklistPlanNuevo();
       planForm.style.display = 'none';
       cargarPlanesSuscripcionAdmin(token);
     });
@@ -1138,15 +1240,17 @@
         var proxima = s.proximaEntrega
           ? new Date(s.proximaEntrega + 'T00:00:00').toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
           : 'Sin definir';
+        var composicion = s.items.map(function (it) { return it.cantidad + 'x ' + it.productoNombre; }).join(' + ') || 'Sin productos';
+        var registrarDeshabilitado = s.estado !== 'activa' || !s.disponible;
         return (
           '<div class="sb-producto-admin-card" data-id="' + s.id + '">' +
           '<div class="sb-producto-admin-info">' +
-          '<div class="sb-producto-admin-nombre">' + s.clienteNombre + ' <span class="sb-kpi-sub">· ' + s.clienteCorreo + '</span></div>' +
-          '<div class="sb-pedido-cliente">' + s.productoNombre + ' · Cada ' + s.frecuenciaDias + ' días · Próxima entrega: ' + proxima + '</div>' +
-          '<div class="sb-pedido-cliente">Stock actual del producto: ' + s.productoStock + (s.notas ? ' · Notas: ' + s.notas : '') + '</div>' +
+          '<div class="sb-producto-admin-nombre">' + s.clienteNombre + ' <span class="sb-kpi-sub">· ' + s.clienteCorreo + '</span>' + (s.disponible ? '' : ' <span class="sb-metodo-badge">Sin stock suficiente</span>') + '</div>' +
+          '<div class="sb-pedido-cliente">' + s.planNombre + ' (' + composicion + ') · Cada ' + s.frecuenciaDias + ' días · Próxima entrega: ' + proxima + '</div>' +
+          (s.notas ? '<div class="sb-pedido-cliente">Notas: ' + s.notas + '</div>' : '') +
           '</div>' +
           '<div class="sb-producto-admin-campos">' +
-          '<label>Plan (producto + frecuencia)<select class="sb-susc-editar-plan">' + opcionesPlanHtml(s.planId) + '</select></label>' +
+          '<label>Plan<select class="sb-susc-editar-plan">' + opcionesPlanHtml(s.planId) + '</select></label>' +
           '<label>Precio por entrega<input type="number" min="0" step="0.01" class="sb-susc-editar-precio" value="' + s.precioEntrega + '" /></label>' +
           '<label>Estado<select class="sb-susc-editar-estado">' +
           Object.keys(etiquetasEstadoSuscripcion).map(function (k) {
@@ -1156,7 +1260,7 @@
           '</div>' +
           '<div class="sb-producto-admin-acciones">' +
           '<button type="button" class="sb-btn sb-guardar-suscripcion-cambios" data-id="' + s.id + '" style="padding:8px 16px; font-size:12.5px;">Guardar</button>' +
-          '<button type="button" class="sb-btn sb-registrar-entrega-suscripcion" data-id="' + s.id + '" style="padding:8px 16px; font-size:12.5px;"' + (s.estado !== 'activa' ? ' disabled' : '') + '>Registrar entrega</button>' +
+          '<button type="button" class="sb-btn sb-registrar-entrega-suscripcion" data-id="' + s.id + '" style="padding:8px 16px; font-size:12.5px;"' + (registrarDeshabilitado ? ' disabled' : '') + (!s.disponible ? ' title="No hay stock suficiente para completar esta entrega"' : '') + '>Registrar entrega</button>' +
           '</div>' +
           '</div>'
         );

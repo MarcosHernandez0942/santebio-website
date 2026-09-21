@@ -171,27 +171,7 @@
         <h2>Entre más seguido, más ahorras</h2>
       </div>
       <div class="sb-planes-grid sb-reveal" id="sb-planes-grid">
-        <div class="sb-plan-card">
-          <div class="sb-plan-card-ahorro">Ahorra 10%</div>
-          <h3>90 Cápsulas</h3>
-          <div class="sb-plan-card-sub">Cada 30 días</div>
-          <div class="sb-plan-card-precio">$242 MXN</div>
-          <p>Ideal para 1 frasco al mes. Envío preferente incluido.</p>
-        </div>
-        <div class="sb-plan-card is-destacado">
-          <div class="sb-plan-card-ahorro">Ahorra 12%</div>
-          <h3>90 Cápsulas</h3>
-          <div class="sb-plan-card-sub">Cada 60 días</div>
-          <div class="sb-plan-card-precio">$237 MXN</div>
-          <p>El plan más elegido. Envío gratis en cada entrega.</p>
-        </div>
-        <div class="sb-plan-card">
-          <div class="sb-plan-card-ahorro">Ahorra 15%</div>
-          <h3>90 Cápsulas</h3>
-          <div class="sb-plan-card-sub">Cada 90 días</div>
-          <div class="sb-plan-card-precio">$229 MXN</div>
-          <p>Máximo ahorro para quienes ya tienen su rutina. Envío gratis.</p>
-        </div>
+        <p class="sb-note" style="text-align:center; width:100%;">Muy pronto vas a poder ver aquí los planes disponibles.</p>
       </div>
       <p class="sb-note" style="text-align:center; margin-top: 28px;">Suplemento alimenticio. Este producto no es un medicamento. El consumo de este producto es responsabilidad de quien lo recomienda y lo usa.</p>
     </div>
@@ -233,26 +213,30 @@
    automatico todavia esta en construccion en vez de mostrar un boton
    que finja activar algo que el backend no procesa de verdad. */
 /* Los planes de arriba ya no son fijos: se traen del panel de admin
-   (tabla planes_suscripcion via listar_planes_suscripcion_publico) para
-   que un cambio de descuento/nombre ahi se refleje aqui sin tocar
-   codigo. Las 3 tarjetas que ya estan en el HTML quedan como
-   contenido de respaldo por si la API no responde (sin conexion, o el
-   servidor no esta corriendo) -- asi la pagina nunca se queda vacia. */
+   (tabla planes_suscripcion via listar_planes_suscripcion_publico) --
+   cada uno es un combo con su propio nombre, composicion de productos
+   y precio, capturado a mano por el admin. Si la API no responde (sin
+   conexion, o el servidor no esta corriendo) o todavia no hay ningun
+   plan disponible, se deja el mensaje de respaldo que ya trae el HTML
+   en vez de una tarjeta rota. Solo se muestran los planes con
+   inventario suficiente -- no tiene caso ofrecer uno que no se puede
+   surtir. */
 SanteBioAuth.llamarApi('listar_planes_suscripcion_publico', {}).then(function (res) {
-  if (!res.ok || !res.planes || res.planes.length === 0) return;
+  if (!res.ok) return;
   var grid = document.getElementById('sb-planes-grid');
-  // Cada plan ya trae un producto + una frecuencia + un precio real
-  // fijo (no un % que se reste sobre la marcha) -- si hay planes para
-  // mas de una presentacion (90 y 150 capsulas), salen como tarjetas
-  // separadas, cada una con su propio precio exacto.
-  grid.innerHTML = res.planes.map(function (p) {
+  var disponibles = (res.planes || []).filter(function (p) { return p.disponible; });
+  if (disponibles.length === 0) return;
+  grid.innerHTML = disponibles.map(function (p) {
+    var precioHtml = (p.precioRegular && p.precioRegular > p.precio)
+      ? '<s style="opacity:0.6;">' + SanteBioCart.formatMXN(p.precioRegular) + '</s> ' + SanteBioCart.formatMXN(p.precio)
+      : SanteBioCart.formatMXN(p.precio);
+    var composicion = p.items.map(function (it) { return it.cantidad + 'x ' + it.productoNombre; }).join(' + ');
     return (
-      '<div class="sb-plan-card' + (p.destacado ? ' is-destacado' : '') + '">' +
-      '<div class="sb-plan-card-ahorro">Ahorra ' + p.descuentoPorcentaje + '%</div>' +
-      '<h3>' + p.productoNombre + '</h3>' +
-      '<div class="sb-plan-card-sub">Cada ' + p.frecuenciaDias + ' días</div>' +
-      '<div class="sb-plan-card-precio">' + SanteBioCart.formatMXN(p.precio) + '</div>' +
-      '<p>' + p.descripcion + '</p>' +
+      '<div class="sb-plan-card">' +
+      '<h3>' + p.nombre + '</h3>' +
+      '<div class="sb-plan-card-sub">' + composicion + ' · Cada ' + p.frecuenciaDias + ' días</div>' +
+      '<div class="sb-plan-card-precio">' + precioHtml + '</div>' +
+      (p.descripcion ? '<p>' + p.descripcion + '</p>' : '') +
       '</div>'
     );
   }).join('');

@@ -306,53 +306,62 @@ def calcular_stock_paquete(producto_id, db_session):
 
 
 class PlanSuscripcion(db.Model):
-    """Un plan de suscripcion es una combinacion CONCRETA de una
-    presentacion (producto individual) + una frecuencia de entrega,
-    con su propio precio real -- como una variante de producto normal
-    (ej. "90 Capsulas cada 30 dias -- $242.10"). Cada combinacion que
-    se quiera ofrecer es su propia fila con su propio precio.
-
-    Version anterior (para quien lea el historial de git): un plan
-    aplicaba de forma generica a cualquier producto, con un % de
-    descuento aparte y un precio "de referencia" calculado por
-    presentacion -- resulto confuso (parecia que dos precios distintos
-    se sumaban). Se rediseño para que cada plan tenga un solo precio,
-    sin ambiguedad. El "Ahorra X%" que se muestra en
-    suscripciones.html ya no se guarda: se calcula al vuelo comparando
-    este precio contra el precio de lista del producto (ver
-    _serializar_plan en routes.py), asi nunca puede quedar
-    desincronizado del precio real. Sin encriptar: es informacion
-    publica de catalogo, igual que Producto."""
+    """Un plan de suscripcion es un combo con nombre propio (ej. "Plan
+    Familiar") armado de uno o mas productos individuales en las
+    cantidades que el admin elija (ver PlanSuscripcionProducto) mas
+    un precio real -- como un paquete de tienda.html pero pensado para
+    entregas periodicas. El precio se captura a mano, no se deriva de
+    ninguna formula. precio_regular es opcional y solo sirve para
+    mostrar un tachado (mismo patron que Producto.precio_regular).
+    Sin encriptar: es informacion publica de catalogo, igual que
+    Producto."""
 
     __tablename__ = "planes_suscripcion"
 
     id = db.Column(db.Integer, primary_key=True)
-    producto_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
+    nombre = db.Column(db.Text, nullable=False)
     frecuencia_dias = db.Column(db.Integer, nullable=False)
-    # Precio real que paga el cliente en cada entrega de ESTE plan --
-    # lo captura el admin directamente, no se deriva de ninguna
-    # formula ni de ningun otro campo.
     precio = db.Column(db.Numeric(10, 2), nullable=False)
+    precio_regular = db.Column(db.Numeric(10, 2), nullable=True)
     descripcion = db.Column(db.Text, nullable=False, default="")
-    destacado = db.Column(db.Boolean, nullable=False, default=False)
     activo = db.Column(db.Boolean, nullable=False, default=True)
     orden = db.Column(db.Integer, nullable=False, default=0)
     creado_en = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
+class PlanSuscripcionProducto(db.Model):
+    """Composicion de un plan: que productos individuales (frascos) y
+    cuantos de cada uno se entregan en cada ciclo -- ej. 2 frascos de
+    "90 Cápsulas" + 1 de "150 Cápsulas". Un plan puede combinar mas de
+    un producto; el total de capsulas que trae el plan se calcula en
+    el frontend sumando cantidad * capsulas-por-frasco (implicito en
+    el nombre del producto, ej. "90 Cápsulas"), solo para mostrarlo --
+    lo que de verdad importa para inventario es esta tabla
+    (producto_id + cantidad), igual que COMPOSICION_PAQUETES pero
+    editable desde el admin en vez de fijo en codigo."""
+
+    __tablename__ = "plan_suscripcion_productos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey("planes_suscripcion.id"), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
+    cantidad = db.Column(db.Integer, nullable=False, default=1)
+
+
 class Suscripcion(db.Model):
-    """Suscripcion de un cliente a un plan (producto + frecuencia +
-    precio ya definidos ahi, ver PlanSuscripcion) con entregas
-    periodicas. El cobro/envio automatico TODAVIA NO EXISTE
+    """Suscripcion de un cliente a un plan (ver PlanSuscripcion, ya
+    trae la composicion de productos + frecuencia + precio) con
+    entregas periodicas. El cobro/envio automatico TODAVIA NO EXISTE
     (suscripciones.html ya avisa "muy pronto" -- falta conectar una
     pasarela con cobro recurrente real). Mientras tanto, cada entrega
     se registra a mano desde el panel de admin con la accion
     "registrar_entrega_suscripcion" (routes.py), que crea un Pedido
-    real y descuenta inventario exactamente igual que una compra
-    normal -- asi el stock nunca se desincroniza aunque el cobro
-    todavia sea manual. Sin encriptar a proposito: no guarda datos de
-    contacto propios, solo referencias (usuario_id/plan_id) -- los
-    datos sensibles siguen viviendo solo en Usuario/Direccion."""
+    real y descuenta inventario de CADA producto del plan -- si a
+    alguno no le alcanza el stock, se rechaza el registro completo
+    (mismas reglas que un pedido normal, ver crear_pedido). Sin
+    encriptar a proposito: no guarda datos de contacto propios, solo
+    referencias (usuario_id/plan_id) -- los datos sensibles siguen
+    viviendo solo en Usuario/Direccion."""
 
     __tablename__ = "suscripciones"
 

@@ -2,7 +2,7 @@ import os
 import bcrypt
 from sqlalchemy import inspect as sa_inspect
 from db import db
-from models import Admin, Producto, PlanSuscripcion
+from models import Admin, Producto
 
 
 def agregar_columnas_openpay_si_hace_falta():
@@ -96,76 +96,35 @@ def crear_productos_iniciales_si_hace_falta():
     print(f"[bootstrap] {len(_PRODUCTOS_INICIALES)} productos iniciales creados.")
 
 
-def migrar_planes_suscripcion_a_producto_especifico_si_hace_falta():
-    """Rediseño de planes_suscripcion: antes un plan (ej. "Cada 30
-    días") aplicaba de forma genérica a CUALQUIER producto, con un %
-    de descuento aparte y un precio "de referencia" calculado por
-    presentación -- resultó confuso para Marcos ("¿los dos precios se
-    suman o qué?"). Ahora cada plan es una combinación concreta de
-    producto + frecuencia + precio real, como una variante de producto
-    normal (ej. "90 Cápsulas cada 30 días -- $242.10"), sin ambigüedad.
+def migrar_planes_suscripcion_a_combos_si_hace_falta():
+    """Segundo rediseño de planes_suscripcion (para quien lea el
+    historial de git: el primero fue producto+frecuencia+precio por
+    plan). Pedido explicito de Marcos para simplificar: un plan ahora
+    es un combo con NOMBRE propio, armado de uno o mas productos en
+    las cantidades que el admin elija (ver PlanSuscripcionProducto),
+    con precio y precio regular (igual que Producto), frecuencia y
+    descripcion -- y se puede eliminar por completo, no solo ocultar.
 
-    Como el feature todavía no tiene NINGÚN suscriptor real (el cobro
-    automático ni siquiera está conectado, ver Suscripcion en
+    Como el feature todavia no tiene NINGUN suscriptor real (el cobro
+    automatico ni siquiera esta conectado, ver Suscripcion en
     models.py), no hay datos de clientes que preservar -- por eso esta
-    migración reconstruye las tablas desde cero en vez de intentar
-    mapear filas viejas a la estructura nueva. Si alguna vez llegan a
-    existir suscripciones de clientes reales, este patrón (DROP TABLE)
-    ya no se puede volver a usar para el siguiente cambio de esquema."""
+    migracion reconstruye las tablas desde cero (y de paso borra los
+    planes de ejemplo anteriores, pedido explicito: "quita todas las
+    subs que ya estan") en vez de intentar mapear filas viejas a la
+    estructura nueva. Si alguna vez llegan a existir suscripciones de
+    clientes reales, este patron (DROP TABLE) ya no se puede volver a
+    usar para el siguiente cambio de esquema."""
     inspector = sa_inspect(db.engine)
     if "planes_suscripcion" not in inspector.get_table_names():
         return  # tabla nueva, la crea db.create_all() con el esquema actual
 
     columnas = {c["name"] for c in inspector.get_columns("planes_suscripcion")}
-    if "producto_id" in columnas:
-        return  # ya está en el esquema nuevo
+    if "nombre" in columnas:
+        return  # ya esta en el esquema nuevo
 
     db.session.execute(db.text("DROP TABLE IF EXISTS precios_plan_producto"))
+    db.session.execute(db.text("DROP TABLE IF EXISTS plan_suscripcion_productos"))
     db.session.execute(db.text("DROP TABLE IF EXISTS suscripciones"))
     db.session.execute(db.text("DROP TABLE IF EXISTS planes_suscripcion"))
     db.session.commit()
-    print("[bootstrap] Tablas de suscripciones reconstruidas con el nuevo esquema (producto + frecuencia + precio por plan).")
-
-
-# Mismos 3 descuentos que ya se mostraban fijos en suscripciones.html
-# (30/60/90 días con 10/12/15%), pero ahora un plan por CADA
-# presentación individual que exista (90 y 150 cápsulas), con el
-# precio ya calculado sobre el precio real de ese producto en este
-# despliegue -- no un precio fijo copiado del catálogo de ejemplo, que
-# podría no coincidir si el admin ya cambió los precios. Se siembra
-# solo para que un despliegue nuevo con base de datos vacía no se
-# quede sin planes que mostrar; en un entorno que ya tiene planes
-# capturados a mano desde el panel de administrador, no se toca nada.
-_DESCUENTOS_PLAN_INICIALES = [
-    {"frecuencia_dias": 30, "descuento_porcentaje": 10,
-     "descripcion": "Ideal para 1 frasco al mes. Envío preferente incluido.", "destacado": False, "orden": 1},
-    {"frecuencia_dias": 60, "descuento_porcentaje": 12,
-     "descripcion": "El plan más elegido. Envío gratis en cada entrega.", "destacado": True, "orden": 2},
-    {"frecuencia_dias": 90, "descuento_porcentaje": 15,
-     "descripcion": "Máximo ahorro para quienes ya tienen su rutina. Envío gratis.", "destacado": False, "orden": 3},
-]
-
-
-def crear_planes_suscripcion_iniciales_si_hace_falta():
-    if db.session.query(PlanSuscripcion).count() > 0:
-        return
-
-    individuales = db.session.query(Producto).filter_by(seccion="individual").all()
-    if not individuales:
-        return  # sin productos todavia (despliegue muy nuevo), nada que sembrar
-
-    creados = 0
-    for producto in individuales:
-        for datos in _DESCUENTOS_PLAN_INICIALES:
-            precio = round(float(producto.precio) * (1 - datos["descuento_porcentaje"] / 100), 2)
-            db.session.add(PlanSuscripcion(
-                producto_id=producto.id,
-                frecuencia_dias=datos["frecuencia_dias"],
-                precio=precio,
-                descripcion=datos["descripcion"],
-                destacado=datos["destacado"],
-                orden=datos["orden"],
-            ))
-            creados += 1
-    db.session.commit()
-    print(f"[bootstrap] {creados} planes de suscripción iniciales creados.")
+    print("[bootstrap] Tablas de suscripciones reconstruidas con el esquema de combos (nombre + productos/cantidades + precio).")

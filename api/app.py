@@ -13,8 +13,7 @@ from bootstrap import (
     crear_productos_iniciales_si_hace_falta,
     agregar_columnas_openpay_si_hace_falta,
     agregar_columna_precio_regular_si_hace_falta,
-    crear_planes_suscripcion_iniciales_si_hace_falta,
-    migrar_planes_suscripcion_a_producto_especifico_si_hace_falta,
+    migrar_planes_suscripcion_a_combos_si_hace_falta,
 )
 from webhook_openpay import bp as openpay_webhook_bp
 from routes_pdf import bp as pdf_bp
@@ -38,13 +37,12 @@ app.register_blueprint(openpay_webhook_bp, url_prefix="/api")
 app.register_blueprint(pdf_bp, url_prefix="/api")
 
 with app.app_context():
-    migrar_planes_suscripcion_a_producto_especifico_si_hace_falta()
+    migrar_planes_suscripcion_a_combos_si_hace_falta()
     db.create_all()
     agregar_columnas_openpay_si_hace_falta()
     agregar_columna_precio_regular_si_hace_falta()
     crear_admin_inicial_si_hace_falta()
     crear_productos_iniciales_si_hace_falta()
-    crear_planes_suscripcion_iniciales_si_hace_falta()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 4931))
