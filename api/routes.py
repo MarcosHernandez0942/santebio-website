@@ -13,7 +13,7 @@ from email_utils import (
 )
 from models import (
     Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion, Producto, AvisoStock,
-    PlanSuscripcion, Suscripcion,
+    PlanSuscripcion, Suscripcion, PrecioPlanProducto,
     expandir_items_a_individuales, calcular_stock_paquete, COMPOSICION_PAQUETES,
 )
 from openpay_client import openpay_configurado, crear_cargo_tarjeta, crear_cargo_tienda, crear_cargo_spei
@@ -876,31 +876,44 @@ def listar_planes_suscripcion_admin(datos_token):
         return jsonify({"error": "No tienes permiso para ver esto."}), 403
 
     planes = db.session.query(PlanSuscripcion).order_by(PlanSuscripcion.orden, PlanSuscripcion.frecuencia_dias).all()
-    # El descuento del plan ya no se aplica solo para cobrar (ver
-    # Suscripcion.precio_entrega/crear_suscripcion_admin), pero el
-    # admin lo sigue necesitando como referencia rapida de "a cuanto
-    # equivaldria" ese % sobre el precio ACTUAL de cada presentacion
-    # individual, para poder decidir el precio real sin hacer la
-    # cuenta a mano cada vez.
     individuales = (
         db.session.query(Producto)
         .filter_by(seccion="individual", activo=True)
         .order_by(Producto.orden, Producto.id)
         .all()
     )
+    # El precio real de cada plan+presentacion se captura a mano
+    # (PrecioPlanProducto) -- pedido explicito de Marcos: poder
+    # ponerlo el mismo directo en la tarjeta del plan, no solo verlo
+    # calculado. Si todavia no existe un precio propio para esa
+    # combinacion, se manda el calculado con el % actual nada mas como
+    # sugerencia de punto de partida (personalizado=false), para que
+    # el campo nunca se vea vacio pero quede claro que aun no se ha
+    # guardado un precio real.
+    guardados = {
+        (pp.plan_id, pp.producto_id): pp.precio
+        for pp in db.session.query(PrecioPlanProducto).all()
+    }
 
-    def referencia(plan):
-        return [
-            {
+    def precios_de(plan):
+        resultado = []
+        for p in individuales:
+            guardado = guardados.get((plan.id, p.id))
+            if guardado is not None:
+                precio, personalizado = float(guardado), True
+            else:
+                precio = round(float(p.precio) * (1 - float(plan.descuento_porcentaje) / 100), 2)
+                personalizado = False
+            resultado.append({
                 "productoId": p.id,
                 "productoNombre": p.nombre,
-                "precioConDescuento": round(float(p.precio) * (1 - float(plan.descuento_porcentaje) / 100), 2),
-            }
-            for p in individuales
-        ]
+                "precio": precio,
+                "personalizado": personalizado,
+            })
+        return resultado
 
     return jsonify({
-        "planes": [dict(p.to_dict(), preciosReferencia=referencia(p)) for p in planes]
+        "planes": [dict(p.to_dict(), precios=precios_de(p)) for p in planes]
     })
 
 
@@ -948,6 +961,26 @@ def actualizar_plan_suscripcion(body, datos_token):
         plan.orden = int(body["orden"])
     if "activo" in body:
         plan.activo = bool(body["activo"])
+
+    # precios: { "998": 242.10, "999": 359.10 } -- uno por presentacion
+    # individual, capturado a mano junto con el resto del plan en el
+    # mismo boton de Guardar.
+    for producto_id_texto, precio in (body.get("precios") or {}).items():
+        try:
+            producto_id = int(producto_id_texto)
+        except (TypeError, ValueError):
+            continue
+        if precio in (None, ""):
+            continue
+        existente = (
+            db.session.query(PrecioPlanProducto)
+            .filter_by(plan_id=plan.id, producto_id=producto_id)
+            .first()
+        )
+        if existente:
+            existente.precio = precio
+        else:
+            db.session.add(PrecioPlanProducto(plan_id=plan.id, producto_id=producto_id, precio=precio))
 
     db.session.commit()
     return jsonify({"ok": True, "plan": plan.to_dict()})

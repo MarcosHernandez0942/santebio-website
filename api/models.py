@@ -344,6 +344,27 @@ class PlanSuscripcion(db.Model):
         }
 
 
+class PrecioPlanProducto(db.Model):
+    """Precio real, editable a mano por el admin, de un plan de
+    suscripcion para una presentacion (producto individual) puntual --
+    ej. "Cada 30 dias" + "90 Capsulas" = $242.10. Antes ese numero solo
+    se mostraba como referencia calculada con el % de descuento del
+    plan; pedido explicito de Marcos: poder capturarlo/editarlo el
+    mismo directo en la tarjeta del plan, sin depender de la formula.
+    Si no existe una fila aqui para un plan+producto, el admin todavia
+    no le ha puesto un precio propio -- el frontend sugiere el
+    calculado con el % mientras tanto, pero no se guarda solo."""
+
+    __tablename__ = "precios_plan_producto"
+
+    id = db.Column(db.Integer, primary_key=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey("planes_suscripcion.id"), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
+    precio = db.Column(db.Numeric(10, 2), nullable=False)
+
+    __table_args__ = (db.UniqueConstraint("plan_id", "producto_id", name="uq_precio_plan_producto"),)
+
+
 class Suscripcion(db.Model):
     """Suscripcion de un cliente a un producto con entregas periodicas.
     El cobro/envio automatico TODAVIA NO EXISTE (suscripciones.html ya
