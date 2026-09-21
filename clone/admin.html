@@ -1073,7 +1073,7 @@
   }
 
   function cargarProductosParaSuscripcion(token) {
-    SanteBioAuth.llamarApi('listar_productos_admin', {}, token).then(function (res) {
+    return SanteBioAuth.llamarApi('listar_productos_admin', {}, token).then(function (res) {
       // Solo presentaciones individuales -- una suscripcion siempre
       // entrega un producto real, nunca un paquete (los paquetes ya
       // ni tienen su propio stock, ver COMPOSICION_PAQUETES).
@@ -1082,15 +1082,27 @@
     });
   }
 
+  function opcionesProductoHtml(seleccionadoId) {
+    return productosIndividualesCache.map(function (p) {
+      return '<option value="' + p.id + '"' + (p.id === seleccionadoId ? ' selected' : '') + '>' + p.nombre + ' — ' + SanteBioCart.formatMXN(p.precio) + '</option>';
+    }).join('');
+  }
+
   var etiquetasEstadoSuscripcion = { activa: 'Activa', pausada: 'Pausada', cancelada: 'Cancelada' };
 
   function cargarSuscripcionesAdmin(token, mostrarCargando) {
-    cargarProductosParaSuscripcion(token);
     var lista = document.getElementById('sb-suscripciones-lista');
     if (mostrarCargando !== false) {
       lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
     }
-    SanteBioAuth.llamarApi('listar_suscripciones_admin', {}, token).then(function (res) {
+    // Se espera a que los productos individuales esten cargados antes
+    // de pintar la lista -- cada fila necesita productosIndividualesCache
+    // ya listo para armar su selector de "Producto" (frasco/dosis).
+    Promise.all([
+      cargarProductosParaSuscripcion(token),
+      SanteBioAuth.llamarApi('listar_suscripciones_admin', {}, token),
+    ]).then(function (resultados) {
+      var res = resultados[1];
       var suscripciones = res.suscripciones || [];
       if (suscripciones.length === 0) {
         lista.innerHTML = '<p class="sb-empty-panel">Todavía no hay suscripciones. Se dan de alta a mano mientras se conecta el cobro automático.</p>';
@@ -1108,6 +1120,7 @@
           '<div class="sb-pedido-cliente">Stock actual del producto: ' + s.productoStock + (s.notas ? ' · Notas: ' + s.notas : '') + '</div>' +
           '</div>' +
           '<div class="sb-producto-admin-campos">' +
+          '<label>Producto (frasco/dosis)<select class="sb-susc-editar-producto">' + opcionesProductoHtml(s.productoId) + '</select></label>' +
           '<label>Precio por entrega<input type="number" min="0" step="0.01" class="sb-susc-editar-precio" value="' + s.precioEntrega + '" /></label>' +
           '<label>Estado<select class="sb-susc-editar-estado">' +
           Object.keys(etiquetasEstadoSuscripcion).map(function (k) {
@@ -1128,6 +1141,7 @@
           var card = btn.closest('.sb-producto-admin-card');
           var datos = {
             id: btn.dataset.id,
+            productoId: parseInt(card.querySelector('.sb-susc-editar-producto').value, 10),
             precioEntrega: parseFloat(card.querySelector('.sb-susc-editar-precio').value),
             estado: card.querySelector('.sb-susc-editar-estado').value,
           };

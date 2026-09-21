@@ -1063,6 +1063,15 @@ def actualizar_suscripcion_admin(body, datos_token):
         if body["estado"] not in ("activa", "pausada", "cancelada"):
             return jsonify({"error": "Estado inválido."}), 400
         suscripcion.estado = body["estado"]
+    if "productoId" in body:
+        # El "frasco o dosis" (90/150 capsulas) que entrega la
+        # suscripcion tambien se puede cambiar despues de creada --
+        # pedido explicito de Marcos -- ej. el cliente pide cambiarse
+        # de presentacion sin tener que dar de baja y crear otra.
+        producto_nuevo = db.session.query(Producto).filter_by(id=body["productoId"]).first()
+        if not producto_nuevo:
+            return jsonify({"error": "Producto no encontrado."}), 404
+        suscripcion.producto_id = producto_nuevo.id
     if "planId" in body:
         plan_nuevo = db.session.query(PlanSuscripcion).filter_by(id=body["planId"]).first()
         if not plan_nuevo:
