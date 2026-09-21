@@ -1157,7 +1157,13 @@
 
       lista.querySelectorAll('.sb-eliminar-plan').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          if (!confirm('¿Eliminar este plan por completo? Esta acción no se puede deshacer.')) return;
+          var card = btn.closest('.sb-producto-admin-card');
+          var nombrePlan = card.querySelector('.sb-plan-editar-nombre').value.trim() || 'este plan';
+          // Doble confirmacion a proposito (pedido explicito) -- borrar
+          // un plan es definitivo (a diferencia de "Ocultar"), asi que
+          // se pregunta dos veces antes de mandar la accion.
+          if (!confirm('¿Seguro que quieres eliminar "' + nombrePlan + '"? Ya no existirá más.')) return;
+          if (!confirm('Esta acción no se puede deshacer. ¿Confirmas que quieres eliminarlo definitivamente?')) return;
           btn.disabled = true;
           SanteBioAuth.llamarApi('eliminar_plan_suscripcion', { id: btn.dataset.id }, token).then(function (res) {
             btn.disabled = false;
