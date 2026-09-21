@@ -257,7 +257,7 @@
 
           <div class="sb-kpi-section sb-reveal" style="margin-top: 24px;">
             <h3>Suscripciones de clientes</h3>
-            <p class="sb-form-hint" style="margin-top:-8px;">El cobro automático todavía no está conectado: cada entrega se registra aquí a mano y descuenta inventario igual que un pedido normal.</p>
+            <p class="sb-form-hint" style="margin-top:-8px;">El cobro automático todavía no está conectado: cada entrega se registra aquí a mano y descuenta inventario igual que un pedido normal. El % de descuento del plan es solo el gancho de venta que se muestra en suscripciones.html — el precio real que se cobra se captura aquí abajo.</p>
             <div id="sb-suscripciones-lista"></div>
 
             <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-suscripcion" style="margin-top: 8px;">+ Agregar suscripción</button>
@@ -279,8 +279,8 @@
               </div>
               <div class="sb-form-row">
                 <div class="sb-form-group">
-                  <label for="sb-susc-precio">Precio por entrega (MXN, opcional)</label>
-                  <input type="number" id="sb-susc-precio" min="0" step="0.01" placeholder="Se calcula solo con el descuento del plan" />
+                  <label for="sb-susc-precio">Precio por entrega (MXN)</label>
+                  <input type="number" id="sb-susc-precio" min="0" step="0.01" required />
                 </div>
                 <div class="sb-form-group">
                   <label for="sb-susc-proxima">Próxima entrega (opcional)</label>
@@ -1040,8 +1040,11 @@
   function llenarSelectPlanes() {
     var select = document.getElementById('sb-susc-plan');
     if (!select) return;
+    // "% desc." aqui es solo referencia (el mismo dato de mercadeo de
+    // suscripciones.html) -- no se aplica solo, el precio real se
+    // captura a mano en el campo de abajo.
     select.innerHTML = planesSuscripcionCache.filter(function (p) { return p.activo; }).map(function (p) {
-      return '<option value="' + p.id + '">' + p.nombre + ' (' + p.descuentoPorcentaje + '% desc.)</option>';
+      return '<option value="' + p.id + '">' + p.nombre + ' (referencia: ' + p.descuentoPorcentaje + '% desc.)</option>';
     }).join('');
   }
 
@@ -1049,8 +1052,16 @@
     var select = document.getElementById('sb-susc-producto');
     if (!select) return;
     select.innerHTML = productosIndividualesCache.map(function (p) {
-      return '<option value="' + p.id + '">' + p.nombre + ' — ' + SanteBioCart.formatMXN(p.precio) + '</option>';
+      return '<option value="' + p.id + '" data-precio="' + p.precio + '">' + p.nombre + ' — ' + SanteBioCart.formatMXN(p.precio) + '</option>';
     }).join('');
+    // Precarga el precio por entrega con el precio actual del
+    // producto -- solo como punto de partida comodo, el admin lo
+    // puede cambiar libremente antes de guardar (el % de descuento NO
+    // se resta aqui, ver comentario en crear_suscripcion_admin).
+    var precioInput = document.getElementById('sb-susc-precio');
+    if (precioInput && !precioInput.value && select.options.length > 0) {
+      precioInput.value = select.options[select.selectedIndex].dataset.precio;
+    }
   }
 
   function cargarProductosParaSuscripcion(token) {
@@ -1143,6 +1154,15 @@
   var suscripcionForm = document.getElementById('sb-suscripcion-form');
   document.getElementById('sb-mostrar-form-suscripcion').addEventListener('click', function () {
     suscripcionForm.style.display = suscripcionForm.style.display === 'block' ? 'none' : 'block';
+  });
+
+  // Al cambiar el producto elegido, se refresca el precio por entrega
+  // con el precio actual de ese producto -- solo como punto de
+  // partida comodo, el admin lo sigue pudiendo editar libremente antes
+  // de guardar.
+  document.getElementById('sb-susc-producto').addEventListener('change', function () {
+    var opcion = this.options[this.selectedIndex];
+    if (opcion) document.getElementById('sb-susc-precio').value = opcion.dataset.precio;
   });
 
   suscripcionForm.addEventListener('submit', function (e) {

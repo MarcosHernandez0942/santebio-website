@@ -319,6 +319,11 @@ class PlanSuscripcion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.Text, nullable=False)
     frecuencia_dias = db.Column(db.Integer, nullable=False)
+    # Puramente informativo/de mercadeo ("Ahorra 10%" en
+    # suscripciones.html) -- pedido explicito de Marcos: NO se usa para
+    # calcular ningun precio real. El precio que de verdad se cobra
+    # vive en Suscripcion.precio_entrega, capturado y editado siempre a
+    # mano por el admin.
     descuento_porcentaje = db.Column(db.Numeric(5, 2), nullable=False, default=0)
     descripcion = db.Column(db.Text, nullable=False, default="")
     destacado = db.Column(db.Boolean, nullable=False, default=False)
@@ -358,12 +363,14 @@ class Suscripcion(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
     producto_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey("planes_suscripcion.id"), nullable=False)
-    # Precio que paga el cliente en CADA entrega. Se precarga con
-    # producto.precio ya con el descuento del plan aplicado al crear la
-    # suscripcion, pero el admin lo puede ajustar a mano despues
-    # (pedido explicito: "que puedan modificar precios") -- ej. una
-    # cortesia puntual sin tener que crear un plan nuevo solo para un
-    # cliente.
+    # Precio que paga el cliente en CADA entrega. El "% de descuento"
+    # del plan (PlanSuscripcion.descuento_porcentaje) es solo un dato
+    # de mercadeo para suscripciones.html ("Ahorra 10%") -- pedido
+    # explicito de Marcos: el descuento NO se aplica solo para calcular
+    # este precio, el admin lo captura y lo edita siempre a mano
+    # (ver crear_suscripcion_admin/actualizar_suscripcion_admin en
+    # routes.py), para que el monto real cobrado quede bajo su control
+    # y no dependa de una formula automatica.
     precio_entrega = db.Column(db.Numeric(10, 2), nullable=False)
     estado = db.Column(db.Text, nullable=False, default="activa")  # activa | pausada | cancelada
     proxima_entrega = db.Column(db.Date, nullable=True)

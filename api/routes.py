@@ -991,9 +991,15 @@ def crear_suscripcion_admin(body, datos_token):
     if not plan:
         return jsonify({"error": "Plan no encontrado."}), 404
 
+    # El "% de descuento" del plan es solo un dato de mercadeo (lo que
+    # se muestra en suscripciones.html, "Ahorra 10%") -- pedido
+    # explicito de Marcos: NO se usa para calcular el precio real, para
+    # que el precio que de verdad se cobra quede totalmente bajo
+    # control del admin y no se le pueda "ir de las manos" con un
+    # descuento mal calculado. Por eso aqui es obligatorio, no opcional.
     precio_entrega = body.get("precioEntrega")
     if precio_entrega in (None, ""):
-        precio_entrega = round(float(producto.precio) * (1 - float(plan.descuento_porcentaje) / 100), 2)
+        return jsonify({"error": "Falta el precio por entrega."}), 400
 
     proxima_entrega = None
     if body.get("proximaEntrega"):
