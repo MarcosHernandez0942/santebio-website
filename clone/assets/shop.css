@@ -561,6 +561,80 @@ a {
   border-width: 2px;
 }
 
+/* --- Aviso de suscripciones (barra bajo el encabezado + tarjeta
+   promocional dentro de la cuadricula de productos individuales) --- */
+.sb-promo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  text-align: center;
+  padding: 12px 24px;
+  background: var(--green-bright);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.sb-promo-bar:hover {
+  filter: brightness(0.97);
+}
+.sb-promo-bar-flecha {
+  font-weight: 700;
+}
+
+.sb-card-promo {
+  justify-content: center;
+  text-align: center;
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.sb-card-promo .sb-card-promo-icono {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+.sb-card-promo h3 {
+  color: #fff;
+}
+.sb-card-promo p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+.sb-card-promo .sb-btn {
+  background: var(--green-bright);
+  color: var(--ink);
+  align-self: center;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+/* Mismo brillo que el pill de suscripciones del home (index.html,
+   .sb-promo-suscripciones::before) -- Marcos pidio repetirlo aqui
+   para que el boton llame la atencion igual que en el home. */
+.sb-card-promo .sb-btn::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: -60%;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.65), transparent);
+  transform: skewX(-20deg);
+  animation: sb-btn-shine 3.4s ease-in-out infinite;
+}
+@keyframes sb-btn-shine {
+  0% { left: -60%; }
+  40% { left: 130%; }
+  100% { left: 130%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-card-promo .sb-btn::before { animation: none; }
+}
+
 /* --- Aparecer al hacer scroll --- */
 .sb-reveal {
   opacity: 0;

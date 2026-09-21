@@ -976,6 +976,203 @@ src="https://www.facebook.com/tr?id=1600549497670830&ev=PageView&noscript=1"
   font-weight: 700;
 }
 
+/* Anuncio "Conoce las suscripciones" en el navbar del home.
+   Solo en index.html (pedido explicito de Marcos: unicamente pagina
+   principal). El pill es el gancho; al hover/focus despliega una
+   tarjeta tipo "Cuenta y Listas" de Amazon (referencia que mando
+   Marcos) que apunta a suscripciones.html (info real de los planes
+   de cobro recurrente -- distinto de los paquetes de la tienda, que
+   son descuento por volumen en una sola compra). El mismo pill
+   tambien es un link directo, asi que en touch (sin hover) igual
+   funciona con un tap.
+   Antes iba centrado (absolute) en el navbar y tapaba el logo/tagline
+   -- Marcos pidio que en vez de tapar el logo, se posicione junto a
+   los iconos (visualmente "señala" la tienda, aunque el link real es
+   a suscripciones). margin-left:auto en un hijo flex de una fila con
+   justify-content:space-between empuja todo el espacio libre antes de
+   el, pegandolo justo a la izquierda de los iconos sin volver a
+   pelear con el sistema de flex de Elementor. */
+.sb-promo-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 22px;
+  flex-shrink: 0;
+}
+.sb-promo-suscripciones {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #B9EE6E, #699431);
+  color: #143A1C;
+  font-size: 14px;
+  line-height: 1.15;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,0.45);
+  box-shadow: 0 4px 16px rgba(32,79,43,0.28);
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.sb-promo-wrap:hover .sb-promo-suscripciones,
+.sb-promo-suscripciones:focus-visible {
+  color: #143A1C;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 22px rgba(32,79,43,0.4);
+}
+.sb-promo-suscripciones .sb-promo-emoji {
+  font-size: 17px;
+  transform: translateY(-1px);
+}
+.sb-promo-suscripciones .sb-promo-sub {
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: rgba(20,58,28,0.35);
+  text-underline-offset: 2px;
+}
+.sb-promo-suscripciones::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: -60%;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.65), transparent);
+  transform: skewX(-20deg);
+  animation: sb-promo-shine 3.4s ease-in-out infinite;
+}
+@keyframes sb-promo-shine {
+  0% { left: -60%; }
+  40% { left: 130%; }
+  100% { left: 130%; }
+}
+
+/* Tarjeta desplegable (estilo "Cuenta y Listas" de Amazon) */
+.sb-promo-dropdown {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 250px;
+  padding: 20px 18px 18px;
+  border-radius: 14px;
+  background: #fff;
+  color: #204F2B;
+  text-align: center;
+  box-shadow: 0 18px 44px rgba(20,58,28,0.28);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  z-index: 10001;
+}
+.sb-promo-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 28px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  transform: rotate(45deg);
+  border-radius: 3px 0 0 0;
+}
+.sb-promo-wrap:hover .sb-promo-dropdown,
+.sb-promo-wrap:focus-within .sb-promo-dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.sb-promo-dropdown-icono {
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+.sb-promo-dropdown h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: #143A1C;
+}
+.sb-promo-dropdown p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #4a6b50;
+}
+
+@media (max-width: 1180px) {
+  .sb-promo-suscripciones .sb-promo-texto { display: none; }
+  .sb-promo-suscripciones { padding: 10px; }
+}
+@media (max-width: 921px) {
+  /* Solo se oculta la version del navbar de escritorio -- a partir de
+     aqui es el navbar movil (elementor-element-f0d3e5e) el que se
+     muestra, y ese trae su propia copia del promo (ver mas abajo). */
+  .elementor-element-41a8d58 .sb-promo-wrap { display: none; }
+}
+@media (min-width: 922px) {
+  /* El navbar movil solo se muestra por debajo de ~921px, pero por
+     si el breakpoint de Astra/Elementor no coincide exacto, se oculta
+     tambien por reglas propias arriba de esa medida. */
+  .elementor-element-f0d3e5e .sb-promo-wrap { display: none; }
+}
+
+/* Version movil: logo + iconos ya van muy justos de espacio en una
+   pantalla chica (con el promo ahi metido, el navbar movil se
+   partia a la mitad y el carrito/cuenta se iban a una segunda fila
+   feo y sin querer). En vez de pelear por el mismo renglon, el promo
+   se manda el solo a su propio renglon completo debajo del logo y
+   los iconos (mismo truco: el contenedor de Elementor ya envuelve en
+   mobile, solo se fuerza con flex-basis:100% + order). Con todo el
+   ancho disponible si alcanza para mostrar el texto completo. */
+.elementor-element-f0d3e5e .sb-promo-wrap {
+  flex-basis: 100%;
+  order: 5;
+  margin-left: 0;
+  justify-content: center;
+  margin-top: 10px;
+}
+.elementor-element-f0d3e5e .sb-promo-wrap {
+  max-width: calc(100vw - 80px);
+}
+.elementor-element-f0d3e5e .sb-promo-suscripciones {
+  padding: 9px 16px;
+  white-space: normal;
+  text-align: center;
+  font-size: 13px;
+}
+.elementor-element-f0d3e5e .sb-promo-suscripciones .sb-promo-texto {
+  display: inline;
+}
+.elementor-element-f0d3e5e .sb-promo-dropdown {
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, -6px);
+}
+.elementor-element-f0d3e5e .sb-promo-dropdown::before {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%) rotate(45deg);
+}
+.elementor-element-f0d3e5e .sb-promo-wrap:hover .sb-promo-dropdown,
+.elementor-element-f0d3e5e .sb-promo-wrap:focus-within .sb-promo-dropdown {
+  transform: translate(-50%, 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-promo-suscripciones::before { animation: none; }
+  .sb-promo-wrap:hover .sb-promo-suscripciones { transform: none; }
+  .sb-promo-dropdown { transition: opacity 0.18s ease, visibility 0.18s; }
+  .sb-promo-wrap:hover .sb-promo-dropdown,
+  .sb-promo-wrap:focus-within .sb-promo-dropdown { transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .elementor-element-11e549e,
   .elementor-element-4d014e2,
@@ -1087,8 +1284,8 @@ class="skip-link screen-reader-text"
 href="#content">
 Ir al contenido</a><div
 class="hfeed site" id="page"><div class="ekit-template-content-markup ekit-template-content-header"><div data-elementor-type="wp-post" data-elementor-id="33" class="elementor elementor-33"><div class="elementor-element elementor-element-41a8d58 e-con-full navbar-scroll elementor-hidden-mobile e-flex e-con e-parent" data-id="41a8d58" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}"><div class="elementor-element elementor-element-6e62e29 elementor-widget__width-initial elementor-widget-tablet__width-initial elementor-widget elementor-widget-html" data-id="6e62e29" data-element_type="widget" data-e-type="widget" data-widget_type="html.default"> <script type="litespeed/javascript">const logoNormal="https://capsulasdenopal.com/wp-content/uploads/2026/03/logo-transparente.webp";const logoScroll="https://capsulasdenopal.com/wp-content/uploads/2026/03/logo-blanco.webp";document.addEventListener("scroll",function(){const navbar=document.querySelector(".navbar-scroll");const logo=document.getElementById("logo");if(window.scrollY>50){navbar.classList.add("scrolled");logo.src=logoScroll}else{navbar.classList.remove("scrolled");logo.src=logoNormal}})</script> </div><div class="elementor-element elementor-element-f8303af logo-scroll e-flex e-con-boxed e-con e-child" data-id="f8303af" data-element_type="container" data-e-type="container"><div class="e-con-inner"><div class="elementor-element elementor-element-d74f800 logo elementor-widget elementor-widget-html" data-id="d74f800" data-element_type="widget" data-e-type="widget" data-widget_type="html.default">
-<a href="index.html" aria-label="Ir al inicio" class="sb-logo-home-link"><img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjU4MCIgdmlld0JveD0iMCAwIDE2MDAgNTgwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" id="logo" data-src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" width="1600" height="580" /></a></div></div></div><a class="sb-tienda-link sb-header-icon-link" href="tienda.html" aria-label="Ir a la tienda"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 8h14l1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 8V7a4 4 0 0 1 8 0v1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a><a class="sb-cart-link sb-header-icon-link" href="datos.html" aria-label="Ver carrito"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.8h7.2a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/></svg><span class="sb-cart-badge">0</span></a><a class="sb-account-link sb-header-icon-link" href="cuenta.html" aria-label="Mi cuenta"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0z"/></svg></a></div><div class="elementor-element elementor-element-f0d3e5e e-con-full navbar-scroll elementor-hidden-desktop elementor-hidden-tablet e-flex e-con e-parent" data-id="f0d3e5e" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}"><div class="elementor-element elementor-element-daedf2a logo elementor-widget-mobile__width-initial elementor-widget elementor-widget-html" data-id="daedf2a" data-element_type="widget" data-e-type="widget" data-widget_type="html.default">
-<a href="index.html" aria-label="Ir al inicio" class="sb-logo-home-link"><img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjU4MCIgdmlld0JveD0iMCAwIDE2MDAgNTgwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" id="logo" data-src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" width="1600" height="580" /></a></div><a class="sb-tienda-link sb-header-icon-link" href="tienda.html" aria-label="Ir a la tienda"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 8h14l1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 8V7a4 4 0 0 1 8 0v1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a><a class="sb-cart-link sb-header-icon-link" href="datos.html" aria-label="Ver carrito"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.8h7.2a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/></svg><span class="sb-cart-badge">0</span></a><a class="sb-account-link sb-header-icon-link" href="cuenta.html" aria-label="Mi cuenta"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0z"/></svg></a><div class="elementor-element elementor-element-f85ef1a elementor-widget__width-initial elementor-widget-tablet__width-initial elementor-widget elementor-widget-html" data-id="f85ef1a" data-element_type="widget" data-e-type="widget" data-widget_type="html.default"> <script type="litespeed/javascript">const logoNormal="https://capsulasdenopal.com/wp-content/uploads/2026/03/logo-transparente.webp";const logoScroll="https://capsulasdenopal.com/wp-content/uploads/2026/03/logo-blanco.webp";document.addEventListener("scroll",function(){const navbar=document.querySelector(".navbar-scroll");const logo=document.getElementById("logo");if(window.scrollY>50){navbar.classList.add("scrolled");logo.src=logoScroll}else{navbar.classList.remove("scrolled");logo.src=logoNormal}})</script> </div></div></div></div><div id="content" class="site-content"><div class="ast-container"><div id="primary" class="content-area primary"><main id="main" class="site-main"><article
+<a href="index.html" aria-label="Ir al inicio" class="sb-logo-home-link"><img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjU4MCIgdmlld0JveD0iMCAwIDE2MDAgNTgwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" id="logo" data-src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" width="1600" height="580" /></a></div></div></div><div class="sb-promo-wrap"><a class="sb-promo-suscripciones" href="suscripciones.html"><span class="sb-promo-emoji">💚</span><span class="sb-promo-texto">¿Te interesa ahorrar? <span class="sb-promo-sub">Conoce las suscripciones</span> <span class="sb-promo-flecha">→</span></span></a><div class="sb-promo-dropdown"><div class="sb-promo-dropdown-icono">💚</div><h4>¿Quieres ahorrar?</h4><p>Conoce las suscripciones: recibe tus cápsulas cada mes con descuento, sin tener que volver a comprar.</p></div></div><a class="sb-tienda-link sb-header-icon-link" href="tienda.html" aria-label="Ir a la tienda"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 8h14l1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 8V7a4 4 0 0 1 8 0v1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a><a class="sb-cart-link sb-header-icon-link" href="datos.html" aria-label="Ver carrito"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.8h7.2a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/></svg><span class="sb-cart-badge">0</span></a><a class="sb-account-link sb-header-icon-link" href="cuenta.html" aria-label="Mi cuenta"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0z"/></svg></a></div><div class="elementor-element elementor-element-f0d3e5e e-con-full navbar-scroll elementor-hidden-desktop elementor-hidden-tablet e-flex e-con e-parent" data-id="f0d3e5e" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}"><div class="elementor-element elementor-element-daedf2a logo elementor-widget-mobile__width-initial elementor-widget elementor-widget-html" data-id="daedf2a" data-element_type="widget" data-e-type="widget" data-widget_type="html.default">
+<a href="index.html" aria-label="Ir al inicio" class="sb-logo-home-link"><img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjU4MCIgdmlld0JveD0iMCAwIDE2MDAgNTgwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" id="logo" data-src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" width="1600" height="580" /></a></div><div class="sb-promo-wrap"><a class="sb-promo-suscripciones" href="suscripciones.html"><span class="sb-promo-emoji">💚</span><span class="sb-promo-texto">¿Te interesa ahorrar? <span class="sb-promo-sub">Conoce las suscripciones</span> <span class="sb-promo-flecha">→</span></span></a><div class="sb-promo-dropdown"><div class="sb-promo-dropdown-icono">💚</div><h4>¿Quieres ahorrar?</h4><p>Conoce las suscripciones: recibe tus cápsulas cada mes con descuento, sin tener que volver a comprar.</p></div></div><a class="sb-tienda-link sb-header-icon-link" href="tienda.html" aria-label="Ir a la tienda"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 8h14l1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 8V7a4 4 0 0 1 8 0v1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a><a class="sb-cart-link sb-header-icon-link" href="datos.html" aria-label="Ver carrito"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.8h7.2a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/></svg><span class="sb-cart-badge">0</span></a><a class="sb-account-link sb-header-icon-link" href="cuenta.html" aria-label="Mi cuenta"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0z"/></svg></a><div class="elementor-element elementor-element-f85ef1a elementor-widget__width-initial elementor-widget-tablet__width-initial elementor-widget elementor-widget-html" data-id="f85ef1a" data-element_type="widget" data-e-type="widget" data-widget_type="html.default"> <script type="litespeed/javascript">const logoNormal="https://capsulasdenopal.com/wp-content/uploads/2026/03/logo-transparente.webp";const logoScroll="https://capsulasdenopal.com/wp-content/uploads/2026/03/logo-blanco.webp";document.addEventListener("scroll",function(){const navbar=document.querySelector(".navbar-scroll");const logo=document.getElementById("logo");if(window.scrollY>50){navbar.classList.add("scrolled");logo.src=logoScroll}else{navbar.classList.remove("scrolled");logo.src=logoNormal}})</script> </div></div></div></div><div id="content" class="site-content"><div class="ast-container"><div id="primary" class="content-area primary"><main id="main" class="site-main"><article
 class="post-44 page type-page status-publish ast-article-single" id="post-44" itemtype="https://schema.org/CreativeWork" itemscope="itemscope"><header class="entry-header ast-no-thumbnail ast-no-title ast-header-without-markup"></header><div class="entry-content clear"
 itemprop="text"><div data-elementor-type="wp-page" data-elementor-id="44" class="elementor elementor-44"><div class="elementor-element elementor-element-f3f73bf e-grid e-con-boxed e-con e-parent" data-id="f3f73bf" data-element_type="container" data-e-type="container"><div class="e-con-inner"><div class="elementor-element elementor-element-a8c9011 e-con-full e-flex e-con e-child" data-id="a8c9011" data-element_type="container" data-e-type="container"><div class="elementor-element elementor-element-96c96f2 elementor-invisible elementor-widget elementor-widget-heading" data-id="96c96f2" data-element_type="widget" data-e-type="widget" data-settings="{&quot;_animation&quot;:&quot;fadeInLeft&quot;}" data-widget_type="heading.default"><h1 class="elementor-heading-title elementor-size-default">Fibra Natural de Nopal Disponible Para Ti</h1></div></div><div class="elementor-element elementor-element-74763f1 e-con-full e-flex elementor-invisible e-con e-child" data-id="74763f1" data-element_type="container" data-e-type="container" data-settings="{&quot;animation&quot;:&quot;fadeInRight&quot;}"><div class="elementor-element elementor-element-3604697 elementor-widget__width-inherit elementor-widget elementor-widget-image" data-id="3604697" data-element_type="widget" data-e-type="widget" data-widget_type="image.default">
 <img data-lazyloaded="1" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDI0IiBoZWlnaHQ9Ijg2MyIgdmlld0JveD0iMCAwIDEwMjQgODYzIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==" fetchpriority="high" decoding="async" width="1024" height="863" data-src="wp-content/uploads/2026/03/New-Project-2-e1773165267979-1024x863.webp" class="attachment-large size-large wp-image-63" alt="Frasco de cápsulas de nopal SanteBio" /></div><div class="elementor-element elementor-element-4db5de5 e-con-full e-flex e-con e-child" data-id="4db5de5" data-element_type="container" data-e-type="container"><div class="elementor-element elementor-element-36f0e7d e-con-full e-flex e-con e-child" data-id="36f0e7d" data-element_type="container" data-e-type="container"><div class="elementor-element elementor-element-de5b990 elementor-widget elementor-widget-heading" data-id="de5b990" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default">Cápsulas de nopal</h2></div></div><div class="elementor-element elementor-element-5c952d9 e-con-full e-flex e-con e-child" data-id="5c952d9" data-element_type="container" data-e-type="container"><div class="elementor-element elementor-element-fff15ab elementor-widget elementor-widget-heading" data-id="fff15ab" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default">Presentación</h2></div></div><div class="elementor-element elementor-element-50543ab e-con-full e-grid e-con e-child" data-id="50543ab" data-element_type="container" data-e-type="container"><div class="elementor-element elementor-element-91d9ef0 e-con-full e-flex e-con e-child" data-id="91d9ef0" data-element_type="container" data-e-type="container"><div class="elementor-element elementor-element-309ac22 elementor-widget elementor-widget-heading" data-id="309ac22" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default">90 Cápsulas</h2></div><div class="elementor-element elementor-element-9c41595 elementor-widget elementor-widget-heading" data-id="9c41595" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default"><s>$310.00</s></h2></div><div class="elementor-element elementor-element-d5d894e elementor-widget elementor-widget-heading" data-id="d5d894e" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default"><h2 class="elementor-heading-title elementor-size-default">$269 MXN</h2></div><div class="elementor-element elementor-element-59080ce elementor-align-center elementor-widget elementor-widget-button" data-id="59080ce" data-element_type="widget" data-e-type="widget" data-widget_type="button.default">

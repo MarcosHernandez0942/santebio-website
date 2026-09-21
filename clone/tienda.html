@@ -118,6 +118,17 @@ function tarjetaProducto(p) {
   );
 }
 
+function tarjetaPromoSuscripciones() {
+  return (
+    '<div class="sb-card sb-card-promo sb-reveal">' +
+    '<div class="sb-card-promo-icono">💚</div>' +
+    '<h3>¿Quieres ahorrar?</h3>' +
+    '<p>Conoce las suscripciones: recibe tus cápsulas cada mes con descuento, sin tener que volver a comprar.</p>' +
+    '<a class="sb-btn" href="suscripciones.html">Conocer suscripciones</a>' +
+    '</div>'
+  );
+}
+
 function wireBotonesAgregar() {
   document.querySelectorAll('.sb-add-to-cart').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -164,7 +175,8 @@ SanteBioAuth.llamarApi('listar_productos_publico', {}, null).then(function (res)
   var individuales = productos.filter(function (p) { return p.seccion !== 'paquete'; });
   var paquetes = productos.filter(function (p) { return p.seccion === 'paquete'; });
 
-  document.getElementById('sb-grid-individual').innerHTML = individuales.map(tarjetaProducto).join('');
+  document.getElementById('sb-grid-individual').innerHTML =
+    individuales.map(tarjetaProducto).join('') + tarjetaPromoSuscripciones();
 
   if (paquetes.length > 0) {
     document.getElementById('sb-grid-paquete').innerHTML = paquetes.map(tarjetaProducto).join('');
