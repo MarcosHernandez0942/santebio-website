@@ -51,12 +51,12 @@
     gap: 24px;
   }
   .sb-plan-card {
-    flex: 1 1 240px;
-    max-width: 260px;
+    flex: 1 1 260px;
+    max-width: 300px;
     background: #fff;
     border: 1px solid var(--line);
     border-radius: 16px;
-    padding: 24px;
+    padding: 32px 28px;
     text-align: center;
   }
   .sb-plan-card.is-destacado {
@@ -64,32 +64,40 @@
     border-width: 2px;
   }
   .sb-plan-card-ahorro {
-    font-size: 12px;
+    display: inline-block;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--green);
-    margin-bottom: 6px;
+    background: rgba(105, 148, 49, 0.1);
+    border-radius: 999px;
+    padding: 5px 12px;
+    margin-bottom: 14px;
   }
   .sb-plan-card h3 {
-    margin: 0 0 2px;
+    margin: 0 0 6px;
     font-size: 20px;
   }
   .sb-plan-card-sub {
     font-size: 13px;
+    line-height: 1.5;
     color: rgba(32, 79, 43, 0.65);
-    margin: 0 0 10px;
+    margin: 0 0 18px;
   }
   .sb-plan-card-precio {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700;
     color: var(--ink);
-    margin: 0 0 4px;
+    margin: 0;
   }
   .sb-plan-card p {
     font-size: 13px;
+    line-height: 1.5;
     color: rgba(32, 79, 43, 0.75);
-    margin: 8px 0 0;
+    margin: 18px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
   }
 
   .sb-cuenta-gate {
@@ -227,12 +235,17 @@ SanteBioAuth.llamarApi('listar_planes_suscripcion_publico', {}).then(function (r
   var disponibles = (res.planes || []).filter(function (p) { return p.disponible; });
   if (disponibles.length === 0) return;
   grid.innerHTML = disponibles.map(function (p) {
-    var precioHtml = (p.precioRegular && p.precioRegular > p.precio)
+    var tieneDescuento = p.precioRegular && p.precioRegular > p.precio;
+    var precioHtml = tieneDescuento
       ? '<s style="opacity:0.6;">' + SanteBioCart.formatMXN(p.precioRegular) + '</s> ' + SanteBioCart.formatMXN(p.precio)
       : SanteBioCart.formatMXN(p.precio);
+    var ahorroHtml = tieneDescuento
+      ? '<div class="sb-plan-card-ahorro">Ahorra ' + Math.round((1 - p.precio / p.precioRegular) * 100) + '%</div>'
+      : '';
     var composicion = p.items.map(function (it) { return it.cantidad + 'x ' + it.productoNombre; }).join(' + ');
     return (
       '<div class="sb-plan-card">' +
+      ahorroHtml +
       '<h3>' + p.nombre + '</h3>' +
       '<div class="sb-plan-card-sub">' + composicion + ' · Cada ' + p.frecuenciaDias + ' días</div>' +
       '<div class="sb-plan-card-precio">' + precioHtml + '</div>' +
