@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Suscripciones — SanteBio</title>
+<link rel="icon" type="image/png" href="wp-content/uploads/2026/03/logo-transparente.webp" />
+<link rel="stylesheet" href="assets/shop.css" />
+<style>
+  .sb-suscripcion-pasos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+  }
+  .sb-suscripcion-paso {
+    flex: 1 1 220px;
+    max-width: 280px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+  }
+  .sb-suscripcion-paso-numero {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--green-bright);
+    color: var(--ink);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+  }
+  .sb-suscripcion-paso h3 {
+    font-size: 16px;
+    margin: 0 0 8px;
+  }
+  .sb-suscripcion-paso p {
+    font-size: 14px;
+    color: rgba(32, 79, 43, 0.75);
+    margin: 0;
+  }
+
+  .sb-planes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+  }
+  .sb-plan-card {
+    flex: 1 1 240px;
+    max-width: 260px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+  }
+  .sb-plan-card.is-destacado {
+    border-color: var(--green);
+    border-width: 2px;
+  }
+  .sb-plan-card-ahorro {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 6px;
+  }
+  .sb-plan-card h3 {
+    margin: 0 0 4px;
+    font-size: 20px;
+  }
+  .sb-plan-card p {
+    font-size: 13px;
+    color: rgba(32, 79, 43, 0.75);
+    margin: 8px 0 0;
+  }
+
+  .sb-cuenta-gate {
+    max-width: 520px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+  }
+  .sb-cuenta-gate h3 {
+    margin: 0 0 10px;
+  }
+  .sb-cuenta-gate p {
+    color: rgba(32, 79, 43, 0.75);
+    margin: 0 0 20px;
+  }
+  .sb-cuenta-gate .sb-botones {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+<header class="sb-header">
+  <a class="sb-logo-link" href="index.html">
+    <img class="sb-logo" src="wp-content/uploads/2026/03/logo-transparente.webp" alt="SanteBio - Cápsulas de Nopal" />
+  </a>
+  <div class="sb-header-actions">
+    <a class="sb-tienda-link sb-header-icon-link" href="tienda.html" aria-label="Ir a la tienda"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 8h14l1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 8V7a4 4 0 0 1 8 0v1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></a>
+    <a class="sb-cart-link sb-header-icon-link" href="datos.html" aria-label="Ver carrito">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.8h7.2a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/></svg>
+      <span class="sb-cart-badge">0</span>
+    </a>
+    <a class="sb-account-link sb-header-icon-link" href="cuenta.html" aria-label="Mi cuenta"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0z"/></svg></a>
+  </div>
+</header>
+
+<section class="sb-hero">
+  <div class="sb-eyebrow">Suscripciones</div>
+  <h1>Recibe tus cápsulas cada mes y ahorra</h1>
+  <p class="sb-subhead">Elige tu presentación y la frecuencia de entrega: nosotros nos encargamos de que nunca te quedes sin tus cápsulas de nopal, con un precio preferente en cada envío.</p>
+</section>
+
+<main>
+  <section class="sb-section">
+    <div class="sb-section-inner">
+      <div class="sb-section-heading">
+        <div class="sb-eyebrow">Cómo funciona</div>
+        <h2>Tan simple como esto</h2>
+      </div>
+      <div class="sb-suscripcion-pasos sb-reveal">
+        <div class="sb-suscripcion-paso">
+          <div class="sb-suscripcion-paso-numero">1</div>
+          <h3>Elige tu plan</h3>
+          <p>Selecciona tu presentación (90 o 150 cápsulas) y cada cuánto quieres recibirla: cada 30, 60 o 90 días.</p>
+        </div>
+        <div class="sb-suscripcion-paso">
+          <div class="sb-suscripcion-paso-numero">2</div>
+          <h3>Recíbela automáticamente</h3>
+          <p>Cobramos y enviamos tu pedido solo cuando toca, a la tarjeta que ya tengas guardada en tu cuenta.</p>
+        </div>
+        <div class="sb-suscripcion-paso">
+          <div class="sb-suscripcion-paso-numero">3</div>
+          <h3>Pausa o cancela cuando quieras</h3>
+          <p>Sin contratos ni penalizaciones: ajusta, pausa o cancela tu suscripción desde tu cuenta en cualquier momento.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sb-section sb-section-tint">
+    <div class="sb-section-inner">
+      <div class="sb-section-heading">
+        <div class="sb-eyebrow">Planes</div>
+        <h2>Entre más seguido, más ahorras</h2>
+      </div>
+      <div class="sb-planes-grid sb-reveal" id="sb-planes-grid">
+        <div class="sb-plan-card">
+          <div class="sb-plan-card-ahorro">Ahorra 10%</div>
+          <h3>Cada 30 días</h3>
+          <p>Ideal para 1 frasco al mes. Envío preferente incluido.</p>
+        </div>
+        <div class="sb-plan-card is-destacado">
+          <div class="sb-plan-card-ahorro">Ahorra 12%</div>
+          <h3>Cada 60 días</h3>
+          <p>El plan más elegido. Envío gratis en cada entrega.</p>
+        </div>
+        <div class="sb-plan-card">
+          <div class="sb-plan-card-ahorro">Ahorra 15%</div>
+          <h3>Cada 90 días</h3>
+          <p>Máximo ahorro para quienes ya tienen su rutina. Envío gratis.</p>
+        </div>
+      </div>
+      <p class="sb-note" style="text-align:center; margin-top: 28px;">Suplemento alimenticio. Este producto no es un medicamento. El consumo de este producto es responsabilidad de quien lo recomienda y lo usa.</p>
+    </div>
+  </section>
+
+  <section class="sb-section">
+    <div class="sb-section-inner">
+      <div class="sb-cuenta-gate sb-reveal" id="sb-cuenta-gate">
+        <!-- Contenido segun sesion, ver script abajo. -->
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="sb-footer">
+  <div class="sb-footer-links">
+    <a href="mailto:hola@capsulasdenopal.com">hola@capsulasdenopal.com</a>
+    <a href="https://wa.me/524771108120">477 110 8120</a>
+    <a href="seguimiento.html">Rastrear mi pedido</a>
+  </div>
+  <div class="sb-footer-social">
+    <a href="https://www.facebook.com/share/18crX3QKti/?mibextid=wwXIfr" aria-label="Síguenos en Facebook">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/capsulasdenopalsantebio" aria-label="Síguenos en Instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+    </a>
+  </div>
+  <small>Aviso de Privacidad · © 2026 SanteBio</small>
+</footer>
+
+<script src="assets/cart.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+/* Las suscripciones son solo para clientes con cuenta -- este bloque
+   es la unica parte "funcional" de la pagina por ahora (el resto es
+   contenido informativo/mercadeo): si no hay sesion, invita a
+   iniciarla o crear una cuenta; si ya la tiene, avisa que el cobro
+   automatico todavia esta en construccion en vez de mostrar un boton
+   que finja activar algo que el backend no procesa de verdad. */
+/* Los planes de arriba ya no son fijos: se traen del panel de admin
+   (tabla planes_suscripcion via listar_planes_suscripcion_publico) para
+   que un cambio de descuento/nombre ahi se refleje aqui sin tocar
+   codigo. Las 3 tarjetas que ya estan en el HTML quedan como
+   contenido de respaldo por si la API no responde (sin conexion, o el
+   servidor no esta corriendo) -- asi la pagina nunca se queda vacia. */
+SanteBioAuth.llamarApi('listar_planes_suscripcion_publico', {}).then(function (res) {
+  if (!res.ok || !res.planes || res.planes.length === 0) return;
+  var grid = document.getElementById('sb-planes-grid');
+  grid.innerHTML = res.planes.map(function (p) {
+    return (
+      '<div class="sb-plan-card' + (p.destacado ? ' is-destacado' : '') + '">' +
+      '<div class="sb-plan-card-ahorro">Ahorra ' + p.descuentoPorcentaje + '%</div>' +
+      '<h3>' + p.nombre + '</h3>' +
+      '<p>' + p.descripcion + '</p>' +
+      '</div>'
+    );
+  }).join('');
+});
+
+var gate = document.getElementById('sb-cuenta-gate');
+var usuario = SanteBioAuth.getUsuarioActual();
+if (usuario) {
+  gate.innerHTML =
+    '<h3>¡Hola, ' + usuario.nombre + '!</h3>' +
+    '<p>Ya tienes cuenta, así que estás lista/o para cuando activemos las suscripciones. Muy pronto podrás elegir tu plan desde aquí.</p>' +
+    '<div class="sb-botones"><button class="sb-btn" disabled>Muy pronto</button>' +
+    '<a class="sb-btn sb-btn-ghost" href="tienda.html">Comprar por ahora</a></div>';
+} else {
+  gate.innerHTML =
+    '<h3>Inicia sesión para suscribirte</h3>' +
+    '<p>Las suscripciones son exclusivas para clientes con cuenta SanteBio: así podemos guardar tu plan, tu dirección y tu método de pago para cada entrega.</p>' +
+    '<div class="sb-botones"><a class="sb-btn" href="cuenta.html">Iniciar sesión</a>' +
+    '<a class="sb-btn sb-btn-ghost" href="cuenta.html">Crear cuenta</a></div>';
+}
+
+var revealObserver = new IntersectionObserver(function (entries) {
+  entries.forEach(function (entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('is-visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.sb-reveal').forEach(function (el) { revealObserver.observe(el); });
+</script>
+</body>
+</html>

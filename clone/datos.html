@@ -37,6 +37,12 @@
   <section class="sb-section">
     <div class="sb-section-inner">
       <div class="sb-cart-layout">
+        <div class="sb-empty-cart sb-reveal" id="sb-sin-pedido" style="display:none;">
+          <svg viewBox="0 0 32 32" fill="currentColor"><path d="M9 11V9a7 7 0 0 1 14 0v2h4.2a1.5 1.5 0 0 1 1.49 1.67l-1.8 16A1.5 1.5 0 0 1 25.4 30H6.6a1.5 1.5 0 0 1-1.49-1.33l-1.8-16A1.5 1.5 0 0 1 4.8 11H9zm2 0h10V9a5 5 0 0 0-10 0v2z"/></svg>
+          <p>Agrega algo a tu carrito para comenzar.</p>
+          <a class="sb-btn" href="tienda.html">Ir a la tienda</a>
+        </div>
+
         <form class="sb-form-card sb-reveal" id="sb-datos-form" novalidate>
           <h3>Información de contacto</h3>
           <div class="sb-form-row">
@@ -143,12 +149,29 @@
     // Si viene de un "Comprar ahora" (compra directa), solo ese
     // producto -- si no, el carrito completo de siempre.
     var cart = SanteBioCart.itemsCheckout();
+    var form = document.getElementById('sb-datos-form');
+    var sinPedido = document.getElementById('sb-sin-pedido');
+    var miniTotal = document.getElementById('sb-mini-total');
+    var avisoGeneral = document.getElementById('sb-cart-aviso');
 
-    // Sin nada que enviar - de regreso a la tienda.
+    // Sin nada que enviar -- en vez de mandar de regreso a la tienda de
+    // un jalon, se queda aqui mismo mostrando "carrito vacio" (Tu
+    // pedido) y una invitacion a agregar algo (donde iria el
+    // formulario), asi el cliente entiende por que no puede continuar
+    // si llega aqui sin nada en el carrito (ej. desde el icono del
+    // encabezado).
     if (cart.length === 0) {
-      window.location.href = 'tienda.html';
+      form.style.display = 'none';
+      sinPedido.style.display = 'block';
+      document.getElementById('sb-mini-items').innerHTML = '<p class="sb-empty-panel">Carrito vacío.</p>';
+      miniTotal.innerHTML = '';
+      miniTotal.style.display = 'none';
+      if (avisoGeneral) avisoGeneral.style.display = 'none';
       return;
     }
+    form.style.display = '';
+    sinPedido.style.display = 'none';
+    miniTotal.style.display = '';
 
     var miniItems = document.getElementById('sb-mini-items');
     miniItems.innerHTML = cart.map(function (item) {

@@ -1,7 +1,7 @@
 import os
 import bcrypt
 from db import db
-from models import Admin, Producto
+from models import Admin, Producto, PlanSuscripcion
 
 
 def agregar_columnas_openpay_si_hace_falta():
@@ -93,3 +93,31 @@ def crear_productos_iniciales_si_hace_falta():
     )
     db.session.commit()
     print(f"[bootstrap] {len(_PRODUCTOS_INICIALES)} productos iniciales creados.")
+
+
+# Mismos 3 planes que ya se mostraban fijos en suscripciones.html
+# (30/60/90 dias con 10/12/15% de descuento) -- se siembran aqui para
+# que un despliegue nuevo con base de datos vacia no se quede sin
+# planes que mostrar; en un entorno que ya tiene planes capturados a
+# mano desde el panel de administrador, no se toca nada.
+_PLANES_SUSCRIPCION_INICIALES = [
+    {"nombre": "Cada 30 días", "frecuencia_dias": 30, "descuento_porcentaje": 10,
+     "descripcion": "Ideal para 1 frasco al mes. Envío preferente incluido.",
+     "destacado": False, "orden": 1},
+    {"nombre": "Cada 60 días", "frecuencia_dias": 60, "descuento_porcentaje": 12,
+     "descripcion": "El plan más elegido. Envío gratis en cada entrega.",
+     "destacado": True, "orden": 2},
+    {"nombre": "Cada 90 días", "frecuencia_dias": 90, "descuento_porcentaje": 15,
+     "descripcion": "Máximo ahorro para quienes ya tienen su rutina. Envío gratis.",
+     "destacado": False, "orden": 3},
+]
+
+
+def crear_planes_suscripcion_iniciales_si_hace_falta():
+    if db.session.query(PlanSuscripcion).count() > 0:
+        return
+
+    for datos in _PLANES_SUSCRIPCION_INICIALES:
+        db.session.add(PlanSuscripcion(**datos))
+    db.session.commit()
+    print(f"[bootstrap] {len(_PLANES_SUSCRIPCION_INICIALES)} planes de suscripción iniciales creados.")

@@ -74,6 +74,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.6 8.6 0 0 1-3.7-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.9A8.4 8.4 0 0 1 12.6 3a8.5 8.5 0 0 1 8.4 8.4z"/></svg>
             Opiniones
           </button>
+          <button type="button" data-panel="suscripciones">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2.1l4 4-4 4"/><path d="M21 6.1H7a4 4 0 0 0-4 4v1"/><path d="M7 21.9l-4-4 4-4"/><path d="M3 17.9h14a4 4 0 0 0 4-4v-1"/></svg>
+            Suscripciones
+          </button>
         </div>
 
         <div class="sb-dash-panel" id="sb-panel-resumen">
@@ -111,6 +115,16 @@
             <div class="sb-kpi-section sb-reveal">
               <h3>Ventas por método de pago</h3>
               <div id="sb-kpi-metodos"></div>
+            </div>
+
+            <div class="sb-kpi-section sb-reveal">
+              <h3>Ventas por producto</h3>
+              <div id="sb-kpi-por-producto"></div>
+            </div>
+
+            <div class="sb-kpi-section sb-reveal">
+              <h3>Ventas por sección</h3>
+              <div id="sb-kpi-por-seccion"></div>
             </div>
           </div>
         </div>
@@ -205,6 +219,83 @@
             </div>
           </div>
         </div>
+
+        <!-- Panel: Suscripciones -->
+        <div class="sb-dash-panel" id="sb-panel-suscripciones" style="display:none;">
+          <div class="sb-kpi-section sb-reveal">
+            <h3>Planes de suscripción</h3>
+            <p class="sb-form-hint" style="margin-top:-8px;">Estos son los planes que se muestran en suscripciones.html. El descuento se aplica sobre el precio actual del producto.</p>
+            <div id="sb-planes-suscripcion-lista"></div>
+
+            <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-plan" style="margin-top: 8px;">+ Agregar plan</button>
+
+            <form id="sb-plan-suscripcion-form" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line-strong);">
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-plan-nombre">Nombre</label>
+                  <input type="text" id="sb-plan-nombre" placeholder="Cada 45 días" required />
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-plan-frecuencia">Frecuencia (días)</label>
+                  <input type="number" id="sb-plan-frecuencia" required min="1" step="1" />
+                </div>
+              </div>
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-plan-descuento">Descuento (%)</label>
+                  <input type="number" id="sb-plan-descuento" required min="0" max="100" step="0.01" />
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-plan-descripcion">Descripción corta</label>
+                  <input type="text" id="sb-plan-descripcion" placeholder="Envío gratis en cada entrega." />
+                </div>
+              </div>
+              <div id="sb-plan-form-error" class="sb-form-error" style="display:none;"></div>
+              <button type="submit" class="sb-btn" id="sb-guardar-plan-btn">Agregar plan</button>
+            </form>
+          </div>
+
+          <div class="sb-kpi-section sb-reveal" style="margin-top: 24px;">
+            <h3>Suscripciones de clientes</h3>
+            <p class="sb-form-hint" style="margin-top:-8px;">El cobro automático todavía no está conectado: cada entrega se registra aquí a mano y descuenta inventario igual que un pedido normal.</p>
+            <div id="sb-suscripciones-lista"></div>
+
+            <button type="button" class="sb-btn sb-btn-ghost" id="sb-mostrar-form-suscripcion" style="margin-top: 8px;">+ Agregar suscripción</button>
+
+            <form id="sb-suscripcion-form" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line-strong);">
+              <div class="sb-form-group">
+                <label for="sb-susc-correo">Correo del cliente (ya debe tener cuenta)</label>
+                <input type="email" id="sb-susc-correo" required />
+              </div>
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-susc-producto">Producto</label>
+                  <select id="sb-susc-producto" required></select>
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-susc-plan">Plan</label>
+                  <select id="sb-susc-plan" required></select>
+                </div>
+              </div>
+              <div class="sb-form-row">
+                <div class="sb-form-group">
+                  <label for="sb-susc-precio">Precio por entrega (MXN, opcional)</label>
+                  <input type="number" id="sb-susc-precio" min="0" step="0.01" placeholder="Se calcula solo con el descuento del plan" />
+                </div>
+                <div class="sb-form-group">
+                  <label for="sb-susc-proxima">Próxima entrega (opcional)</label>
+                  <input type="date" id="sb-susc-proxima" />
+                </div>
+              </div>
+              <div class="sb-form-group">
+                <label for="sb-susc-notas">Notas (opcional)</label>
+                <input type="text" id="sb-susc-notas" placeholder="Ej. pidió por WhatsApp el 20/sep" />
+              </div>
+              <div id="sb-suscripcion-form-error" class="sb-form-error" style="display:none;"></div>
+              <button type="submit" class="sb-btn" id="sb-guardar-suscripcion-btn">Agregar suscripción</button>
+            </form>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -273,6 +364,7 @@
   var pedidosCargados = false;
   var opinionesCargadas = false;
   var productosCargados = false;
+  var suscripcionesCargadas = false;
 
   document.querySelectorAll('.sb-dash-tabs button').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -292,6 +384,11 @@
       if (btn.dataset.panel === 'productos' && !productosCargados) {
         productosCargados = true;
         cargarProductosAdmin(token);
+      }
+      if (btn.dataset.panel === 'suscripciones' && !suscripcionesCargadas) {
+        suscripcionesCargadas = true;
+        cargarPlanesSuscripcionAdmin(token);
+        cargarSuscripcionesAdmin(token);
       }
     });
   });
@@ -336,6 +433,58 @@
             '</div>'
           );
         }).join('');
+      }
+
+      var porProductoDiv = document.getElementById('sb-kpi-por-producto');
+      if (!kpis.ventasPorProducto || kpis.ventasPorProducto.length === 0) {
+        porProductoDiv.innerHTML = '<p class="sb-kpi-sub">Todavía no hay pedidos.</p>';
+      } else {
+        var maxProd = Math.max.apply(null, kpis.ventasPorProducto.map(function (r) { return r.cantidad; }));
+        porProductoDiv.innerHTML = kpis.ventasPorProducto.map(function (r) {
+          var pct = maxProd > 0 ? Math.round((r.cantidad / maxProd) * 100) : 0;
+          return (
+            '<div class="sb-kpi-bar-row">' +
+            '<div class="sb-kpi-bar-label">' + r.nombre + '<span class="sb-kpi-sub"> · ' + r.cantidad + ' uds</span></div>' +
+            '<div class="sb-kpi-bar-track"><div class="sb-kpi-bar-fill" style="width:' + pct + '%;"></div></div>' +
+            '<div class="sb-kpi-bar-value">' + SanteBioCart.formatMXN(r.monto) + '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+
+      var porSeccionDiv = document.getElementById('sb-kpi-por-seccion');
+      var seccion = kpis.ventasPorSeccion;
+      if (!seccion || (seccion.individual.unidades === 0 && seccion.paquete.unidades === 0)) {
+        porSeccionDiv.innerHTML = '<p class="sb-kpi-sub">Todavía no hay pedidos.</p>';
+      } else {
+        var maxSeccion = Math.max(seccion.individual.unidades, seccion.paquete.unidades) || 1;
+        var html = '';
+        html +=
+          '<div class="sb-kpi-bar-row">' +
+          '<div class="sb-kpi-bar-label">Individuales<span class="sb-kpi-sub"> · ' + seccion.individual.unidades + ' uds</span></div>' +
+          '<div class="sb-kpi-bar-track"><div class="sb-kpi-bar-fill" style="width:' + Math.round((seccion.individual.unidades / maxSeccion) * 100) + '%;"></div></div>' +
+          '<div class="sb-kpi-bar-value">' + SanteBioCart.formatMXN(seccion.individual.monto) + '</div>' +
+          '</div>';
+        html +=
+          '<div class="sb-kpi-bar-row">' +
+          '<div class="sb-kpi-bar-label">Paquetes<span class="sb-kpi-sub"> · ' + seccion.paquete.unidades + ' uds</span></div>' +
+          '<div class="sb-kpi-bar-track"><div class="sb-kpi-bar-fill" style="width:' + Math.round((seccion.paquete.unidades / maxSeccion) * 100) + '%;"></div></div>' +
+          '<div class="sb-kpi-bar-value">' + SanteBioCart.formatMXN(seccion.paquete.monto) + '</div>' +
+          '</div>';
+        if (seccion.paquete.porPaquete && seccion.paquete.porPaquete.length > 0) {
+          var maxPaquete = Math.max.apply(null, seccion.paquete.porPaquete.map(function (r) { return r.unidades; })) || 1;
+          html += '<div style="margin-left:20px; margin-top:4px;">' + seccion.paquete.porPaquete.map(function (r) {
+            var pct = Math.round((r.unidades / maxPaquete) * 100);
+            return (
+              '<div class="sb-kpi-bar-row">' +
+              '<div class="sb-kpi-bar-label">' + (r.nombre || ('Paquete #' + r.id)) + '<span class="sb-kpi-sub"> · ' + r.unidades + ' uds</span></div>' +
+              '<div class="sb-kpi-bar-track"><div class="sb-kpi-bar-fill" style="width:' + pct + '%;"></div></div>' +
+              '<div class="sb-kpi-bar-value">' + SanteBioCart.formatMXN(r.monto) + '</div>' +
+              '</div>'
+            );
+          }).join('') + '</div>';
+        }
+        porSeccionDiv.innerHTML = html;
       }
     });
   }
@@ -784,6 +933,245 @@
       productoForm.reset();
       productoForm.style.display = 'none';
       cargarProductosAdmin(token);
+    });
+  });
+
+  /* --- Suscripciones (admin) --- */
+  var planesSuscripcionCache = [];
+  var productosIndividualesCache = [];
+
+  function cargarPlanesSuscripcionAdmin(token, mostrarCargando) {
+    var lista = document.getElementById('sb-planes-suscripcion-lista');
+    if (mostrarCargando !== false) {
+      lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    }
+    SanteBioAuth.llamarApi('listar_planes_suscripcion_admin', {}, token).then(function (res) {
+      var planes = res.planes || [];
+      planesSuscripcionCache = planes;
+      llenarSelectPlanes();
+      if (planes.length === 0) {
+        lista.innerHTML = '<p class="sb-empty-panel">Todavía no hay planes.</p>';
+        return;
+      }
+      lista.innerHTML = planes.map(function (p) {
+        return (
+          '<div class="sb-producto-admin-card" data-id="' + p.id + '">' +
+          '<div class="sb-producto-admin-info">' +
+          '<div class="sb-producto-admin-nombre">' + p.nombre + (p.destacado ? ' <span class="sb-metodo-badge">Destacado</span>' : '') + (p.activo ? '' : ' <span class="sb-metodo-badge">Oculto</span>') + '</div>' +
+          '<div class="sb-pedido-cliente">' + p.descripcion + '</div>' +
+          '</div>' +
+          '<div class="sb-producto-admin-campos">' +
+          '<label>Descuento (%)<input type="number" min="0" max="100" step="0.01" class="sb-plan-editar-descuento" value="' + p.descuentoPorcentaje + '" /></label>' +
+          '<label>Frecuencia (días)<input type="number" min="1" step="1" class="sb-plan-editar-frecuencia" value="' + p.frecuenciaDias + '" /></label>' +
+          '<label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="sb-plan-editar-destacado" ' + (p.destacado ? 'checked' : '') + ' style="width:auto;" />Destacado</label>' +
+          '</div>' +
+          '<div class="sb-producto-admin-acciones">' +
+          '<button type="button" class="sb-btn sb-guardar-plan-cambios" data-id="' + p.id + '" style="padding:8px 16px; font-size:12.5px;">Guardar</button>' +
+          '<button type="button" class="sb-btn sb-btn-ghost sb-toggle-activo-plan" data-id="' + p.id + '" data-activo="' + p.activo + '" style="padding:8px 16px; font-size:12.5px;">' + (p.activo ? 'Ocultar' : 'Mostrar') + '</button>' +
+          '</div>' +
+          '</div>'
+        );
+      }).join('');
+
+      lista.querySelectorAll('.sb-guardar-plan-cambios').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var card = btn.closest('.sb-producto-admin-card');
+          var datos = {
+            id: btn.dataset.id,
+            descuentoPorcentaje: parseFloat(card.querySelector('.sb-plan-editar-descuento').value),
+            frecuenciaDias: parseInt(card.querySelector('.sb-plan-editar-frecuencia').value, 10),
+            destacado: card.querySelector('.sb-plan-editar-destacado').checked,
+          };
+          btn.disabled = true;
+          btn.textContent = 'Guardando…';
+          SanteBioAuth.llamarApi('actualizar_plan_suscripcion', datos, token).then(function () {
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+            cargarPlanesSuscripcionAdmin(token, false);
+          });
+        });
+      });
+
+      lista.querySelectorAll('.sb-toggle-activo-plan').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var nuevoActivo = btn.dataset.activo !== 'true';
+          btn.disabled = true;
+          SanteBioAuth.llamarApi('actualizar_plan_suscripcion', { id: btn.dataset.id, activo: nuevoActivo }, token).then(function () {
+            btn.disabled = false;
+            cargarPlanesSuscripcionAdmin(token, false);
+          });
+        });
+      });
+    });
+  }
+
+  var planForm = document.getElementById('sb-plan-suscripcion-form');
+  document.getElementById('sb-mostrar-form-plan').addEventListener('click', function () {
+    planForm.style.display = planForm.style.display === 'block' ? 'none' : 'block';
+  });
+
+  planForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!this.checkValidity()) { this.reportValidity(); return; }
+    var errorDivPlan = document.getElementById('sb-plan-form-error');
+    errorDivPlan.style.display = 'none';
+    var btn = document.getElementById('sb-guardar-plan-btn');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+    SanteBioAuth.llamarApi('crear_plan_suscripcion', {
+      nombre: document.getElementById('sb-plan-nombre').value.trim(),
+      frecuenciaDias: parseInt(document.getElementById('sb-plan-frecuencia').value, 10),
+      descuentoPorcentaje: parseFloat(document.getElementById('sb-plan-descuento').value),
+      descripcion: document.getElementById('sb-plan-descripcion').value.trim(),
+    }, token).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Agregar plan';
+      if (!res.ok) {
+        errorDivPlan.textContent = res.error || 'No se pudo crear el plan.';
+        errorDivPlan.style.display = 'block';
+        return;
+      }
+      planForm.reset();
+      planForm.style.display = 'none';
+      cargarPlanesSuscripcionAdmin(token);
+    });
+  });
+
+  function llenarSelectPlanes() {
+    var select = document.getElementById('sb-susc-plan');
+    if (!select) return;
+    select.innerHTML = planesSuscripcionCache.filter(function (p) { return p.activo; }).map(function (p) {
+      return '<option value="' + p.id + '">' + p.nombre + ' (' + p.descuentoPorcentaje + '% desc.)</option>';
+    }).join('');
+  }
+
+  function llenarSelectProductos() {
+    var select = document.getElementById('sb-susc-producto');
+    if (!select) return;
+    select.innerHTML = productosIndividualesCache.map(function (p) {
+      return '<option value="' + p.id + '">' + p.nombre + ' — ' + SanteBioCart.formatMXN(p.precio) + '</option>';
+    }).join('');
+  }
+
+  function cargarProductosParaSuscripcion(token) {
+    SanteBioAuth.llamarApi('listar_productos_admin', {}, token).then(function (res) {
+      // Solo presentaciones individuales -- una suscripcion siempre
+      // entrega un producto real, nunca un paquete (los paquetes ya
+      // ni tienen su propio stock, ver COMPOSICION_PAQUETES).
+      productosIndividualesCache = (res.productos || []).filter(function (p) { return p.seccion === 'individual'; });
+      llenarSelectProductos();
+    });
+  }
+
+  var etiquetasEstadoSuscripcion = { activa: 'Activa', pausada: 'Pausada', cancelada: 'Cancelada' };
+
+  function cargarSuscripcionesAdmin(token, mostrarCargando) {
+    cargarProductosParaSuscripcion(token);
+    var lista = document.getElementById('sb-suscripciones-lista');
+    if (mostrarCargando !== false) {
+      lista.innerHTML = '<p class="sb-kpi-sub">Cargando…</p>';
+    }
+    SanteBioAuth.llamarApi('listar_suscripciones_admin', {}, token).then(function (res) {
+      var suscripciones = res.suscripciones || [];
+      if (suscripciones.length === 0) {
+        lista.innerHTML = '<p class="sb-empty-panel">Todavía no hay suscripciones. Se dan de alta a mano mientras se conecta el cobro automático.</p>';
+        return;
+      }
+      lista.innerHTML = suscripciones.map(function (s) {
+        var proxima = s.proximaEntrega
+          ? new Date(s.proximaEntrega + 'T00:00:00').toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
+          : 'Sin definir';
+        return (
+          '<div class="sb-producto-admin-card" data-id="' + s.id + '">' +
+          '<div class="sb-producto-admin-info">' +
+          '<div class="sb-producto-admin-nombre">' + s.clienteNombre + ' <span class="sb-kpi-sub">· ' + s.clienteCorreo + '</span></div>' +
+          '<div class="sb-pedido-cliente">' + s.productoNombre + ' · ' + s.planNombre + ' · Próxima entrega: ' + proxima + '</div>' +
+          '<div class="sb-pedido-cliente">Stock actual del producto: ' + s.productoStock + (s.notas ? ' · Notas: ' + s.notas : '') + '</div>' +
+          '</div>' +
+          '<div class="sb-producto-admin-campos">' +
+          '<label>Precio por entrega<input type="number" min="0" step="0.01" class="sb-susc-editar-precio" value="' + s.precioEntrega + '" /></label>' +
+          '<label>Estado<select class="sb-susc-editar-estado">' +
+          Object.keys(etiquetasEstadoSuscripcion).map(function (k) {
+            return '<option value="' + k + '"' + (s.estado === k ? ' selected' : '') + '>' + etiquetasEstadoSuscripcion[k] + '</option>';
+          }).join('') +
+          '</select></label>' +
+          '</div>' +
+          '<div class="sb-producto-admin-acciones">' +
+          '<button type="button" class="sb-btn sb-guardar-suscripcion-cambios" data-id="' + s.id + '" style="padding:8px 16px; font-size:12.5px;">Guardar</button>' +
+          '<button type="button" class="sb-btn sb-registrar-entrega-suscripcion" data-id="' + s.id + '" style="padding:8px 16px; font-size:12.5px;"' + (s.estado !== 'activa' ? ' disabled' : '') + '>Registrar entrega</button>' +
+          '</div>' +
+          '</div>'
+        );
+      }).join('');
+
+      lista.querySelectorAll('.sb-guardar-suscripcion-cambios').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var card = btn.closest('.sb-producto-admin-card');
+          var datos = {
+            id: btn.dataset.id,
+            precioEntrega: parseFloat(card.querySelector('.sb-susc-editar-precio').value),
+            estado: card.querySelector('.sb-susc-editar-estado').value,
+          };
+          btn.disabled = true;
+          btn.textContent = 'Guardando…';
+          SanteBioAuth.llamarApi('actualizar_suscripcion_admin', datos, token).then(function () {
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+            cargarSuscripcionesAdmin(token, false);
+          });
+        });
+      });
+
+      lista.querySelectorAll('.sb-registrar-entrega-suscripcion').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          btn.disabled = true;
+          btn.textContent = 'Registrando…';
+          SanteBioAuth.llamarApi('registrar_entrega_suscripcion', { id: btn.dataset.id }, token).then(function (res) {
+            if (!res.ok) {
+              alert(res.error || 'No se pudo registrar la entrega.');
+              btn.disabled = false;
+              btn.textContent = 'Registrar entrega';
+              return;
+            }
+            cargarSuscripcionesAdmin(token, false);
+          });
+        });
+      });
+    });
+  }
+
+  var suscripcionForm = document.getElementById('sb-suscripcion-form');
+  document.getElementById('sb-mostrar-form-suscripcion').addEventListener('click', function () {
+    suscripcionForm.style.display = suscripcionForm.style.display === 'block' ? 'none' : 'block';
+  });
+
+  suscripcionForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!this.checkValidity()) { this.reportValidity(); return; }
+    var errorDivSuscripcion = document.getElementById('sb-suscripcion-form-error');
+    errorDivSuscripcion.style.display = 'none';
+    var btn = document.getElementById('sb-guardar-suscripcion-btn');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+    var precioTexto = document.getElementById('sb-susc-precio').value.trim();
+    SanteBioAuth.llamarApi('crear_suscripcion_admin', {
+      correo: document.getElementById('sb-susc-correo').value.trim(),
+      productoId: parseInt(document.getElementById('sb-susc-producto').value, 10),
+      planId: parseInt(document.getElementById('sb-susc-plan').value, 10),
+      precioEntrega: precioTexto === '' ? null : parseFloat(precioTexto),
+      proximaEntrega: document.getElementById('sb-susc-proxima').value || null,
+      notas: document.getElementById('sb-susc-notas').value.trim(),
+    }, token).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = 'Agregar suscripción';
+      if (!res.ok) {
+        errorDivSuscripcion.textContent = res.error || 'No se pudo crear la suscripción.';
+        errorDivSuscripcion.style.display = 'block';
+        return;
+      }
+      suscripcionForm.reset();
+      suscripcionForm.style.display = 'none';
+      cargarSuscripcionesAdmin(token);
     });
   });
 

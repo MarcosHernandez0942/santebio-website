@@ -13,7 +13,8 @@ from email_utils import (
 )
 from models import (
     Usuario, Admin, Pedido, Direccion, Tarjeta, TokenRestablecer, Opinion, Producto, AvisoStock,
-    expandir_items_a_individuales, calcular_stock_paquete,
+    PlanSuscripcion, Suscripcion,
+    expandir_items_a_individuales, calcular_stock_paquete, COMPOSICION_PAQUETES,
 )
 from openpay_client import openpay_configurado, crear_cargo_tarjeta, crear_cargo_tienda, crear_cargo_spei
 from pagos_confirmacion import confirmar_pago_si_corresponde
@@ -27,6 +28,7 @@ ACCIONES_PUBLICAS = {
     "solicitar_cambio_password", "confirmar_cambio_password",
     "listar_opiniones_publicas", "calificaciones_por_producto",
     "consultar_pedido_publico", "listar_productos_publico",
+    "listar_planes_suscripcion_publico",
 }
 # "nueva_opinion" YA NO es publica a proposito: solo clientes con
 # sesion iniciada pueden opinar (pedido de Marcos, "para que se filtre
@@ -107,6 +109,22 @@ def accion():
             return listar_avisos_stock(datos_token)
         if tipo_accion == "marcar_avisos_stock_revisados":
             return marcar_avisos_stock_revisados(datos_token)
+        if tipo_accion == "listar_planes_suscripcion_publico":
+            return listar_planes_suscripcion_publico()
+        if tipo_accion == "listar_planes_suscripcion_admin":
+            return listar_planes_suscripcion_admin(datos_token)
+        if tipo_accion == "crear_plan_suscripcion":
+            return crear_plan_suscripcion(body, datos_token)
+        if tipo_accion == "actualizar_plan_suscripcion":
+            return actualizar_plan_suscripcion(body, datos_token)
+        if tipo_accion == "listar_suscripciones_admin":
+            return listar_suscripciones_admin(datos_token)
+        if tipo_accion == "crear_suscripcion_admin":
+            return crear_suscripcion_admin(body, datos_token)
+        if tipo_accion == "actualizar_suscripcion_admin":
+            return actualizar_suscripcion_admin(body, datos_token)
+        if tipo_accion == "registrar_entrega_suscripcion":
+            return registrar_entrega_suscripcion(body, datos_token)
         if tipo_accion == "nueva_opinion":
             return nueva_opinion(body, datos_token)
         if tipo_accion == "listar_opiniones_publicas":
@@ -409,23 +427,82 @@ def listar_kpis_admin(datos_token):
 
     pedidos = db.session.query(Pedido).all()
     total_usuarios = db.session.query(Usuario).count()
+    productos = db.session.query(Producto).all()
+    producto_por_id = {p.id: p for p in productos}
+    producto_por_nombre = {p.nombre: p for p in productos}
 
     ventas_totales = sum(float(p.total) for p in pedidos)
     total_pedidos = len(pedidos)
     ticket_promedio = ventas_totales / total_pedidos if total_pedidos > 0 else 0
 
     por_metodo = {}
+    # Se agrupa por id del item (no por nombre) porque es el mismo
+    # identificador estable que ya usa expandir_items_a_individuales
+    # para descontar inventario -- el nombre snapshot que trae cada
+    # pedido puede quedar desactualizado si el producto se renombro
+    # despues (visto en datos reales: un mismo id 1250 trae "Cápsulas
+    # Premium" en un pedido viejo y "Paquete 1" en uno reciente), asi
+    # que para mostrar se usa el nombre ACTUAL del catalogo cuando el
+    # id todavia existe, y el nombre del pedido solo si ya no.
     por_producto = {}
     for p in pedidos:
         metodo = p.metodo_pago or "Sin especificar"
         por_metodo[metodo] = por_metodo.get(metodo, 0) + float(p.total)
         for item in (p.items or []):
-            nombre = item.get("name") or "Producto sin nombre"
+            nombre_pedido = item.get("name") or "Producto sin nombre"
             cantidad = item.get("qty") or 0
-            por_producto[nombre] = por_producto.get(nombre, 0) + cantidad
+            precio = item.get("price") or 0
+            try:
+                item_id = int(item.get("id"))
+            except (TypeError, ValueError):
+                item_id = None
+            clave = item_id if item_id is not None else ("nombre:" + nombre_pedido)
+            if clave not in por_producto:
+                nombre_actual = producto_por_id[item_id].nombre if item_id in producto_por_id else nombre_pedido
+                por_producto[clave] = {"id": item_id, "nombre": nombre_actual, "cantidad": 0, "monto": 0.0}
+            por_producto[clave]["cantidad"] += cantidad
+            por_producto[clave]["monto"] += cantidad * float(precio)
 
-    producto_mas_vendido = max(por_producto.items(), key=lambda par: par[1]) if por_producto else None
+    producto_mas_vendido = (
+        max(por_producto.values(), key=lambda v: v["cantidad"]) if por_producto else None
+    )
     ventas_por_metodo = [{"metodo": m, "total": t} for m, t in sorted(por_metodo.items(), key=lambda par: -par[1])]
+    ventas_por_producto = sorted(por_producto.values(), key=lambda v: -v["cantidad"])
+
+    # Seccion (individual/paquete) de cada producto vendido: se cruza
+    # primero por id contra el catalogo real (Producto.id) -- si un
+    # pedido viejo trae un id que ya no existe (producto borrado), se
+    # intenta un segundo cruce por nombre antes de asumir 'individual'
+    # por default, para que ningun monto se pierda del total.
+    seccion_individual = {"unidades": 0, "monto": 0.0}
+    seccion_paquete = {"unidades": 0, "monto": 0.0}
+    por_paquete = {
+        pid: {
+            "id": pid,
+            "nombre": producto_por_id[pid].nombre if pid in producto_por_id else None,
+            "unidades": 0,
+            "monto": 0.0,
+        }
+        for pid in COMPOSICION_PAQUETES
+    }
+    for entrada in ventas_por_producto:
+        producto = producto_por_id.get(entrada["id"]) if entrada["id"] is not None else None
+        if producto is None:
+            producto = producto_por_nombre.get(entrada["nombre"])
+        if producto is not None and producto.seccion == "paquete":
+            seccion_paquete["unidades"] += entrada["cantidad"]
+            seccion_paquete["monto"] += entrada["monto"]
+            if producto.id in por_paquete:
+                por_paquete[producto.id]["unidades"] += entrada["cantidad"]
+                por_paquete[producto.id]["monto"] += entrada["monto"]
+        else:
+            seccion_individual["unidades"] += entrada["cantidad"]
+            seccion_individual["monto"] += entrada["monto"]
+
+    ventas_por_seccion = {
+        "individual": seccion_individual,
+        "paquete": dict(seccion_paquete, porPaquete=list(por_paquete.values())),
+    }
 
     return jsonify({
         "ventasTotales": ventas_totales,
@@ -433,10 +510,15 @@ def listar_kpis_admin(datos_token):
         "ticketPromedio": ticket_promedio,
         "totalUsuarios": total_usuarios,
         "productoMasVendido": (
-            {"nombre": producto_mas_vendido[0], "cantidad": producto_mas_vendido[1]}
+            {"nombre": producto_mas_vendido["nombre"], "cantidad": producto_mas_vendido["cantidad"]}
             if producto_mas_vendido else None
         ),
         "ventasPorMetodo": ventas_por_metodo,
+        "ventasPorProducto": [
+            {"nombre": e["nombre"], "cantidad": e["cantidad"], "monto": e["monto"]}
+            for e in ventas_por_producto
+        ],
+        "ventasPorSeccion": ventas_por_seccion,
     })
 
 
@@ -777,6 +859,280 @@ def actualizar_producto(body, datos_token):
 
     db.session.commit()
     return jsonify({"ok": True, "producto": _serializar_producto(producto)})
+
+
+def listar_planes_suscripcion_publico():
+    planes = (
+        db.session.query(PlanSuscripcion)
+        .filter_by(activo=True)
+        .order_by(PlanSuscripcion.orden, PlanSuscripcion.frecuencia_dias)
+        .all()
+    )
+    return jsonify({"planes": [p.to_dict() for p in planes]})
+
+
+def listar_planes_suscripcion_admin(datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para ver esto."}), 403
+
+    planes = db.session.query(PlanSuscripcion).order_by(PlanSuscripcion.orden, PlanSuscripcion.frecuencia_dias).all()
+    return jsonify({"planes": [p.to_dict() for p in planes]})
+
+
+def crear_plan_suscripcion(body, datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para hacer esto."}), 403
+
+    nombre = (body.get("nombre") or "").strip()
+    frecuencia_dias = body.get("frecuenciaDias")
+    if not nombre or not frecuencia_dias:
+        return jsonify({"error": "Faltan datos del plan (nombre y frecuencia)."}), 400
+
+    plan = PlanSuscripcion(
+        nombre=nombre,
+        frecuencia_dias=int(frecuencia_dias),
+        descuento_porcentaje=body.get("descuentoPorcentaje") or 0,
+        descripcion=body.get("descripcion") or "",
+        destacado=bool(body.get("destacado")),
+        orden=int(body.get("orden") or 0),
+    )
+    db.session.add(plan)
+    db.session.commit()
+    return jsonify({"ok": True, "plan": plan.to_dict()})
+
+
+def actualizar_plan_suscripcion(body, datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para hacer esto."}), 403
+
+    plan = db.session.query(PlanSuscripcion).filter_by(id=body.get("id")).first()
+    if not plan:
+        return jsonify({"error": "Plan no encontrado."}), 404
+
+    if "nombre" in body:
+        plan.nombre = body["nombre"]
+    if "frecuenciaDias" in body:
+        plan.frecuencia_dias = int(body["frecuenciaDias"])
+    if "descuentoPorcentaje" in body:
+        plan.descuento_porcentaje = body["descuentoPorcentaje"]
+    if "descripcion" in body:
+        plan.descripcion = body["descripcion"] or ""
+    if "destacado" in body:
+        plan.destacado = bool(body["destacado"])
+    if "orden" in body:
+        plan.orden = int(body["orden"])
+    if "activo" in body:
+        plan.activo = bool(body["activo"])
+
+    db.session.commit()
+    return jsonify({"ok": True, "plan": plan.to_dict()})
+
+
+def _serializar_suscripcion_admin(s, usuario, producto, plan):
+    return {
+        "id": s.id,
+        "usuarioId": s.usuario_id,
+        "clienteNombre": usuario.nombre if usuario else "Cliente eliminado",
+        "clienteCorreo": usuario.correo if usuario else "",
+        "productoId": s.producto_id,
+        "productoNombre": producto.nombre if producto else "Producto eliminado",
+        "productoStock": producto.stock if producto else 0,
+        "planId": s.plan_id,
+        "planNombre": plan.nombre if plan else "Plan eliminado",
+        "frecuenciaDias": plan.frecuencia_dias if plan else None,
+        "precioEntrega": float(s.precio_entrega),
+        "estado": s.estado,
+        "proximaEntrega": s.proxima_entrega.isoformat() if s.proxima_entrega else None,
+        "notas": s.notas,
+        "creadoEn": s.creado_en.isoformat(),
+    }
+
+
+def listar_suscripciones_admin(datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para ver esto."}), 403
+
+    suscripciones = db.session.query(Suscripcion).order_by(Suscripcion.creado_en.desc()).all()
+    usuarios = {u.id: u for u in db.session.query(Usuario).all()}
+    productos = {p.id: p for p in db.session.query(Producto).all()}
+    planes = {p.id: p for p in db.session.query(PlanSuscripcion).all()}
+    return jsonify({
+        "suscripciones": [
+            _serializar_suscripcion_admin(
+                s, usuarios.get(s.usuario_id), productos.get(s.producto_id), planes.get(s.plan_id)
+            )
+            for s in suscripciones
+        ]
+    })
+
+
+def crear_suscripcion_admin(body, datos_token):
+    """El admin da de alta a mano la suscripcion de un cliente que ya
+    tiene cuenta (por ahora no hay flujo de autoservicio en
+    suscripciones.html -- ver comentario en el modelo Suscripcion)."""
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para hacer esto."}), 403
+
+    correo = (body.get("correo") or "").strip()
+    producto_id = body.get("productoId")
+    plan_id = body.get("planId")
+    if not correo or not producto_id or not plan_id:
+        return jsonify({"error": "Faltan datos de la suscripción (correo, producto y plan)."}), 400
+
+    usuario = db.session.query(Usuario).filter_by(correo=correo).first()
+    if not usuario:
+        return jsonify({"error": "No existe ningún cliente registrado con ese correo."}), 404
+
+    producto = db.session.query(Producto).filter_by(id=producto_id).first()
+    if not producto:
+        return jsonify({"error": "Producto no encontrado."}), 404
+
+    plan = db.session.query(PlanSuscripcion).filter_by(id=plan_id).first()
+    if not plan:
+        return jsonify({"error": "Plan no encontrado."}), 404
+
+    precio_entrega = body.get("precioEntrega")
+    if precio_entrega in (None, ""):
+        precio_entrega = round(float(producto.precio) * (1 - float(plan.descuento_porcentaje) / 100), 2)
+
+    proxima_entrega = None
+    if body.get("proximaEntrega"):
+        try:
+            proxima_entrega = datetime.strptime(body["proximaEntrega"], "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Fecha de próxima entrega inválida."}), 400
+
+    suscripcion = Suscripcion(
+        usuario_id=usuario.id,
+        producto_id=producto.id,
+        plan_id=plan.id,
+        precio_entrega=precio_entrega,
+        proxima_entrega=proxima_entrega,
+        notas=body.get("notas") or "",
+    )
+    db.session.add(suscripcion)
+    db.session.commit()
+    return jsonify({
+        "ok": True,
+        "suscripcion": _serializar_suscripcion_admin(suscripcion, usuario, producto, plan),
+    })
+
+
+def actualizar_suscripcion_admin(body, datos_token):
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para hacer esto."}), 403
+
+    suscripcion = db.session.query(Suscripcion).filter_by(id=body.get("id")).first()
+    if not suscripcion:
+        return jsonify({"error": "Suscripción no encontrada."}), 404
+
+    if "precioEntrega" in body:
+        suscripcion.precio_entrega = body["precioEntrega"]
+    if "estado" in body:
+        if body["estado"] not in ("activa", "pausada", "cancelada"):
+            return jsonify({"error": "Estado inválido."}), 400
+        suscripcion.estado = body["estado"]
+    if "planId" in body:
+        plan_nuevo = db.session.query(PlanSuscripcion).filter_by(id=body["planId"]).first()
+        if not plan_nuevo:
+            return jsonify({"error": "Plan no encontrado."}), 404
+        suscripcion.plan_id = plan_nuevo.id
+    if "proximaEntrega" in body:
+        valor = body["proximaEntrega"]
+        if valor:
+            try:
+                suscripcion.proxima_entrega = datetime.strptime(valor, "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify({"error": "Fecha de próxima entrega inválida."}), 400
+        else:
+            suscripcion.proxima_entrega = None
+    if "notas" in body:
+        suscripcion.notas = body["notas"] or ""
+
+    db.session.commit()
+    usuario = db.session.query(Usuario).filter_by(id=suscripcion.usuario_id).first()
+    producto = db.session.query(Producto).filter_by(id=suscripcion.producto_id).first()
+    plan = db.session.query(PlanSuscripcion).filter_by(id=suscripcion.plan_id).first()
+    return jsonify({"ok": True, "suscripcion": _serializar_suscripcion_admin(suscripcion, usuario, producto, plan)})
+
+
+def registrar_entrega_suscripcion(body, datos_token):
+    """Registra manualmente el ciclo de entrega/cobro de una
+    suscripcion: crea un Pedido real (aparece en el tab Pedidos igual
+    que una compra normal) y descuenta inventario -- mismas reglas que
+    crear_pedido (producto activo, stock suficiente, aviso persistente
+    si no alcanza, ver AvisoStock). Existe porque el cobro recurrente
+    automatico todavia no esta conectado (ver Suscripcion en
+    models.py); en cuanto lo este, esta accion puede quedar tal cual
+    para registros manuales/excepciones."""
+    if not exigir_tipo(datos_token, "admin"):
+        return jsonify({"error": "No tienes permiso para hacer esto."}), 403
+
+    suscripcion = db.session.query(Suscripcion).filter_by(id=body.get("id")).first()
+    if not suscripcion:
+        return jsonify({"error": "Suscripción no encontrada."}), 404
+    if suscripcion.estado != "activa":
+        return jsonify({"error": "Solo se pueden registrar entregas de suscripciones activas."}), 400
+
+    producto = db.session.query(Producto).filter_by(id=suscripcion.producto_id).first()
+    if not producto or not producto.activo:
+        return jsonify({"error": "El producto de esta suscripción ya no está disponible."}), 400
+    if producto.stock < 1:
+        db.session.add(AvisoStock(
+            producto_id=producto.id,
+            producto_nombre=producto.nombre,
+            cantidad_solicitada=1,
+            cantidad_disponible=producto.stock,
+        ))
+        db.session.commit()
+        return jsonify({"error": "Por su gran éxito, \"" + producto.nombre + "\" no está disponible por el momento. En breve tendremos más."}), 400
+
+    usuario = db.session.query(Usuario).filter_by(id=suscripcion.usuario_id).first()
+    direccion = (
+        db.session.query(Direccion)
+        .filter_by(usuario_id=suscripcion.usuario_id)
+        .order_by(Direccion.creado_en.desc())
+        .first()
+    )
+    datos_entrega = {
+        "nombre": usuario.nombre if usuario else "",
+        "telefono": usuario.telefono if usuario else "",
+        "calle": direccion.calle if direccion else "",
+        "colonia": direccion.colonia if direccion else "",
+        "ciudad": direccion.ciudad if direccion else "",
+        "estado": direccion.estado if direccion else "",
+        "cp": direccion.cp if direccion else "",
+    }
+
+    producto.stock -= 1
+
+    folio = generar_folio()
+    while db.session.query(Pedido).filter_by(folio=folio).first():
+        folio = generar_folio()
+
+    pedido = Pedido(
+        folio=folio,
+        usuario_id=suscripcion.usuario_id,
+        items=[{"id": producto.id, "name": producto.nombre, "qty": 1, "price": float(suscripcion.precio_entrega)}],
+        total=suscripcion.precio_entrega,
+        metodo_pago="suscripción",
+        estado="Aceptado",
+        datos_entrega=datos_entrega,
+        stock_descontado=True,
+    )
+    db.session.add(pedido)
+
+    plan = db.session.query(PlanSuscripcion).filter_by(id=suscripcion.plan_id).first()
+    frecuencia = plan.frecuencia_dias if plan else 30
+    base = suscripcion.proxima_entrega or datetime.now(timezone.utc).date()
+    suscripcion.proxima_entrega = base + timedelta(days=frecuencia)
+
+    db.session.commit()
+    return jsonify({
+        "ok": True,
+        "pedido": pedido.to_dict(),
+        "suscripcion": _serializar_suscripcion_admin(suscripcion, usuario, producto, plan),
+    })
 
 
 def listar_avisos_stock(datos_token):

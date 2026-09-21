@@ -305,6 +305,85 @@ def calcular_stock_paquete(producto_id, db_session):
     return min(disponibles) if disponibles else 0
 
 
+class PlanSuscripcion(db.Model):
+    """Catalogo de frecuencias de suscripcion -- antes vivia fijo como
+    texto/CSS en suscripciones.html ("cada 30/60/90 dias" con 10/12/15%
+    de descuento). Se migra a tabla para que el admin pueda editar
+    nombre/descuento/destacado desde el panel sin tocar codigo, y para
+    que suscripciones.html los muestre en vivo (ver
+    listar_planes_suscripcion_publico en routes.py). Sin encriptar: es
+    informacion publica de marketing, igual que Producto."""
+
+    __tablename__ = "planes_suscripcion"
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.Text, nullable=False)
+    frecuencia_dias = db.Column(db.Integer, nullable=False)
+    descuento_porcentaje = db.Column(db.Numeric(5, 2), nullable=False, default=0)
+    descripcion = db.Column(db.Text, nullable=False, default="")
+    destacado = db.Column(db.Boolean, nullable=False, default=False)
+    activo = db.Column(db.Boolean, nullable=False, default=True)
+    orden = db.Column(db.Integer, nullable=False, default=0)
+    creado_en = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nombre": self.nombre,
+            "frecuenciaDias": self.frecuencia_dias,
+            "descuentoPorcentaje": float(self.descuento_porcentaje),
+            "descripcion": self.descripcion,
+            "destacado": self.destacado,
+            "activo": self.activo,
+            "orden": self.orden,
+        }
+
+
+class Suscripcion(db.Model):
+    """Suscripcion de un cliente a un producto con entregas periodicas.
+    El cobro/envio automatico TODAVIA NO EXISTE (suscripciones.html ya
+    avisa "muy pronto" -- falta conectar una pasarela con cobro
+    recurrente real). Mientras tanto, cada entrega se registra a mano
+    desde el panel de admin con la accion
+    "registrar_entrega_suscripcion" (routes.py), que crea un Pedido
+    real y descuenta inventario exactamente igual que una compra
+    normal -- asi el stock nunca se desincroniza aunque el cobro
+    todavia sea manual. Sin encriptar a proposito: no guarda datos de
+    contacto propios, solo referencias (usuario_id/producto_id/plan_id)
+    -- los datos sensibles siguen viviendo solo en Usuario/Direccion."""
+
+    __tablename__ = "suscripciones"
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey("productos.id"), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey("planes_suscripcion.id"), nullable=False)
+    # Precio que paga el cliente en CADA entrega. Se precarga con
+    # producto.precio ya con el descuento del plan aplicado al crear la
+    # suscripcion, pero el admin lo puede ajustar a mano despues
+    # (pedido explicito: "que puedan modificar precios") -- ej. una
+    # cortesia puntual sin tener que crear un plan nuevo solo para un
+    # cliente.
+    precio_entrega = db.Column(db.Numeric(10, 2), nullable=False)
+    estado = db.Column(db.Text, nullable=False, default="activa")  # activa | pausada | cancelada
+    proxima_entrega = db.Column(db.Date, nullable=True)
+    notas = db.Column(db.Text, nullable=False, default="")
+    creado_en = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "usuarioId": self.usuario_id,
+            "productoId": self.producto_id,
+            "planId": self.plan_id,
+            "precioEntrega": float(self.precio_entrega),
+            "estado": self.estado,
+            "proximaEntrega": self.proxima_entrega.isoformat() if self.proxima_entrega else None,
+            "notas": self.notas,
+            "creadoEn": self.creado_en.isoformat(),
+        }
+
+
 class Tarjeta(db.Model):
     """Solo guarda metadatos NO sensibles de la tarjeta (marca, ultimos
     4 digitos, vencimiento) -- nunca el numero completo ni el CVV. El
